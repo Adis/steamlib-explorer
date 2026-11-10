@@ -3,7 +3,7 @@ Personal, self-hosted repository of Steam games allowing you to browse and filte
 
 ## Development
 
-Requirements: Docker and Go 1.24+.
+Requirements: Docker and Go 1.25+.
 
 ```sh
 cp .env.example .env
