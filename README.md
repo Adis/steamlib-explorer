@@ -3,20 +3,22 @@ Personal, self-hosted repository of Steam games allowing you to browse and filte
 
 ## Development
 
-Requirements: Docker and Go 1.24+ (Go is used to run the migration tool).
+Requirements: Docker and Go 1.25+.
 
 ```sh
 cp .env.example .env
 make db-up          # start Postgres 17 on localhost:5432
-make migrate-up     # create the tables
-make migrate-status # check what is applied
+make run            # start the backend on :8080, applying migrations first
+curl localhost:8080/healthz
 ```
+
+`make test` runs the backend tests and `make build` puts a binary in `backend/bin/server`. The `migrate-*` targets are still there for rolling back or checking status by hand.
 
 `make migrate-down` rolls back the last migration and `make db-down` stops Postgres (data stays in the `pgdata` volume).
 
 ## Database
 
-The schema lives in [`backend/db/migrations`](backend/db/migrations) and is applied with [goose](https://github.com/pressly/goose).
+The schema lives in [`backend/db/migrations`](backend/db/migrations) and is applied with [goose](https://github.com/pressly/goose). The migrations are embedded in the backend binary and run every time it starts.
 
 | Table | One row per | Holds |
 | --- | --- | --- |
