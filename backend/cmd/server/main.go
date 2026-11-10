@@ -13,8 +13,11 @@ import (
 	"time"
 
 	"github.com/Adis/steamlib-explorer/backend/internal/api"
+	"github.com/Adis/steamlib-explorer/backend/internal/auth"
 	"github.com/Adis/steamlib-explorer/backend/internal/config"
 	"github.com/Adis/steamlib-explorer/backend/internal/database"
+	"github.com/Adis/steamlib-explorer/backend/internal/steam"
+	"github.com/Adis/steamlib-explorer/backend/internal/store"
 )
 
 func main() {
@@ -43,15 +46,23 @@ func run() error {
 		return err
 	}
 
+	steamClient := steam.New(cfg.SteamAPIKey)
+	authService := &auth.Service{
+		OpenID:    &auth.OpenID{Endpoint: auth.SteamOpenIDEndpoint, HTTP: &http.Client{Timeout: 15 * time.Second}},
+		Store:     store.AuthStore{Q: store.New(pool)},
+		Profiles:  auth.SteamProfiles{Client: steamClient},
+		PublicURL: cfg.PublicURL,
+	}
+
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           api.NewRouter(pool),
+		Handler:           api.NewRouter(api.Deps{DB: pool, Auth: authService}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	errc := make(chan error, 1)
 	go func() {
-		slog.Info("listening", "addr", srv.Addr)
+		slog.Info("listening", "addr", srv.Addr, "public_url", cfg.PublicURL)
 		errc <- srv.ListenAndServe()
 	}()
 

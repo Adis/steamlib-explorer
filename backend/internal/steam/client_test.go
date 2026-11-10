@@ -242,3 +242,30 @@ func TestParseReleaseDate(t *testing.T) {
 		}
 	}
 }
+
+func TestPlayerSummary(t *testing.T) {
+	var gotPath string
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.Write([]byte(`{"response":{"players":[{"steamid":"76561197960287930","personaname":"Rabscuttle","avatarfull":"https://avatars.steamstatic.com/abc_full.jpg"}]}}`))
+	})
+	p, err := c.PlayerSummary(context.Background(), 76561197960287930)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/ISteamUser/GetPlayerSummaries/v2/" {
+		t.Errorf("path = %s", gotPath)
+	}
+	if p.PersonaName != "Rabscuttle" || p.AvatarURL != "https://avatars.steamstatic.com/abc_full.jpg" {
+		t.Errorf("summary = %+v", p)
+	}
+}
+
+func TestPlayerSummaryNotFound(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"response":{"players":[]}}`))
+	})
+	if _, err := c.PlayerSummary(context.Background(), 1); !errors.Is(err, ErrPlayerNotFound) {
+		t.Fatalf("err = %v, want ErrPlayerNotFound", err)
+	}
+}

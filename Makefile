@@ -1,10 +1,11 @@
 GOOSE   := go run github.com/pressly/goose/v3/cmd/goose@v3.26.0
+SQLC    := go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.29.0
 MIGRATIONS := backend/db/migrations
 
 -include .env
 export
 
-.PHONY: db-up db-down run build test migrate-up migrate-down migrate-status
+.PHONY: db-up db-down run build test test-db generate migrate-up migrate-down migrate-status
 
 db-up:          ## Start Postgres in Docker
 	docker compose up -d --wait db
@@ -20,6 +21,13 @@ build:          ## Build the backend binary into backend/bin/server
 
 test:           ## Run the backend tests
 	cd backend && go test ./...
+
+test-db:        ## Run the backend tests, including the ones that need Postgres
+	psql "$(DATABASE_URL)" -qc "DROP DATABASE IF EXISTS steamlib_test" -c "CREATE DATABASE steamlib_test"
+	cd backend && TEST_DATABASE_URL="$(subst /steamlib?,/steamlib_test?,$(DATABASE_URL))" go test ./...
+
+generate:       ## Regenerate Go code from backend/db/queries with sqlc
+	cd backend && $(SQLC) generate
 
 migrate-up:     ## Apply all migrations
 	$(GOOSE) -dir $(MIGRATIONS) postgres "$(DATABASE_URL)" up
