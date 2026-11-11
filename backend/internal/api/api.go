@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/Adis/steamlib-explorer/backend/internal/auth"
+	"github.com/Adis/steamlib-explorer/backend/internal/logging"
 )
 
 // Pinger is the part of the database pool the health check needs.
@@ -19,15 +20,17 @@ type Pinger interface {
 }
 
 type Deps struct {
-	DB   Pinger
-	Auth *auth.Service
+	DB        Pinger
+	Auth      *auth.Service
+	Refresher Refresher
+	SyncQ     SyncQueries
 }
 
 func NewRouter(d Deps) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
+	r.Use(logging.Requests)
 	r.Use(middleware.Recoverer)
 
 	r.Get("/healthz", health(d.DB))
@@ -39,6 +42,8 @@ func NewRouter(d Deps) http.Handler {
 	r.Route("/api", func(r chi.Router) {
 		r.Use(d.Auth.RequireUser)
 		r.Get("/me", auth.Me)
+		r.Post("/sync", startSync(d.Refresher))
+		r.Get("/sync", syncStatus(d.SyncQ))
 	})
 	return r
 }

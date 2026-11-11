@@ -5,7 +5,7 @@ MIGRATIONS := backend/db/migrations
 -include .env
 export
 
-.PHONY: db-up db-down run build test test-db generate migrate-up migrate-down migrate-status
+.PHONY: db-up db-down run web web-install build test test-db generate migrate-up migrate-down migrate-status
 
 db-up:          ## Start Postgres in Docker
 	docker compose up -d --wait db
@@ -16,6 +16,12 @@ db-down:        ## Stop Postgres (data is kept in the pgdata volume)
 run:            ## Run the backend (applies migrations on startup)
 	cd backend && go run ./cmd/server
 
+web-install:    ## Install the frontend's npm packages
+	cd frontend && npm install
+
+web:            ## Run the frontend on http://localhost:5173 (proxies /api and /auth to the backend)
+	cd frontend && npm run dev
+
 build:          ## Build the backend binary into backend/bin/server
 	cd backend && go build -o bin/server ./cmd/server
 
@@ -24,7 +30,7 @@ test:           ## Run the backend tests
 
 test-db:        ## Run the backend tests, including the ones that need Postgres
 	psql "$(DATABASE_URL)" -qc "DROP DATABASE IF EXISTS steamlib_test" -c "CREATE DATABASE steamlib_test"
-	cd backend && TEST_DATABASE_URL="$(subst /steamlib?,/steamlib_test?,$(DATABASE_URL))" go test ./...
+	cd backend && TEST_DATABASE_URL="$(subst /steamlib?,/steamlib_test?,$(DATABASE_URL))" go test -p 1 ./...
 
 generate:       ## Regenerate Go code from backend/db/queries with sqlc
 	cd backend && $(SQLC) generate
