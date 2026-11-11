@@ -143,8 +143,13 @@ func (s *Service) RequireUser(next http.Handler) http.Handler {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, user)))
+		next.ServeHTTP(w, r.WithContext(WithUser(r.Context(), user)))
 	})
+}
+
+// WithUser returns a context carrying the signed-in user.
+func WithUser(ctx context.Context, u User) context.Context {
+	return context.WithValue(ctx, ctxKey{}, u)
 }
 
 // UserFrom returns the signed-in user set by RequireUser.

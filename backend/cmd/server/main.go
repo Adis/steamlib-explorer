@@ -16,8 +16,10 @@ import (
 	"github.com/Adis/steamlib-explorer/backend/internal/auth"
 	"github.com/Adis/steamlib-explorer/backend/internal/config"
 	"github.com/Adis/steamlib-explorer/backend/internal/database"
+	"github.com/Adis/steamlib-explorer/backend/internal/logging"
 	"github.com/Adis/steamlib-explorer/backend/internal/steam"
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
+	"github.com/Adis/steamlib-explorer/backend/internal/syncer"
 )
 
 func main() {
@@ -36,6 +38,15 @@ func run() error {
 		return err
 	}
 
+	_, closeLog, err := logging.Setup(cfg.LogFile, slog.LevelInfo)
+	if err != nil {
+		return err
+	}
+	defer closeLog()
+	if cfg.LogFile != "" {
+		slog.Info("logging to console and file", "file", cfg.LogFile)
+	}
+
 	pool, err := database.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return err
@@ -45,18 +56,35 @@ func run() error {
 	if err := database.Migrate(ctx, pool); err != nil {
 		return err
 	}
+	queries := store.New(pool)
+	if n, err := queries.FailRunningSyncs(ctx); err != nil {
+		return err
+	} else if n > 0 {
+		slog.Warn("marked refreshes interrupted by the last shutdown as failed", "count", n)
+	}
 
-	steamClient := steam.New(cfg.SteamAPIKey)
+	// Every call to Steam goes through the logging transport.
+	steamHTTP := &http.Client{Timeout: 30 * time.Second, Transport: &logging.Transport{Service: "steam"}}
+	steamClient := steam.New(cfg.SteamAPIKey, steam.WithHTTPClient(steamHTTP))
+
 	authService := &auth.Service{
-		OpenID:    &auth.OpenID{Endpoint: auth.SteamOpenIDEndpoint, HTTP: &http.Client{Timeout: 15 * time.Second}},
-		Store:     store.AuthStore{Q: store.New(pool)},
+		OpenID:    &auth.OpenID{Endpoint: auth.SteamOpenIDEndpoint, HTTP: steamHTTP},
+		Store:     store.AuthStore{Q: queries},
 		Profiles:  auth.SteamProfiles{Client: steamClient},
 		PublicURL: cfg.PublicURL,
 	}
 
+	// Refreshes outlive the request that starts them, so they get their own
+	// context, cancelled on shutdown.
+	syncCtx, cancelSyncs := context.WithCancel(context.Background())
+	defer cancelSyncs()
+	refresher := syncer.New(syncCtx, steamClient, queries)
+
 	srv := &http.Server{
-		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           api.NewRouter(api.Deps{DB: pool, Auth: authService}),
+		Addr: fmt.Sprintf(":%d", cfg.Port),
+		Handler: api.NewRouter(api.Deps{
+			DB: pool, Auth: authService, Refresher: refresher, SyncQ: queries,
+		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
@@ -79,5 +107,7 @@ func run() error {
 			return err
 		}
 	}
+	cancelSyncs()
+	refresher.Wait()
 	return nil
 }

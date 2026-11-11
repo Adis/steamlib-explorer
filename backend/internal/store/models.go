@@ -16,7 +16,7 @@ type App struct {
 	Type             *string
 	ShortDescription *string
 	HeaderImage      *string
-	ReleaseDate      pgtype.Date
+	ReleaseDate      *time.Time
 	ReleaseDateText  *string
 	ComingSoon       bool
 	IsFree           bool
@@ -27,13 +27,13 @@ type App struct {
 	PlatformWindows  bool
 	PlatformMac      bool
 	PlatformLinux    bool
-	MetacriticScore  pgtype.Int4
-	PriceCents       pgtype.Int4
+	MetacriticScore  *int32
+	PriceCents       *int32
 	PriceCurrency    *string
-	ReviewScore      pgtype.Int4
+	ReviewScore      *int32
 	ReviewScoreDesc  *string
-	ReviewsPositive  pgtype.Int4
-	ReviewsTotal     pgtype.Int4
+	ReviewsPositive  *int32
+	ReviewsTotal     *int32
 	ReviewPct        pgtype.Numeric
 	DetailsRaw       []byte
 	DetailsStatus    string
@@ -68,6 +68,7 @@ type SyncRun struct {
 	GamesSeen      int32
 	DetailsFetched int32
 	Error          *string
+	DetailsTotal   int32
 }
 
 type User struct {

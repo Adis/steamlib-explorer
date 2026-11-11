@@ -34,3 +34,6 @@ go.work.sum
 
 # Backend build output
 backend/bin/
+
+# Backend logs
+backend/logs/
