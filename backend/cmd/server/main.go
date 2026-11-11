@@ -83,7 +83,7 @@ func run() error {
 	srv := &http.Server{
 		Addr: fmt.Sprintf(":%d", cfg.Port),
 		Handler: api.NewRouter(api.Deps{
-			DB: pool, Auth: authService, Refresher: refresher, SyncQ: queries,
+			DB: pool, Auth: authService, Refresher: refresher, SyncQ: queries, Games: queries,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

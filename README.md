@@ -63,5 +63,23 @@ Genres and categories are `text[]` columns with GIN indexes, so filtering by "ha
 | `GET /api/me` | The signed-in user (`steam_id`, `persona_name`, `avatar_url`), or 401 |
 | `POST /api/sync` | Starts a sync of the signed-in user's library (202), or 409 if one is running |
 | `GET /api/sync` | The latest sync (status, games seen, store details fetched of total, error) and library counts |
+| `GET /api/games` | One page of the signed-in user's games with store data, plus `total` matches (filters below) |
+| `GET /api/facets` | Genres and store categories in the user's library with game counts, most common first |
+
+`GET /api/games` takes these optional query parameters. Bad values get a 400 with an `error` message.
+
+| Parameter | Meaning |
+| --- | --- |
+| `q` | Name contains this text (case-insensitive) |
+| `genre`, `category` | Has this genre / store category; repeat to require all of them |
+| `played` | `true` for played games, `false` for never played |
+| `min_hours`, `max_hours` | Total playtime range in hours (decimals allowed) |
+| `min_review` | Minimum positive review percentage, 0 to 100 |
+| `min_metacritic` | Minimum Metacritic score, 0 to 100 |
+| `released_after`, `released_before` | Release date range, `YYYY-MM-DD` (games without a parseable date are left out) |
+| `platform` | `windows`, `mac` or `linux`; repeat to require several |
+| `sort` | `name` (default), `playtime`, `recent` (last two weeks), `last_played`, `review`, `metacritic`, `release` |
+| `order` | `asc` or `desc`; defaults to A to Z for `name` and biggest/newest first for the others. Unknown values sort last |
+| `limit`, `offset` | Page size (1 to 200, default 50) and start |
 
 A sync reads the library with one `GetOwnedGames` call, then fetches store details and reviews for every game whose store data is missing or older than 30 days, about 3 seconds per game (two store requests, 1.5 seconds apart). If Steam starts refusing requests, the sync stops with a message and keeps what it fetched; the next sync continues from there.
