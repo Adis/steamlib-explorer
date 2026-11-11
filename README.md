@@ -14,7 +14,9 @@ make run              # terminal 1: backend on :8080, applies migrations first
 make web              # terminal 2: frontend on http://localhost:5173
 ```
 
-Open http://localhost:5173, sign in through Steam and press **Sync library**. The page shows the sync's progress and how many games have store details and reviews.
+Open http://localhost:5173, sign in through Steam and press **Sync library**. Games appear in the table as soon as the library is read; store details and reviews fill in as the sync goes (reload or wait for it to finish). Filter with the panel on the left and click a column heading to sort, or click it again to reverse. Filters are kept in the address bar, so a filtered view can be bookmarked. **Details** next to the library count shows how many games have store details and reviews.
+
+After pulling changes that add frontend packages, run `make web-install` again.
 
 In development the browser only talks to Vite on port 5173, which forwards `/api` and `/auth` to the backend, so `PUBLIC_URL` must be `http://localhost:5173` (as in `.env.example`).
 
