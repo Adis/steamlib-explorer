@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/Adis/steamlib-explorer/backend/internal/auth"
 )
 
 type fakeDB struct{ err error }
@@ -24,7 +26,7 @@ func TestHealth(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			NewRouter(tt.db).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+			NewRouter(Deps{DB: tt.db, Auth: &auth.Service{}}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
 			if rec.Code != tt.want {
 				t.Errorf("status = %d, want %d", rec.Code, tt.want)
 			}
