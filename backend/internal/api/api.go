@@ -24,6 +24,7 @@ type Deps struct {
 	Auth      *auth.Service
 	Refresher Refresher
 	SyncQ     SyncQueries
+	Games     GameQueries
 }
 
 func NewRouter(d Deps) http.Handler {
@@ -44,6 +45,8 @@ func NewRouter(d Deps) http.Handler {
 		r.Get("/me", auth.Me)
 		r.Post("/sync", startSync(d.Refresher))
 		r.Get("/sync", syncStatus(d.SyncQ))
+		r.Get("/games", listGames(d.Games))
+		r.Get("/facets", listFacets(d.Games))
 	})
 	return r
 }

@@ -6,8 +6,6 @@ package store
 
 import (
 	"time"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type App struct {
@@ -34,7 +32,7 @@ type App struct {
 	ReviewScoreDesc  *string
 	ReviewsPositive  *int32
 	ReviewsTotal     *int32
-	ReviewPct        pgtype.Numeric
+	ReviewPct        *float64
 	DetailsRaw       []byte
 	DetailsStatus    string
 	DetailsFetchedAt *time.Time
