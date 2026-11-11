@@ -101,7 +101,7 @@ function LibrarySync() {
           <h2 className="text-xl font-semibold">Your library</h2>
           <p className="text-sm text-slate-400">
             Sync fetches your owned games, then store details and reviews for
-            each one, about 1.5 seconds per game.
+            each one, about 3 seconds per game.
           </p>
         </div>
         <button

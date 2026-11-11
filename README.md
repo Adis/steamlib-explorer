@@ -64,4 +64,4 @@ Genres and categories are `text[]` columns with GIN indexes, so filtering by "ha
 | `POST /api/sync` | Starts a sync of the signed-in user's library (202), or 409 if one is running |
 | `GET /api/sync` | The latest sync (status, games seen, store details fetched of total, error) and library counts |
 
-A sync reads the library with one `GetOwnedGames` call, then fetches store details and reviews for every game whose store data is missing or older than 30 days, about 1.5 seconds per game. If Steam starts refusing requests, the sync stops with a message and keeps what it fetched; the next sync continues from there.
+A sync reads the library with one `GetOwnedGames` call, then fetches store details and reviews for every game whose store data is missing or older than 30 days, about 3 seconds per game (two store requests, 1.5 seconds apart). If Steam starts refusing requests, the sync stops with a message and keeps what it fetched; the next sync continues from there.
