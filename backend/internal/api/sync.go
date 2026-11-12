@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"math"
 	"net/http"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Adis/steamlib-explorer/backend/internal/auth"
+	"github.com/Adis/steamlib-explorer/backend/internal/steam"
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
 	"github.com/Adis/steamlib-explorer/backend/internal/syncer"
 )
@@ -33,7 +35,12 @@ type syncRunJSON struct {
 	GamesSeen      int32      `json:"games_seen"`
 	DetailsTotal   int32      `json:"details_total"`
 	DetailsFetched int32      `json:"details_fetched"`
-	Error          *string    `json:"error"`
+	// When fetching store details began; null while the library is still being read.
+	DetailsStartedAt *time.Time `json:"details_started_at"`
+	// Estimated seconds until the Refresh finishes; null when not running or
+	// once only the reviews step is left.
+	SecondsLeft *int    `json:"seconds_left"`
+	Error       *string `json:"error"`
 }
 
 type libraryStatsJSON struct {
@@ -84,6 +91,7 @@ func syncStatus(q SyncQueries) http.HandlerFunc {
 			out.Run = &syncRunJSON{
 				ID: run.ID, Status: run.Status, StartedAt: run.StartedAt, FinishedAt: run.FinishedAt,
 				GamesSeen: run.GamesSeen, DetailsTotal: run.DetailsTotal, DetailsFetched: run.DetailsFetched,
+				DetailsStartedAt: run.DetailsStartedAt, SecondsLeft: secondsLeft(run, time.Now()),
 				Error: run.Error,
 			}
 		}
@@ -100,4 +108,30 @@ func syncStatus(q SyncQueries) http.HandlerFunc {
 		}
 		writeJSON(w, http.StatusOK, out)
 	}
+}
+
+const (
+	// Seconds per app assumed before a Refresh has a pace of its own.
+	defaultSecondsPerApp = 3.0
+	// How many apps' worth of weight the default pace keeps, so the first few
+	// fetches don't swing the estimate.
+	defaultPaceWeight = 5.0
+	// Seconds per request of the reviews step that follows the details.
+	secondsPerReviewBatch = 1.5
+)
+
+// secondsLeft estimates how long a running Refresh still needs: the store
+// details left at the pace observed so far, plus the batched reviews step.
+// The pace starts at defaultSecondsPerApp and moves to the observed one as
+// apps are fetched. It returns nil when there is nothing to estimate.
+func secondsLeft(run store.SyncRun, now time.Time) *int {
+	if run.Status != "running" || run.DetailsStartedAt == nil || run.DetailsFetched >= run.DetailsTotal {
+		return nil
+	}
+	elapsed := max(now.Sub(*run.DetailsStartedAt).Seconds(), 0)
+	pace := (elapsed + defaultSecondsPerApp*defaultPaceWeight) / (float64(run.DetailsFetched) + defaultPaceWeight)
+	details := float64(run.DetailsTotal-run.DetailsFetched) * pace
+	reviews := math.Ceil(float64(run.DetailsTotal)/steam.MaxReviewBatch) * secondsPerReviewBatch
+	left := int(math.Ceil(details + reviews))
+	return &left
 }

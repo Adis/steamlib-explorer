@@ -89,3 +89,36 @@ func TestSyncStatus(t *testing.T) {
 		}
 	}
 }
+
+func TestSecondsLeft(t *testing.T) {
+	now := time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)
+	ago := func(s int) *time.Time { t := now.Add(-time.Duration(s) * time.Second); return &t }
+	cases := []struct {
+		name string
+		run  store.SyncRun
+		want *int // nil: no estimate
+	}{
+		{"finished", store.SyncRun{Status: "ok", DetailsStartedAt: ago(10), DetailsTotal: 10, DetailsFetched: 10}, nil},
+		{"reading library", store.SyncRun{Status: "running"}, nil},
+		{"reviews step", store.SyncRun{Status: "running", DetailsStartedAt: ago(30), DetailsTotal: 10, DetailsFetched: 10}, nil},
+		// No pace yet: 100 apps × 3 s + 2 review batches × 1.5 s.
+		{"just started", store.SyncRun{Status: "running", DetailsStartedAt: ago(0), DetailsTotal: 100}, ptr(303)},
+		// Observed 2 s/app over 95 apps, blended with 5 apps at 3 s: 2.05 s × 5 left + 3 s.
+		{"observed pace", store.SyncRun{Status: "running", DetailsStartedAt: ago(190), DetailsTotal: 100, DetailsFetched: 95}, ptr(14)},
+	}
+	for _, c := range cases {
+		got := secondsLeft(c.run, now)
+		if (got == nil) != (c.want == nil) || (got != nil && *got != *c.want) {
+			t.Errorf("%s: got %v, want %v", c.name, deref(got), deref(c.want))
+		}
+	}
+}
+
+func ptr(v int) *int { return &v }
+
+func deref(p *int) any {
+	if p == nil {
+		return nil
+	}
+	return *p
+}
