@@ -47,13 +47,13 @@ function GameCard({ game }: { game: Game }) {
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-1 p-3">
+      <div className="flex flex-1 flex-col p-3">
         <h3 className="truncate font-medium tracking-tight group-hover:text-link" title={game.name}>
           {game.name}
         </h3>
-        <p className="truncate text-xs text-faint">{subtitle(game)}</p>
+        <Rating game={game} />
 
-        <div className="mt-auto flex items-center justify-between gap-2 pt-2 text-xs">
+        <div className="mt-2 flex items-center justify-between gap-2 text-xs">
           <span className={played ? "tabular-nums text-fg" : "text-faint"}>
             {played ? formatHours(game.playtime_minutes) : "Never played"}
             {game.last_played_at && (
@@ -63,22 +63,50 @@ function GameCard({ game }: { game: Game }) {
               </span>
             )}
           </span>
-          <span className="flex shrink-0 items-center gap-2 text-faint">
-            {game.metacritic_score !== null && (
-              <span title="Metacritic" className="rounded border border-line-strong px-1 tabular-nums">
-                {game.metacritic_score}
-              </span>
-            )}
-            {game.release_date && <span className="tabular-nums">{game.release_date.slice(0, 4)}</span>}
-          </span>
+          {game.release_date && (
+            <span className="shrink-0 tabular-nums text-faint">{game.release_date.slice(0, 4)}</span>
+          )}
+        </div>
+
+        <div className="mt-auto pt-3">
+          <Genres game={game} />
         </div>
       </div>
     </a>
   );
 }
 
-function subtitle(game: Game) {
-  if (game.details_status === "pending") return "Store details not fetched yet";
-  if (game.details_status === "unavailable") return "No longer on the Steam store";
-  return game.genres.join(", ") || " ";
+/** Steam's rating in words, e.g. "Very Positive · 68,133 reviews". */
+function Rating({ game }: { game: Game }) {
+  if (game.details_status === "pending")
+    return <p className="mt-0.5 truncate text-xs text-faint">Store details not fetched yet</p>;
+  if (game.details_status === "unavailable")
+    return <p className="mt-0.5 truncate text-xs text-faint">No longer on the Steam store</p>;
+  if (!game.review_score_desc || game.review_pct === null)
+    return <p className="mt-0.5 truncate text-xs text-faint">No user reviews</p>;
+  return (
+    <p className="mt-0.5 truncate text-xs">
+      <span className={`font-medium ${reviewColor(game.review_pct)}`}>{game.review_score_desc}</span>
+      {game.reviews_total ? (
+        <span className="text-faint"> · {game.reviews_total.toLocaleString()} reviews</span>
+      ) : null}
+    </p>
+  );
+}
+
+/** Genres as small tags along the bottom of the card, on one line. */
+function Genres({ game }: { game: Game }) {
+  if (game.genres.length === 0) return null;
+  return (
+    <ul className="flex gap-1 overflow-hidden border-t border-line pt-2.5" title={game.genres.join(", ")}>
+      {game.genres.map((g) => (
+        <li
+          key={g}
+          className="shrink-0 rounded-full bg-raised px-2 py-0.5 text-[11px] text-muted"
+        >
+          {g}
+        </li>
+      ))}
+    </ul>
+  );
 }
