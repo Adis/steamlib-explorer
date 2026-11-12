@@ -1,4 +1,4 @@
-import { Check, Settings as SettingsIcon } from "lucide-react";
+import { Check } from "lucide-react";
 import { THEMES, useTheme } from "./theme.ts";
 
 /** Settings page (#settings). Settings are saved in this browser. */
@@ -17,21 +17,6 @@ export default function Settings({ signedIn }: { signedIn: boolean }) {
         <ThemePicker />
       </section>
     </article>
-  );
-}
-
-/** Header gear icon linking to the settings page. */
-export function SettingsLink({ current }: { current: boolean }) {
-  return (
-    <a
-      href="#settings"
-      aria-label="Settings"
-      title="Settings"
-      aria-current={current ? "page" : undefined}
-      className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-raised hover:text-fg aria-[current=page]:bg-raised aria-[current=page]:text-fg"
-    >
-      <SettingsIcon aria-hidden className="h-[18px] w-[18px]" />
-    </a>
   );
 }
 

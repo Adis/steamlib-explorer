@@ -3,10 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchMe, logout, type User } from "./api.ts";
 import Explorer from "./Explorer.tsx";
 import Help from "./Help.tsx";
-import Settings, { SettingsLink } from "./Settings.tsx";
+import Settings from "./Settings.tsx";
 import SyncPanel from "./SyncPanel.tsx";
 import { ErrorBox } from "./ui.tsx";
-import { LibraryBig } from "lucide-react";
+import { CircleHelp, LibraryBig, Settings as SettingsIcon, type LucideIcon } from "lucide-react";
 
 export default function App() {
   const me = useQuery({ queryKey: ["me"], queryFn: fetchMe });
@@ -24,14 +24,10 @@ export default function App() {
             </a>
           </h1>
           <div className="flex items-center gap-3">
-            <a
-              href="#help"
-              aria-current={page === "help" ? "page" : undefined}
-              className="text-sm text-muted hover:text-fg aria-[current=page]:text-fg"
-            >
-              Help
-            </a>
-            <SettingsLink current={page === "settings"} />
+            <nav className="flex items-center gap-1">
+              <NavLink href="#help" icon={CircleHelp} label="Help" current={page === "help"} />
+              <NavLink href="#settings" icon={SettingsIcon} label="Settings" current={page === "settings"} />
+            </nav>
             {me.data && <UserBadge user={me.data} />}
           </div>
         </div>
@@ -125,4 +121,28 @@ function SignIn() {
 /** App mark: Lucide's "library-big" icon (ISC licence), in the accent colour. */
 function Logo({ className = "h-6 w-6" }: { className?: string }) {
   return <LibraryBig aria-hidden className={`text-accent ${className}`} strokeWidth={2} />;
+}
+
+/** Header link with an icon and a label, highlighted on its own page. */
+function NavLink({
+  href,
+  icon: Icon,
+  label,
+  current,
+}: {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  current: boolean;
+}) {
+  return (
+    <a
+      href={href}
+      aria-current={current ? "page" : undefined}
+      className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm text-muted hover:bg-raised hover:text-fg aria-[current=page]:bg-raised aria-[current=page]:text-fg"
+    >
+      <Icon aria-hidden className="h-4 w-4" />
+      {label}
+    </a>
+  );
 }
