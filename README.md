@@ -30,7 +30,7 @@ Every incoming request (`msg="api request"`) and every call to Steam (`msg="outg
 | `PORT` | no | `8080` | Port the backend listens on |
 | `LOG_FILE` | no | `logs/api-calls.txt` | File that also receives every log line, relative to `backend/`; `-` logs to the console only |
 
-Each user's Steam profile and game details must be public for their library to load.
+Steam shares a user's owned games and playtime only when their profile's Game details are public, or when the request uses that user's own API key. So the owner of `STEAM_API_KEY` can keep their profile private (even Friends only or Private); everyone else who signs in needs public game details. The in-app **Help** page explains both options.
 
 `make test` runs the backend tests, `make test-db` also runs the ones that need Postgres, `make generate` rebuilds the sqlc code after you edit `backend/db/queries`, and `make build` puts a binary in `backend/bin/server`. The `migrate-*` targets are still there for rolling back or checking status by hand.
 

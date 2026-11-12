@@ -115,7 +115,20 @@ function Progress({ run }: { run: SyncRun }) {
         <span>{progressLabel(run)}</span>
         {run.seconds_left !== null && <span>{formatTimeLeft(run.seconds_left)}</span>}
       </p>
-      {run.error && <ErrorBox className="mt-3">{run.error}</ErrorBox>}
+      {run.error && (
+        <ErrorBox className="mt-3">
+          {run.error}
+          {/* A run that stops before reading any games is usually a private library. */}
+          {run.games_seen === 0 && (
+            <>
+              {" "}
+              <a href="#help" className="font-medium text-amber-100 underline underline-offset-2 hover:text-white">
+                How to fix this
+              </a>
+            </>
+          )}
+        </ErrorBox>
+      )}
     </div>
   );
 }
