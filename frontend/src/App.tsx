@@ -5,7 +5,7 @@ import Explorer from "./Explorer.tsx";
 import Help from "./Help.tsx";
 import SyncPanel from "./SyncPanel.tsx";
 import { ErrorBox } from "./ui.tsx";
-import { Gamepad2 } from "lucide-react";
+import { LibraryBig } from "lucide-react";
 
 export default function App() {
   const me = useQuery({ queryKey: ["me"], queryFn: fetchMe });
@@ -118,7 +118,7 @@ function SignIn() {
   );
 }
 
-/** App mark: Lucide's "gamepad-2" icon (ISC licence), in the accent colour. */
+/** App mark: Lucide's "library-big" icon (ISC licence), in the accent colour. */
 function Logo({ className = "h-6 w-6" }: { className?: string }) {
-  return <Gamepad2 aria-hidden className={`text-accent ${className}`} strokeWidth={2} />;
+  return <LibraryBig aria-hidden className={`text-accent ${className}`} strokeWidth={2} />;
 }
