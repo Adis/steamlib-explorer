@@ -34,7 +34,7 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-[1536px] px-4 py-8">
-        {page === "help" && <Help />}
+        {page === "help" && <Help signedIn={!!me.data} />}
         {page !== "help" && me.isPending && <p className="text-muted">Loading…</p>}
         {page !== "help" && me.isError && (
           <ErrorBox>Could not reach the backend: {me.error.message}</ErrorBox>
