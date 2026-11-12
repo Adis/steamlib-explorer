@@ -6,17 +6,13 @@ Personal, self-hosted repository of Steam games allowing you to browse and filte
 Requirements: Docker, Go 1.25+ and Node.js 20.19+.
 
 ```sh
-cp .env.example .env  # then set STEAM_API_KEY
-make db-up            # start Postgres 17 on localhost:5432
-make web-install      # once: install the frontend's packages
-
-make run              # terminal 1: backend on :8080, applies migrations first
-make web              # terminal 2: frontend on http://localhost:5173
+cp .env.example .env  # once, then set STEAM_API_KEY
+make dev              # start everything; Ctrl+C stops the backend and frontend
 ```
 
-Open http://localhost:5173, sign in through Steam and press **Sync library**. Games appear in the table as soon as the library is read; store details and reviews fill in as the sync goes (reload or wait for it to finish). Filter with the panel on the left and click a column heading to sort, or click it again to reverse. Filters are kept in the address bar, so a filtered view can be bookmarked. **Details** next to the library count shows how many games have store details and reviews.
+`make dev` starts Postgres 17 on localhost:5432, installs the frontend's packages when `package.json` or `package-lock.json` changed, then runs the backend on :8080 (it applies new migrations first) and the frontend on http://localhost:5173 in one terminal. After a `git pull`, `make dev` is all you need. To run the pieces in separate terminals instead, use `make db-up`, `make web-install`, `make run` and `make web`.
 
-After pulling changes that add frontend packages, run `make web-install` again.
+Open http://localhost:5173, sign in through Steam and press **Sync library**. Games appear in the table as soon as the library is read; store details and reviews fill in as the sync goes (reload or wait for it to finish). Filter with the panel on the left and click a column heading to sort, or click it again to reverse. Filters are kept in the address bar, so a filtered view can be bookmarked. **Details** next to the library count shows how many games have store details and reviews.
 
 In development the browser only talks to Vite on port 5173, which forwards `/api` and `/auth` to the backend, so `PUBLIC_URL` must be `http://localhost:5173` (as in `.env.example`).
 
