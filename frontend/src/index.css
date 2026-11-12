@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@fontsource-variable/geist";
+@import "@fontsource-variable/pixelify-sans";
 
 /*
  * Design tokens. Components use these names (bg-surface, text-muted,
@@ -8,6 +9,8 @@
  */
 @theme {
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  /* App title only. */
+  --font-pixel: "Pixelify Sans Variable", ui-monospace, monospace;
 
   /* Surfaces, darkest to lightest. */
   --color-canvas: #0a0d14;

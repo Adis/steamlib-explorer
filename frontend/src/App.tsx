@@ -11,9 +11,9 @@ export default function App() {
     <div className="min-h-screen bg-[radial-gradient(ellipse_80%_40%_at_50%_-10%,color-mix(in_oklab,var(--color-accent)_14%,transparent),transparent)]">
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1536px] items-center justify-between px-4">
-          <h1 className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight">
+          <h1 className="flex items-center gap-2.5">
             <Logo />
-            Steamlib Explorer
+            <span className="font-pixel text-lg leading-none font-semibold tracking-wide">Steamlib Explorer</span>
           </h1>
           {me.data && <UserBadge user={me.data} />}
         </div>
