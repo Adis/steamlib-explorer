@@ -60,3 +60,13 @@
     cursor: pointer;
   }
 }
+
+@layer components {
+  /* Filter sidebar: keep room for the scrollbar (overlay scrollbars on
+     Linux/macOS would otherwise sit on top of the counts) and keep it thin. */
+  .sidebar-scroll {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+}

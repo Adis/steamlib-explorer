@@ -34,7 +34,7 @@ export default function Explorer() {
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
-      <div className="lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:w-60 lg:shrink-0 lg:overflow-y-auto lg:pr-1">
+      <div className="lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:w-60 lg:shrink-0 lg:overflow-y-auto lg:pr-3 sidebar-scroll">
         {/* On narrow screens the filters fold away above the results. */}
         <button
           onClick={() => setFiltersOpen(!filtersOpen)}
