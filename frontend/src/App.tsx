@@ -1,31 +1,46 @@
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchMe, logout, type User } from "./api.ts";
 import Explorer from "./Explorer.tsx";
+import Help from "./Help.tsx";
 import SyncPanel from "./SyncPanel.tsx";
 import { ErrorBox } from "./ui.tsx";
 
 export default function App() {
   const me = useQuery({ queryKey: ["me"], queryFn: fetchMe });
+  const page = useHashPage();
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_80%_40%_at_50%_-10%,color-mix(in_oklab,var(--color-accent)_14%,transparent),transparent)]">
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1536px] items-center justify-between px-4">
-          <h1 className="flex items-center gap-2.5">
-            <Logo />
-            <span className="font-pixel text-lg leading-none font-semibold tracking-wide">Steamlib Explorer</span>
+          <h1>
+            <a href="#" className="flex items-center gap-2.5">
+              <Logo />
+              <span className="font-pixel text-lg leading-none font-semibold tracking-wide">Steamlib Explorer</span>
+            </a>
           </h1>
-          {me.data && <UserBadge user={me.data} />}
+          <div className="flex items-center gap-4">
+            <a
+              href="#help"
+              aria-current={page === "help" ? "page" : undefined}
+              className="text-sm text-muted hover:text-fg aria-[current=page]:text-fg"
+            >
+              Help
+            </a>
+            {me.data && <UserBadge user={me.data} />}
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-[1536px] px-4 py-8">
-        {me.isPending && <p className="text-muted">Loading…</p>}
-        {me.isError && (
+        {page === "help" && <Help />}
+        {page !== "help" && me.isPending && <p className="text-muted">Loading…</p>}
+        {page !== "help" && me.isError && (
           <ErrorBox>Could not reach the backend: {me.error.message}</ErrorBox>
         )}
-        {me.data === null && <SignIn />}
-        {me.data && (
+        {page !== "help" && me.data === null && <SignIn />}
+        {page !== "help" && me.data && (
           <div className="space-y-6">
             <SyncPanel />
             <Explorer />
@@ -34,6 +49,21 @@ export default function App() {
       </main>
     </div>
   );
+}
+
+/** The page named in the address bar's #fragment: "help" or "" (the library). */
+function useHashPage() {
+  const read = () => window.location.hash.replace(/^#/, "");
+  const [page, setPage] = useState(read);
+  useEffect(() => {
+    const onChange = () => {
+      setPage(read());
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("hashchange", onChange);
+    return () => window.removeEventListener("hashchange", onChange);
+  }, []);
+  return page;
 }
 
 function UserBadge({ user }: { user: User }) {
@@ -69,8 +99,12 @@ function SignIn() {
       <Logo className="mx-auto mb-5 h-10 w-10" />
       <h2 className="text-2xl font-semibold tracking-tight">Explore your Steam library</h2>
       <p className="mt-2 text-muted">
-        Sign in with your Steam account. Your profile and game details must be
-        public for the library to load.
+        Sign in with your Steam account. Steam shares your library only when your
+        game details are public, or when this app runs with your own Steam API
+        key.{" "}
+        <a href="#help" className="text-link hover:text-link-hover">
+          How to set this up
+        </a>
       </p>
       {/* A plain link: the backend redirects to Steam and back. */}
       <a

@@ -249,7 +249,7 @@ func stops(err error) bool {
 func userMessage(err error) string {
 	switch {
 	case errors.Is(err, steam.ErrPrivateProfile):
-		return "Your Steam library is private or empty. Set your profile and game details to Public in Steam's privacy settings, then refresh again."
+		return "Steam didn't share your library. It does that only when your profile's Game details are Public, or when this app runs with your own Steam API key. Change one of them, then sync again."
 	case errors.Is(err, steam.ErrRateLimited):
 		return "Steam is limiting requests. What was fetched so far is saved; refresh again in a few minutes to continue."
 	case errors.Is(err, context.Canceled):
