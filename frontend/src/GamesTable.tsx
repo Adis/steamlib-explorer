@@ -103,9 +103,9 @@ export default function GamesTable({ games, sort, descending, onSort }: Props) {
   };
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-800">
+    <div className="overflow-x-auto rounded-xl border border-line bg-surface/40 shadow-lg shadow-black/10">
       <table className="w-full text-sm">
-        <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-400">
+        <thead className="border-b border-line bg-surface text-left text-[11px] uppercase tracking-wider text-faint">
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
               {hg.headers.map((h) => {
@@ -117,12 +117,12 @@ export default function GamesTable({ games, sort, descending, onSort }: Props) {
                     key={h.id}
                     scope="col"
                     aria-sort={sorted ? (sorted === "desc" ? "descending" : "ascending") : undefined}
-                    className={`whitespace-nowrap px-2.5 py-2 font-medium ${numeric ? "text-right" : ""}`}
+                    className={`whitespace-nowrap px-3 py-2.5 font-semibold ${numeric ? "text-right" : ""}`}
                   >
                     {sortable ? (
                       <button
                         onClick={() => clickHeader(h.column.id)}
-                        className={`inline-flex items-center gap-1 uppercase hover:text-slate-100 ${sorted ? "text-slate-100" : ""}`}
+                        className={`inline-flex items-center gap-1 uppercase hover:text-fg ${sorted ? "text-fg" : ""}`}
                       >
                         {flexRender(h.column.columnDef.header, h.getContext())}
                         <span aria-hidden className="w-3">
@@ -138,13 +138,13 @@ export default function GamesTable({ games, sort, descending, onSort }: Props) {
             </tr>
           ))}
         </thead>
-        <tbody className="divide-y divide-slate-800">
+        <tbody className="divide-y divide-line/70">
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="hover:bg-slate-900/60">
+            <tr key={row.id} className="transition-colors hover:bg-raised/50">
               {row.getVisibleCells().map((cell) => (
                 <td
                   key={cell.id}
-                  className={`px-2.5 py-2 align-middle ${isNumeric(cell.column.columnDef.meta) ? "whitespace-nowrap text-right tabular-nums" : ""}`}
+                  className={`px-3 py-2 align-middle ${isNumeric(cell.column.columnDef.meta) ? "whitespace-nowrap text-right tabular-nums" : ""}`}
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
@@ -169,21 +169,21 @@ function NameCell({ game }: { game: Game }) {
           src={game.header_image}
           alt=""
           loading="lazy"
-          className="h-[37px] w-[80px] shrink-0 rounded object-cover"
+          className="h-[37px] w-[80px] shrink-0 rounded object-cover ring-1 ring-white/5"
         />
       ) : (
-        <div className="h-[37px] w-[80px] shrink-0 rounded bg-slate-800" />
+        <div className="h-[37px] w-[80px] shrink-0 rounded bg-raised" />
       )}
       <div className="min-w-0">
         <a
           href={game.store_url}
           target="_blank"
           rel="noreferrer"
-          className="font-medium hover:text-sky-400"
+          className="font-medium tracking-tight hover:text-link"
         >
           {game.name}
         </a>
-        <div className="truncate text-xs text-slate-400">
+        <div className="truncate text-xs text-faint">
           {game.details_status === "pending"
             ? "Store details not fetched yet"
             : game.details_status === "unavailable"
@@ -209,7 +209,7 @@ function ReviewCell({ game }: { game: Game }) {
   return (
     <span title={`${game.review_score_desc ?? ""} · ${game.reviews_total?.toLocaleString() ?? 0} reviews`}>
       <span className={`font-medium ${color}`}>{Math.round(pct)}%</span>
-      <span className="block text-xs text-slate-500">
+      <span className="block text-[11px] text-faint">
         {game.reviews_total?.toLocaleString()} reviews
       </span>
     </span>
@@ -226,7 +226,7 @@ function Platforms({ p }: { p: Game["platforms"] }) {
   return (
     <span className="flex gap-1 text-xs">
       {supported.map(([label]) => (
-        <span key={String(label)} className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-200">
+        <span key={String(label)} className="rounded border border-line-strong px-1.5 py-px text-[11px] text-muted">
           {label}
         </span>
       ))}
@@ -235,7 +235,7 @@ function Platforms({ p }: { p: Game["platforms"] }) {
 }
 
 function Muted({ children }: { children: React.ReactNode }) {
-  return <span className="text-slate-500">{children}</span>;
+  return <span className="text-faint">{children}</span>;
 }
 
 function formatHours(minutes: number) {
