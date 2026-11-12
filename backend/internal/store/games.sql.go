@@ -102,30 +102,32 @@ WHERE o.steam_id = $1
   AND ($6::int IS NULL OR o.playtime_forever >= $6::int)
   AND ($7::int IS NULL OR o.playtime_forever <= $7::int)
   AND ($8::numeric IS NULL OR a.review_pct >= $8::numeric)
-  AND ($9::int IS NULL OR a.metacritic_score >= $9::int)
-  AND ($10::date IS NULL OR a.release_date >= $10::date)
-  AND ($11::date IS NULL OR a.release_date <= $11::date)
-  AND (NOT $12::boolean OR a.platform_windows)
-  AND (NOT $13::boolean OR a.platform_mac)
-  AND (NOT $14::boolean OR a.platform_linux)
+  -- Steam's 1..9 rating; 0 (no reviews) never matches.
+  AND ($9::int IS NULL OR a.review_score >= $9::int)
+  AND ($10::int IS NULL OR a.metacritic_score >= $10::int)
+  AND ($11::date IS NULL OR a.release_date >= $11::date)
+  AND ($12::date IS NULL OR a.release_date <= $12::date)
+  AND (NOT $13::boolean OR a.platform_windows)
+  AND (NOT $14::boolean OR a.platform_mac)
+  AND (NOT $15::boolean OR a.platform_linux)
 ORDER BY
     -- Only the CASE matching sort/descending yields a value; the others are NULL for every row.
-    CASE WHEN $15::text = 'name'        AND NOT $16::boolean THEN lower(a.name) END ASC,
-    CASE WHEN $15::text = 'name'        AND $16::boolean     THEN lower(a.name) END DESC,
-    CASE WHEN $15::text = 'playtime'    AND NOT $16::boolean THEN o.playtime_forever END ASC,
-    CASE WHEN $15::text = 'playtime'    AND $16::boolean     THEN o.playtime_forever END DESC,
-    CASE WHEN $15::text = 'recent'      AND NOT $16::boolean THEN o.playtime_2weeks END ASC,
-    CASE WHEN $15::text = 'recent'      AND $16::boolean     THEN o.playtime_2weeks END DESC,
-    CASE WHEN $15::text = 'last_played' AND NOT $16::boolean THEN o.last_played_at END ASC NULLS LAST,
-    CASE WHEN $15::text = 'last_played' AND $16::boolean     THEN o.last_played_at END DESC NULLS LAST,
-    CASE WHEN $15::text = 'review'      AND NOT $16::boolean THEN a.review_pct END ASC NULLS LAST,
-    CASE WHEN $15::text = 'review'      AND $16::boolean     THEN a.review_pct END DESC NULLS LAST,
-    CASE WHEN $15::text = 'metacritic'  AND NOT $16::boolean THEN a.metacritic_score END ASC NULLS LAST,
-    CASE WHEN $15::text = 'metacritic'  AND $16::boolean     THEN a.metacritic_score END DESC NULLS LAST,
-    CASE WHEN $15::text = 'release'     AND NOT $16::boolean THEN a.release_date END ASC NULLS LAST,
-    CASE WHEN $15::text = 'release'     AND $16::boolean     THEN a.release_date END DESC NULLS LAST,
+    CASE WHEN $16::text = 'name'        AND NOT $17::boolean THEN lower(a.name) END ASC,
+    CASE WHEN $16::text = 'name'        AND $17::boolean     THEN lower(a.name) END DESC,
+    CASE WHEN $16::text = 'playtime'    AND NOT $17::boolean THEN o.playtime_forever END ASC,
+    CASE WHEN $16::text = 'playtime'    AND $17::boolean     THEN o.playtime_forever END DESC,
+    CASE WHEN $16::text = 'recent'      AND NOT $17::boolean THEN o.playtime_2weeks END ASC,
+    CASE WHEN $16::text = 'recent'      AND $17::boolean     THEN o.playtime_2weeks END DESC,
+    CASE WHEN $16::text = 'last_played' AND NOT $17::boolean THEN o.last_played_at END ASC NULLS LAST,
+    CASE WHEN $16::text = 'last_played' AND $17::boolean     THEN o.last_played_at END DESC NULLS LAST,
+    CASE WHEN $16::text = 'review'      AND NOT $17::boolean THEN a.review_pct END ASC NULLS LAST,
+    CASE WHEN $16::text = 'review'      AND $17::boolean     THEN a.review_pct END DESC NULLS LAST,
+    CASE WHEN $16::text = 'metacritic'  AND NOT $17::boolean THEN a.metacritic_score END ASC NULLS LAST,
+    CASE WHEN $16::text = 'metacritic'  AND $17::boolean     THEN a.metacritic_score END DESC NULLS LAST,
+    CASE WHEN $16::text = 'release'     AND NOT $17::boolean THEN a.release_date END ASC NULLS LAST,
+    CASE WHEN $16::text = 'release'     AND $17::boolean     THEN a.release_date END DESC NULLS LAST,
     lower(a.name), a.appid
-LIMIT $18 OFFSET $17
+LIMIT $19 OFFSET $18
 `
 
 type ListGamesParams struct {
@@ -137,6 +139,7 @@ type ListGamesParams struct {
 	MinMinutes     *int32
 	MaxMinutes     *int32
 	MinReviewPct   *float64
+	MinReviewScore *int32
 	MinMetacritic  *int32
 	ReleasedAfter  *time.Time
 	ReleasedBefore *time.Time
@@ -190,6 +193,7 @@ func (q *Queries) ListGames(ctx context.Context, arg ListGamesParams) ([]ListGam
 		arg.MinMinutes,
 		arg.MaxMinutes,
 		arg.MinReviewPct,
+		arg.MinReviewScore,
 		arg.MinMetacritic,
 		arg.ReleasedAfter,
 		arg.ReleasedBefore,

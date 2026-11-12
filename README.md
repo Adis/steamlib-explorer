@@ -77,6 +77,7 @@ Genres and categories are `text[]` columns with GIN indexes, so filtering by "ha
 | `played` | `true` for played games, `false` for never played |
 | `min_hours`, `max_hours` | Total playtime range in hours (decimals allowed) |
 | `min_review` | Minimum positive review percentage, 0 to 100 |
+| `min_review_score` | Minimum Steam review rating, 1 (Overwhelmingly Negative) to 9 (Overwhelmingly Positive) |
 | `min_metacritic` | Minimum Metacritic score, 0 to 100 |
 | `released_after`, `released_before` | Release date range, `YYYY-MM-DD` (games without a parseable date are left out) |
 | `platform` | `windows`, `mac` or `linux`; repeat to require several |

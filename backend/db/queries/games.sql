@@ -20,6 +20,8 @@ WHERE o.steam_id = sqlc.arg(steam_id)
   AND (sqlc.narg(min_minutes)::int IS NULL OR o.playtime_forever >= sqlc.narg(min_minutes)::int)
   AND (sqlc.narg(max_minutes)::int IS NULL OR o.playtime_forever <= sqlc.narg(max_minutes)::int)
   AND (sqlc.narg(min_review_pct)::numeric IS NULL OR a.review_pct >= sqlc.narg(min_review_pct)::numeric)
+  -- Steam's 1..9 rating; 0 (no reviews) never matches.
+  AND (sqlc.narg(min_review_score)::int IS NULL OR a.review_score >= sqlc.narg(min_review_score)::int)
   AND (sqlc.narg(min_metacritic)::int IS NULL OR a.metacritic_score >= sqlc.narg(min_metacritic)::int)
   AND (sqlc.narg(released_after)::date IS NULL OR a.release_date >= sqlc.narg(released_after)::date)
   AND (sqlc.narg(released_before)::date IS NULL OR a.release_date <= sqlc.narg(released_before)::date)

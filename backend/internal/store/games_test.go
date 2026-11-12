@@ -35,11 +35,11 @@ func TestListGamesAndFacets(t *testing.T) {
 	exec("TRUNCATE users, apps CASCADE")
 	exec("INSERT INTO users (steam_id) VALUES (1), (2)")
 	exec(`INSERT INTO apps (appid, name, genres, categories, platform_windows, platform_linux,
-	                        metacritic_score, release_date, reviews_positive, reviews_total) VALUES
-		(10, 'Alpha',      '{Action,Indie}', '{Single-player}',         true, true,  90, '2015-05-01', 95, 100),
-		(20, 'beta 100%',  '{Action}',       '{Single-player,Co-op}',   true, false, 70, '2020-01-01', 60, 100),
-		(30, 'Gamma',      '{RPG}',          '{Single-player}',         true, true,  NULL, NULL, NULL, NULL),
-		(40, 'Not mine',   '{Action}',       '{}',                      true, true,  99, '2021-01-01', 1, 1)`)
+	                        metacritic_score, release_date, reviews_positive, reviews_total, review_score) VALUES
+		(10, 'Alpha',      '{Action,Indie}', '{Single-player}',         true, true,  90, '2015-05-01', 95, 100, 7),
+		(20, 'beta 100%',  '{Action}',       '{Single-player,Co-op}',   true, false, 70, '2020-01-01', 60, 100, 5),
+		(30, 'Gamma',      '{RPG}',          '{Single-player}',         true, true,  NULL, NULL, NULL, NULL, NULL),
+		(40, 'Not mine',   '{Action}',       '{}',                      true, true,  99, '2021-01-01', 1, 1, 9)`)
 	exec(`INSERT INTO owned_games (steam_id, appid, playtime_forever, playtime_2weeks, last_played_at) VALUES
 		(1, 10, 600, 0,  '2024-01-01'),
 		(1, 20, 30,  30, '2025-01-01'),
@@ -89,6 +89,8 @@ func TestListGamesAndFacets(t *testing.T) {
 		{"unplayed", ListGamesParams{Played: &no}, []int64{30}},
 		{"playtime range", ListGamesParams{MinMinutes: ptr(1), MaxMinutes: ptr(60)}, []int64{20}},
 		{"min review", ListGamesParams{MinReviewPct: f64(80)}, []int64{10}},
+		{"min review score", ListGamesParams{MinReviewScore: ptr(6)}, []int64{10}},
+		{"min review score mixed", ListGamesParams{MinReviewScore: ptr(5)}, []int64{10, 20}},
 		{"min metacritic", ListGamesParams{MinMetacritic: ptr(75)}, []int64{10}},
 		{"released between", ListGamesParams{ReleasedAfter: date("2016-01-01"), ReleasedBefore: date("2020-12-31")}, []int64{20}},
 		{"linux", ListGamesParams{LinuxOnly: true}, []int64{10, 30}},

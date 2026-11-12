@@ -14,7 +14,8 @@ const PASS_THROUGH = [
   "played",
   "min_hours",
   "max_hours",
-  "min_review",
+  "min_review", // kept so older bookmarked links still filter
+  "min_review_score",
   "min_metacritic",
   "platform",
   "sort",

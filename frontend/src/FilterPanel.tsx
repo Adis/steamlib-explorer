@@ -52,11 +52,11 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
         />
       </Group>
 
-      <Group title="Positive reviews">
+      <Group title="Steam reviews">
         <Select
-          value={params.get("min_review") ?? ""}
-          onChange={(v) => setParam("min_review", v || null)}
-          options={[["", "Any"], ...[95, 90, 80, 70, 50].map((n) => [String(n), `${n}% or more`] as const)]}
+          value={params.get("min_review_score") ?? ""}
+          onChange={(v) => setParam("min_review_score", v || null)}
+          options={REVIEW_RATINGS}
         />
       </Group>
 
@@ -114,6 +114,16 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
     </aside>
   );
 }
+
+// Steam's own review ratings (review_score 9..5), each meaning "this or better".
+const REVIEW_RATINGS: (readonly [string, string])[] = [
+  ["", "Any"],
+  ["9", "Overwhelmingly Positive"],
+  ["8", "Very Positive or better"],
+  ["7", "Positive or better"],
+  ["6", "Mostly Positive or better"],
+  ["5", "Mixed or better"],
+];
 
 function toggle(list: string[], value: string) {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
