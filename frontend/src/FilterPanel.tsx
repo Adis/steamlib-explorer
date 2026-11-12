@@ -16,11 +16,11 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
   return (
     <aside className="space-y-6 text-sm">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">Filters</h2>
+        <h2 className="font-semibold tracking-tight">Filters</h2>
         {active > 0 && (
           <button
             onClick={clearFilters}
-            className="text-sky-400 hover:text-sky-300"
+            className="text-link hover:text-link-hover"
           >
             Clear all ({active})
           </button>
@@ -122,7 +122,7 @@ function toggle(list: string[], value: string) {
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <fieldset>
-      <legend className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+      <legend className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-faint">
         {title}
       </legend>
       {children}
@@ -131,7 +131,7 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 }
 
 const inputClass =
-  "w-full rounded border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none";
+  "w-full rounded-md border border-line-strong bg-surface px-2.5 py-1.5 text-fg placeholder:text-faint transition-colors hover:border-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25";
 
 /** Name search; waits for a pause in typing before filtering. */
 function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -188,7 +188,7 @@ function Range(props: {
         aria-label={`${minKey.replace("_", " ")}`}
         className={inputClass}
       />
-      <span className="text-slate-500">to</span>
+      <span className="text-faint">to</span>
       <input
         type="number"
         min={0}
@@ -233,13 +233,13 @@ function Segmented({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex overflow-hidden rounded border border-slate-700">
+    <div className="flex gap-0.5 rounded-md border border-line-strong bg-surface p-0.5">
       {options.map(([v, label]) => (
         <button
           key={v}
           onClick={() => onChange(v)}
           aria-pressed={value === v}
-          className={`flex-1 px-2 py-1.5 ${value === v ? "bg-sky-600 text-white" : "hover:bg-slate-800"}`}
+          className={`flex-1 rounded px-2 py-1 transition-colors ${value === v ? "bg-accent font-medium text-on-accent shadow-sm" : "text-muted hover:bg-raised hover:text-fg"}`}
         >
           {label}
         </button>
@@ -260,10 +260,10 @@ function Check({
   count?: number;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 py-0.5">
-      <input type="checkbox" checked={checked} onChange={onChange} className="accent-sky-500" />
+    <label className="-mx-1 flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 hover:bg-surface">
+      <input type="checkbox" checked={checked} onChange={onChange} className="h-3.5 w-3.5 accent-(--color-accent)" />
       <span className="flex-1">{label}</span>
-      {count !== undefined && <span className="tabular-nums text-slate-500">{count}</span>}
+      {count !== undefined && <span className="tabular-nums text-faint">{count}</span>}
     </label>
   );
 }
@@ -293,7 +293,7 @@ function FacetList({
   return (
     <Group title={title}>
       {selected.length > 1 && (
-        <p className="mb-1 text-xs text-slate-500">Showing games with all of them</p>
+        <p className="mb-1 text-xs text-faint">Showing games with all of them</p>
       )}
       {shown.map((f) => (
         <Check
@@ -307,7 +307,7 @@ function FacetList({
       {facets.length > COLLAPSED && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="mt-1 text-sky-400 hover:text-sky-300"
+          className="mt-1 text-link hover:text-link-hover"
         >
           {expanded ? "Show fewer" : `Show all ${facets.length}`}
         </button>
