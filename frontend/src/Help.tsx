@@ -1,10 +1,10 @@
 /** Help page: why Steam may not share a library, and the two ways to fix it. */
-export default function Help() {
+export default function Help({ signedIn }: { signedIn: boolean }) {
   return (
     <article className="mx-auto max-w-3xl space-y-8 text-[15px] leading-relaxed">
       <header>
         <a href="#" className="text-sm text-link hover:text-link-hover">
-          ← Back to your library
+          {signedIn ? "← Back to your library" : "← Back to sign in"}
         </a>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight">Help</h2>
       </header>
