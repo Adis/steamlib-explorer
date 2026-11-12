@@ -3,11 +3,31 @@ Personal, self-hosted repository of Steam games allowing you to browse and filte
 
 ## Development
 
-Requirements: Docker, Go 1.25+ and Node.js 20.19+.
+### Requirements
+
+[![Docker](https://img.shields.io/badge/Docker-with_Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/get-started/get-docker/)
+[![Go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/dl/)
+[![Node.js](https://img.shields.io/badge/Node.js-20.19%2B-5FA04E?logo=nodedotjs&logoColor=white)](https://nodejs.org/en/download)
+[![GNU Make](https://img.shields.io/badge/GNU_Make-any-6D00CC?logo=gnu&logoColor=white)](https://www.gnu.org/software/make/)
+
+- [Docker](https://docs.docker.com/get-started/get-docker/) with Compose, to run Postgres 17 (the engine must be running before `make dev`)
+- [Go](https://go.dev/dl/) 1.25 or newer, for the backend
+- [Node.js](https://nodejs.org/en/download) 20.19 or newer (with npm), for the frontend
+- [GNU Make](https://www.gnu.org/software/make/), to run the commands below
+- A [Steam Web API key](https://steamcommunity.com/dev/apikey)
+
+### First run
+
+Copy the example settings once, then set `STEAM_API_KEY` in `.env`:
 
 ```sh
-cp .env.example .env  # once, then set STEAM_API_KEY
-make dev              # start everything; Ctrl+C stops the backend and frontend
+cp .env.example .env
+```
+
+Start everything (Ctrl+C stops the backend and frontend):
+
+```sh
+make dev
 ```
 
 `make dev` starts Postgres 17 on localhost:5432, installs the frontend's packages when `package.json` or `package-lock.json` changed, then runs the backend on :8080 (it applies new migrations first) and the frontend on http://localhost:5173 in one terminal. After a `git pull`, `make dev` is all you need. To run the pieces in separate terminals instead, use `make db-up`, `make web-install`, `make run` and `make web`.
