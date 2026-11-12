@@ -240,10 +240,10 @@ export function formatHours(minutes: number) {
 /** Text colour for a positive-review percentage. */
 export function reviewColor(pct: number) {
   return pct >= 80
-    ? "text-emerald-400"
+    ? "text-review-great"
     : pct >= 70
-      ? "text-lime-400"
+      ? "text-review-good"
       : pct >= 40
-        ? "text-amber-400"
-        : "text-rose-400";
+        ? "text-review-mixed"
+        : "text-review-bad";
 }

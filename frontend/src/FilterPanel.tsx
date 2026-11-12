@@ -97,7 +97,7 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
       </Group>
 
       {facets.isError && (
-        <p className="text-amber-300">Could not load genres: {facets.error.message}</p>
+        <p className="text-warn-fg">Could not load genres: {facets.error.message}</p>
       )}
       <FacetList
         title="Genres"

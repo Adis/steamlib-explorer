@@ -107,7 +107,7 @@ function Progress({ run }: { run: SyncRun }) {
     <div className="mt-3">
       <div className="h-1.5 overflow-hidden rounded-full bg-raised">
         <div
-          className={`h-full rounded-full transition-all ${run.status === "error" ? "bg-amber-500" : "bg-accent"}`}
+          className={`h-full rounded-full transition-all ${run.status === "error" ? "bg-warn" : "bg-accent"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -122,7 +122,7 @@ function Progress({ run }: { run: SyncRun }) {
           {run.games_seen === 0 && (
             <>
               {" "}
-              <a href="#help" className="font-medium text-amber-100 underline underline-offset-2 hover:text-white">
+              <a href="#help" className="font-medium text-warn-fg underline underline-offset-2 hover:text-fg">
                 How to fix this
               </a>
             </>

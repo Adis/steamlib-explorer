@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchMe, logout, type User } from "./api.ts";
 import Explorer from "./Explorer.tsx";
 import Help from "./Help.tsx";
+import Settings, { SettingsLink } from "./Settings.tsx";
 import SyncPanel from "./SyncPanel.tsx";
 import { ErrorBox } from "./ui.tsx";
 import { LibraryBig } from "lucide-react";
@@ -10,6 +11,7 @@ import { LibraryBig } from "lucide-react";
 export default function App() {
   const me = useQuery({ queryKey: ["me"], queryFn: fetchMe });
   const page = useHashPage();
+  const subpage = page === "help" || page === "settings";
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_80%_40%_at_50%_-10%,color-mix(in_oklab,var(--color-accent)_14%,transparent),transparent)]">
@@ -21,7 +23,7 @@ export default function App() {
               <span className="font-pixel text-lg leading-none font-semibold tracking-wide">Steamlib Explorer</span>
             </a>
           </h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <a
               href="#help"
               aria-current={page === "help" ? "page" : undefined}
@@ -29,6 +31,7 @@ export default function App() {
             >
               Help
             </a>
+            <SettingsLink current={page === "settings"} />
             {me.data && <UserBadge user={me.data} />}
           </div>
         </div>
@@ -36,12 +39,13 @@ export default function App() {
 
       <main className="mx-auto max-w-[1536px] px-4 py-8">
         {page === "help" && <Help signedIn={!!me.data} />}
-        {page !== "help" && me.isPending && <p className="text-muted">Loading…</p>}
-        {page !== "help" && me.isError && (
+        {page === "settings" && <Settings signedIn={!!me.data} />}
+        {!subpage && me.isPending && <p className="text-muted">Loading…</p>}
+        {!subpage && me.isError && (
           <ErrorBox>Could not reach the backend: {me.error.message}</ErrorBox>
         )}
-        {page !== "help" && me.data === null && <SignIn />}
-        {page !== "help" && me.data && (
+        {!subpage && me.data === null && <SignIn />}
+        {!subpage && me.data && (
           <div className="space-y-6">
             <SyncPanel />
             <Explorer />
@@ -52,7 +56,7 @@ export default function App() {
   );
 }
 
-/** The page named in the address bar's #fragment: "help" or "" (the library). */
+/** The page named in the address bar's #fragment: "help", "settings" or "" (the library). */
 function useHashPage() {
   const read = () => window.location.hash.replace(/^#/, "");
   const [page, setPage] = useState(read);

@@ -82,7 +82,7 @@ export default function Explorer() {
         </div>
 
         {games.isError && (
-          <div role="alert" className="rounded-md border border-amber-700 bg-amber-950 px-4 py-3 text-sm text-amber-200">
+          <div role="alert" className="rounded-md border border-warn-line bg-warn-bg px-4 py-3 text-sm text-warn-fg">
             Could not load games: {games.error.message}
           </div>
         )}
