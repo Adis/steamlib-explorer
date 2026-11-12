@@ -20,11 +20,13 @@
   /* Borders. */
   --color-line: #1f2733;
   --color-line-strong: #2c3644;
+  /* Edges of inputs, selects and switches: at least 3:1 against surface. */
+  --color-control: #5c687a;
 
-  /* Text. */
+  /* Text. faint is the dimmest text and still meets 4.5:1 on surface. */
   --color-fg: #e8ecf2;
   --color-muted: #9aa5b5;
-  --color-faint: #677284;
+  --color-faint: #808b9c;
 
   /* Accent: primary buttons, selection, focus, progress. */
   --color-accent: #3d9df5;
@@ -56,14 +58,21 @@
   --color-raised: #1d1d21;
   --color-line: #232327;
   --color-line-strong: #303036;
+  --color-control: #616169;
   --color-fg: #ededef;
   --color-muted: #a1a1aa;
-  --color-faint: #6b6b74;
+  --color-faint: #85858e;
   --color-accent: #f5a524;
   --color-accent-hover: #f7b84d;
   --color-on-accent: #1a1003;
   --color-link: #f7b84d;
   --color-link-hover: #fbd38d;
+  /* The accent is amber here, so Mixed reviews and warnings move off it. */
+  --color-review-mixed: #fde047;
+  --color-warn: #f97316;
+  --color-warn-bg: #431407;
+  --color-warn-line: #c2410c;
+  --color-warn-fg: #fed7aa;
 }
 
 :root[data-theme="violet"] {
@@ -72,9 +81,10 @@
   --color-raised: #1f1b2a;
   --color-line: #241f31;
   --color-line-strong: #332c44;
+  --color-control: #665d7c;
   --color-fg: #ece9f3;
   --color-muted: #a59fb6;
-  --color-faint: #716a84;
+  --color-faint: #8a839d;
   --color-accent: #8b7cf6;
   --color-accent-hover: #a497f8;
   --color-on-accent: #0c0820;
@@ -89,26 +99,32 @@
   --color-raised: #eef0f4;
   --color-line: #e4e7ec;
   --color-line-strong: #d2d7df;
+  --color-control: #8a93a2;
   --color-fg: #111827;
   --color-muted: #4b5563;
-  --color-faint: #7b8494;
+  --color-faint: #636b78;
   --color-accent: #2563eb;
   --color-accent-hover: #1d4ed8;
   --color-on-accent: #ffffff;
   --color-link: #2563eb;
   --color-link-hover: #1e40af;
-  --color-review-great: #059669;
-  --color-review-good: #65a30d;
-  --color-review-mixed: #d97706;
-  --color-review-bad: #e11d48;
+  /* Darker review colours so they stay readable on white. */
+  --color-review-great: #047857;
+  --color-review-good: #4d7c0f;
+  --color-review-mixed: #b45309;
+  --color-review-bad: #be123c;
+  --color-warn: #b45309;
   --color-warn-bg: #fffbeb;
   --color-warn-line: #fcd34d;
   --color-warn-fg: #92400e;
+  --glow: 5%;
 }
 
 @layer base {
   :root {
     color-scheme: dark;
+    /* Strength of the accent glow behind the header. */
+    --glow: 14%;
   }
 
   html {

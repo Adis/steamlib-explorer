@@ -5,6 +5,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { Game } from "./api.ts";
+import { useTableColumns } from "./tableColumns.ts";
+import { formatDate } from "./ui.tsx";
 
 /** Sort keys accepted by GET /api/games, by column id. */
 const SORT_KEYS: Record<string, string> = {
@@ -43,7 +45,7 @@ const columns = [
     header: "Last played",
     cell: ({ getValue }) => {
       const v = getValue();
-      return v ? new Date(v).toLocaleDateString() : <Muted>–</Muted>;
+      return v ? formatDate(v) : <Muted>–</Muted>;
     },
     meta: { numeric: true },
   }),
@@ -84,6 +86,7 @@ type Props = {
 };
 
 export default function GamesTable({ games, sort, descending, onSort }: Props) {
+  const { hidden } = useTableColumns();
   // Sorting and paging happen in the database; the table only renders a page.
   const table = useReactTable({
     data: games,
@@ -92,7 +95,10 @@ export default function GamesTable({ games, sort, descending, onSort }: Props) {
     getRowId: (g) => String(g.appid),
     manualSorting: true,
     manualPagination: true,
-    state: { sorting: [{ id: sort, desc: descending }] },
+    state: {
+      sorting: [{ id: sort, desc: descending }],
+      columnVisibility: Object.fromEntries(hidden.map((id) => [id, false])),
+    },
   });
 
   const clickHeader = (id: string) => {
@@ -195,18 +201,23 @@ function NameCell({ game }: { game: Game }) {
   );
 }
 
+/** Steam's rating in words, with the share and count beneath, as on the cards. */
 function ReviewCell({ game }: { game: Game }) {
   if (game.review_pct === null) return <Muted>–</Muted>;
-  const pct = game.review_pct;
-  const color = reviewColor(pct);
   return (
-    <span title={`${game.review_score_desc ?? ""} · ${game.reviews_total?.toLocaleString() ?? 0} reviews`}>
-      <span className={`font-medium ${color}`}>{Math.round(pct)}%</span>
-      <span className="block text-[11px] text-faint">
-        {game.reviews_total?.toLocaleString()} reviews
+    <span>
+      <span className={`font-medium ${reviewColor(game.review_pct)}`}>
+        {game.review_score_desc || `${Math.round(game.review_pct)}%`}
       </span>
+      <span className="block text-xs text-faint">{reviewDetail(game)}</span>
     </span>
   );
+}
+
+/** "80% of 68,133": the positive share and the number of reviews. */
+export function reviewDetail(game: Game) {
+  const pct = game.review_pct === null ? "" : `${Math.round(game.review_pct)}%`;
+  return game.reviews_total ? `${pct} of ${game.reviews_total.toLocaleString()}` : pct;
 }
 
 function Platforms({ p }: { p: Game["platforms"] }) {

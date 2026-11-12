@@ -6,7 +6,7 @@ import Help from "./Help.tsx";
 import Settings from "./Settings.tsx";
 import SyncPanel from "./SyncPanel.tsx";
 import { ErrorBox } from "./ui.tsx";
-import { CircleHelp, LibraryBig, Settings as SettingsIcon, type LucideIcon } from "lucide-react";
+import { CircleHelp, LibraryBig, LogOut, Settings as SettingsIcon, type LucideIcon } from "lucide-react";
 
 export default function App() {
   const me = useQuery({ queryKey: ["me"], queryFn: fetchMe });
@@ -14,7 +14,7 @@ export default function App() {
   const subpage = page === "help" || page === "settings";
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_80%_40%_at_50%_-10%,color-mix(in_oklab,var(--color-accent)_14%,transparent),transparent)]">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_80%_40%_at_50%_-10%,color-mix(in_oklab,var(--color-accent)_var(--glow),transparent),transparent)]">
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1536px] items-center justify-between px-4">
           <h1>
@@ -79,15 +79,18 @@ function UserBadge({ user }: { user: User }) {
 
   return (
     <div className="flex items-center gap-3">
-      {user.avatar_url && (
-        <img src={user.avatar_url} alt="" className="h-7 w-7 rounded-full ring-1 ring-line-strong" />
-      )}
-      <span className="text-sm text-muted">{user.persona_name || user.steam_id}</span>
+      <span className="flex items-center gap-2 border-l border-line pl-3 text-sm text-fg">
+        {user.avatar_url && (
+          <img src={user.avatar_url} alt="" className="h-6 w-6 rounded-full ring-1 ring-line-strong" />
+        )}
+        {user.persona_name || user.steam_id}
+      </span>
       <button
         onClick={() => signOut.mutate()}
         disabled={signOut.isPending}
-        className="rounded-md border border-line-strong px-3 py-1 text-sm text-muted hover:bg-raised hover:text-fg disabled:opacity-50"
+        className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm text-muted hover:bg-raised hover:text-fg disabled:opacity-50"
       >
+        <LogOut aria-hidden className="h-4 w-4" />
         Sign out
       </button>
     </div>

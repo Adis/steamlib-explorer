@@ -155,7 +155,7 @@ function toggle(list: string[], value: string) {
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <fieldset>
-      <legend className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-faint">
+      <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
         {title}
       </legend>
       {children}
@@ -164,7 +164,7 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 }
 
 const inputClass =
-  "w-full rounded-md border border-line-strong bg-surface px-2.5 py-1.5 text-fg placeholder:text-faint transition-colors hover:border-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25";
+  "w-full rounded-md border border-control bg-surface px-2.5 py-1.5 text-fg placeholder:text-faint transition-colors hover:border-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25";
 
 /** Name search; waits for a pause in typing before filtering. */
 function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -266,13 +266,13 @@ function Segmented({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex gap-0.5 rounded-md border border-line-strong bg-surface p-0.5">
+    <div className="flex gap-0.5 rounded-md border border-control bg-surface p-0.5">
       {options.map(([v, label]) => (
         <button
           key={v}
           onClick={() => onChange(v)}
           aria-pressed={value === v}
-          className={`flex-1 rounded px-2 py-1 transition-colors ${value === v ? "bg-accent font-medium text-on-accent shadow-sm" : "text-muted hover:bg-raised hover:text-fg"}`}
+          className={`flex-1 rounded px-2 py-1 transition-colors ${value === v ? "bg-raised font-medium text-fg shadow-sm ring-1 ring-line-strong" : "text-muted hover:bg-raised hover:text-fg"}`}
         >
           {label}
         </button>

@@ -1,5 +1,6 @@
 import type { Game } from "./api.ts";
-import { formatHours, reviewColor } from "./GamesTable.tsx";
+import { formatHours, reviewColor, reviewDetail } from "./GamesTable.tsx";
+import { formatDate } from "./ui.tsx";
 
 /** The filtered games as cover-art cards. */
 export default function GamesGrid({ games }: { games: Game[] }) {
@@ -32,14 +33,6 @@ function GameCard({ game }: { game: Game }) {
             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
           />
         )}
-        {game.review_pct !== null && (
-          <span
-            title={`${game.review_score_desc ?? ""} · ${game.reviews_total?.toLocaleString() ?? 0} reviews`}
-            className={`absolute right-2 top-2 rounded-md bg-canvas/85 px-1.5 py-0.5 text-xs font-semibold tabular-nums backdrop-blur ${reviewColor(game.review_pct)}`}
-          >
-            {Math.round(game.review_pct)}%
-          </span>
-        )}
         {game.playtime_2weeks_minutes > 0 && (
           <span className="absolute left-2 top-2 rounded-md bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-on-accent">
             Recently played
@@ -59,7 +52,7 @@ function GameCard({ game }: { game: Game }) {
             {game.last_played_at && (
               <span className="text-faint">
                 {" · "}
-                {new Date(game.last_played_at).toLocaleDateString()}
+                {formatDate(game.last_played_at)}
               </span>
             )}
           </span>
@@ -76,7 +69,7 @@ function GameCard({ game }: { game: Game }) {
   );
 }
 
-/** Steam's rating in words, e.g. "Very Positive · 68,133 reviews". */
+/** Steam's rating in words, e.g. "Very Positive · 80% of 68,133". */
 function Rating({ game }: { game: Game }) {
   if (game.details_status === "pending")
     return <p className="mt-0.5 truncate text-xs text-faint">Store details not fetched yet</p>;
@@ -87,26 +80,27 @@ function Rating({ game }: { game: Game }) {
   return (
     <p className="mt-0.5 truncate text-xs">
       <span className={`font-medium ${reviewColor(game.review_pct)}`}>{game.review_score_desc}</span>
-      {game.reviews_total ? (
-        <span className="text-faint"> · {game.reviews_total.toLocaleString()} reviews</span>
-      ) : null}
+      <span className="text-faint"> · {reviewDetail(game)}</span>
     </p>
   );
 }
 
-/** Genres as small tags along the bottom of the card, on one line. */
+const MAX_GENRES = 2;
+
+/** Up to two genres as small tags along the bottom of the card, then "+N". */
 function Genres({ game }: { game: Game }) {
   if (game.genres.length === 0) return null;
+  const shown = game.genres.slice(0, MAX_GENRES);
+  const more = game.genres.length - shown.length;
+  const tag = "min-w-0 truncate rounded-full bg-raised px-2 py-0.5 text-[11px] text-muted";
   return (
-    <ul className="flex gap-1 overflow-hidden border-t border-line pt-2.5" title={game.genres.join(", ")}>
-      {game.genres.map((g) => (
-        <li
-          key={g}
-          className="shrink-0 rounded-full bg-raised px-2 py-0.5 text-[11px] text-muted"
-        >
+    <ul className="flex gap-1 border-t border-line pt-2.5" title={game.genres.join(", ")}>
+      {shown.map((g) => (
+        <li key={g} className={tag}>
           {g}
         </li>
       ))}
+      {more > 0 && <li className={`${tag} shrink-0`}>+{more}</li>}
     </ul>
   );
 }
