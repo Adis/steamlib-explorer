@@ -69,3 +69,46 @@ export const startSync = () =>
   request<{ run_id: number }>("/api/sync", { method: "POST" });
 
 export const logout = () => request<void>("/auth/logout", { method: "POST" });
+
+export type Game = {
+  appid: number;
+  name: string;
+  store_url: string;
+  header_image: string | null;
+  short_description: string | null;
+  release_date: string | null; // YYYY-MM-DD
+  release_date_text: string | null;
+  coming_soon: boolean;
+  genres: string[];
+  categories: string[];
+  developers: string[];
+  publishers: string[];
+  platforms: { windows: boolean; mac: boolean; linux: boolean };
+  metacritic_score: number | null;
+  price_cents: number | null;
+  price_currency: string | null;
+  is_free: boolean;
+  review_score_desc: string | null;
+  review_pct: number | null;
+  reviews_total: number | null;
+  details_status: "pending" | "ok" | "unavailable" | "error";
+  playtime_minutes: number;
+  playtime_2weeks_minutes: number;
+  last_played_at: string | null;
+};
+
+export type GamesPage = {
+  games: Game[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type Facet = { value: string; games: number };
+export type Facets = { genres: Facet[]; categories: Facet[] };
+
+/** One page of games; params are the query string /api/games accepts. */
+export const fetchGames = (params: URLSearchParams) =>
+  request<GamesPage>(`/api/games?${params}`);
+
+export const fetchFacets = () => request<Facets>("/api/facets");

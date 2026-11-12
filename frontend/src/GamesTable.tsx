@@ -1,0 +1,245 @@
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import type { Game } from "./api.ts";
+
+/** Sort keys accepted by GET /api/games, by column id. */
+const SORT_KEYS: Record<string, string> = {
+  name: "name",
+  playtime: "playtime",
+  recent: "recent",
+  last_played: "last_played",
+  review: "review",
+  metacritic: "metacritic",
+  release: "release",
+};
+
+const col = createColumnHelper<Game>();
+
+const columns = [
+  col.accessor("name", {
+    id: "name",
+    header: "Game",
+    cell: ({ row }) => <NameCell game={row.original} />,
+  }),
+  col.accessor("playtime_minutes", {
+    id: "playtime",
+    header: "Playtime",
+    cell: ({ getValue }) =>
+      getValue() > 0 ? formatHours(getValue()) : <Muted>never played</Muted>,
+    meta: { numeric: true },
+  }),
+  col.accessor("playtime_2weeks_minutes", {
+    id: "recent",
+    header: "2 weeks",
+    cell: ({ getValue }) => (getValue() > 0 ? formatHours(getValue()) : <Muted>–</Muted>),
+    meta: { numeric: true },
+  }),
+  col.accessor("last_played_at", {
+    id: "last_played",
+    header: "Last played",
+    cell: ({ getValue }) => {
+      const v = getValue();
+      return v ? new Date(v).toLocaleDateString() : <Muted>–</Muted>;
+    },
+    meta: { numeric: true },
+  }),
+  col.accessor("review_pct", {
+    id: "review",
+    header: "Reviews",
+    cell: ({ row }) => <ReviewCell game={row.original} />,
+    meta: { numeric: true },
+  }),
+  col.accessor("metacritic_score", {
+    id: "metacritic",
+    header: "Metacritic",
+    cell: ({ getValue }) => getValue() ?? <Muted>–</Muted>,
+    meta: { numeric: true },
+  }),
+  col.accessor("release_date", {
+    id: "release",
+    header: "Released",
+    cell: ({ row }) => {
+      const g = row.original;
+      if (g.release_date) return g.release_date.slice(0, 4);
+      return <Muted>{g.release_date_text || "–"}</Muted>;
+    },
+    meta: { numeric: true },
+  }),
+  col.accessor("platforms", {
+    id: "platforms",
+    header: "Platforms",
+    cell: ({ getValue }) => <Platforms p={getValue()} />,
+  }),
+];
+
+type Props = {
+  games: Game[];
+  sort: string;
+  descending: boolean;
+  onSort: (sort: string, order: "asc" | "desc" | null) => void;
+};
+
+export default function GamesTable({ games, sort, descending, onSort }: Props) {
+  // Sorting and paging happen in the database; the table only renders a page.
+  const table = useReactTable({
+    data: games,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getRowId: (g) => String(g.appid),
+    manualSorting: true,
+    manualPagination: true,
+    state: { sorting: [{ id: sort, desc: descending }] },
+  });
+
+  const clickHeader = (id: string) => {
+    const key = SORT_KEYS[id];
+    if (!key) return;
+    if (key === sort) onSort(key, descending ? "asc" : "desc");
+    else onSort(key, null); // each column starts in its natural direction
+  };
+
+  return (
+    <div className="overflow-x-auto rounded-lg border border-slate-800">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-400">
+          {table.getHeaderGroups().map((hg) => (
+            <tr key={hg.id}>
+              {hg.headers.map((h) => {
+                const sortable = h.column.id in SORT_KEYS;
+                const sorted = h.column.getIsSorted();
+                const numeric = isNumeric(h.column.columnDef.meta);
+                return (
+                  <th
+                    key={h.id}
+                    scope="col"
+                    aria-sort={sorted ? (sorted === "desc" ? "descending" : "ascending") : undefined}
+                    className={`whitespace-nowrap px-2.5 py-2 font-medium ${numeric ? "text-right" : ""}`}
+                  >
+                    {sortable ? (
+                      <button
+                        onClick={() => clickHeader(h.column.id)}
+                        className={`inline-flex items-center gap-1 uppercase hover:text-slate-100 ${sorted ? "text-slate-100" : ""}`}
+                      >
+                        {flexRender(h.column.columnDef.header, h.getContext())}
+                        <span aria-hidden className="w-3">
+                          {sorted === "asc" ? "▲" : sorted === "desc" ? "▼" : ""}
+                        </span>
+                      </button>
+                    ) : (
+                      flexRender(h.column.columnDef.header, h.getContext())
+                    )}
+                  </th>
+                );
+              })}
+            </tr>
+          ))}
+        </thead>
+        <tbody className="divide-y divide-slate-800">
+          {table.getRowModel().rows.map((row) => (
+            <tr key={row.id} className="hover:bg-slate-900/60">
+              {row.getVisibleCells().map((cell) => (
+                <td
+                  key={cell.id}
+                  className={`px-2.5 py-2 align-middle ${isNumeric(cell.column.columnDef.meta) ? "whitespace-nowrap text-right tabular-nums" : ""}`}
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function isNumeric(meta: unknown) {
+  return (meta as { numeric?: boolean } | undefined)?.numeric === true;
+}
+
+function NameCell({ game }: { game: Game }) {
+  return (
+    <div className="flex min-w-56 items-center gap-3">
+      {game.header_image ? (
+        <img
+          src={game.header_image}
+          alt=""
+          loading="lazy"
+          className="h-[37px] w-[80px] shrink-0 rounded object-cover"
+        />
+      ) : (
+        <div className="h-[37px] w-[80px] shrink-0 rounded bg-slate-800" />
+      )}
+      <div className="min-w-0">
+        <a
+          href={game.store_url}
+          target="_blank"
+          rel="noreferrer"
+          className="font-medium hover:text-sky-400"
+        >
+          {game.name}
+        </a>
+        <div className="truncate text-xs text-slate-400">
+          {game.details_status === "pending"
+            ? "Store details not fetched yet"
+            : game.details_status === "unavailable"
+              ? "No longer on the Steam store"
+              : game.genres.join(", ")}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReviewCell({ game }: { game: Game }) {
+  if (game.review_pct === null) return <Muted>–</Muted>;
+  const pct = game.review_pct;
+  const color =
+    pct >= 80
+      ? "text-emerald-400"
+      : pct >= 70
+        ? "text-lime-400"
+        : pct >= 40
+          ? "text-amber-400"
+          : "text-rose-400";
+  return (
+    <span title={`${game.review_score_desc ?? ""} · ${game.reviews_total?.toLocaleString() ?? 0} reviews`}>
+      <span className={`font-medium ${color}`}>{Math.round(pct)}%</span>
+      <span className="block text-xs text-slate-500">
+        {game.reviews_total?.toLocaleString()} reviews
+      </span>
+    </span>
+  );
+}
+
+function Platforms({ p }: { p: Game["platforms"] }) {
+  const supported = [
+    ["Win", p.windows],
+    ["Mac", p.mac],
+    ["Linux", p.linux],
+  ].filter(([, on]) => on);
+  if (supported.length === 0) return <Muted>–</Muted>;
+  return (
+    <span className="flex gap-1 text-xs">
+      {supported.map(([label]) => (
+        <span key={String(label)} className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-200">
+          {label}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function Muted({ children }: { children: React.ReactNode }) {
+  return <span className="text-slate-500">{children}</span>;
+}
+
+function formatHours(minutes: number) {
+  if (minutes < 60) return `${minutes} min`;
+  const h = minutes / 60;
+  return `${h < 10 ? h.toFixed(1) : Math.round(h).toLocaleString()} h`;
+}
