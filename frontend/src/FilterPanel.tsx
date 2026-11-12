@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchFacets, type Facet } from "./api.ts";
 import { activeFilterCount, type SetParam, type UrlParams } from "./filters.ts";
+import { useSidebarFilters } from "./sidebarFilters.ts";
 
 type Props = {
   params: UrlParams;
@@ -12,6 +13,7 @@ type Props = {
 export default function FilterPanel({ params, setParam, clearFilters }: Props) {
   const facets = useQuery({ queryKey: ["facets"], queryFn: fetchFacets });
   const active = activeFilterCount(params);
+  const { isShown } = useSidebarFilters();
 
   return (
     <aside className="space-y-6 text-sm">
@@ -27,90 +29,111 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
         )}
       </div>
 
-      <SearchBox value={params.get("q") ?? ""} onChange={(v) => setParam("q", v)} />
+      {isShown("search") && (
+        <SearchBox value={params.get("q") ?? ""} onChange={(v) => setParam("q", v)} />
+      )}
 
-      <Group title="Played">
-        <Segmented
-          value={params.get("played") ?? ""}
-          options={[
-            ["", "All"],
-            ["true", "Played"],
-            ["false", "Unplayed"],
-          ]}
-          onChange={(v) => setParam("played", v || null)}
-        />
-      </Group>
+      {isShown("played") && (
+        <Group title="Played">
+          <Segmented
+            value={params.get("played") ?? ""}
+            options={[
+              ["", "All"],
+              ["true", "Played"],
+              ["false", "Unplayed"],
+            ]}
+            onChange={(v) => setParam("played", v || null)}
+          />
+        </Group>
+      )}
 
-      <Group title="Playtime (hours)">
-        <Range
-          params={params}
-          setParam={setParam}
-          minKey="min_hours"
-          maxKey="max_hours"
-          step="any"
-          placeholder={["0", "any"]}
-        />
-      </Group>
+      {isShown("playtime") && (
+        <Group title="Playtime (hours)">
+          <Range
+            params={params}
+            setParam={setParam}
+            minKey="min_hours"
+            maxKey="max_hours"
+            step="any"
+            placeholder={["0", "any"]}
+          />
+        </Group>
+      )}
 
-      <Group title="Steam reviews">
-        <Select
-          value={params.get("min_review_score") ?? ""}
-          onChange={(v) => setParam("min_review_score", v || null)}
-          options={REVIEW_RATINGS}
-        />
-      </Group>
+      {isShown("reviews") && (
+        <Group title="Steam reviews">
+          <Select
+            value={params.get("min_review_score") ?? ""}
+            onChange={(v) => setParam("min_review_score", v || null)}
+            options={REVIEW_RATINGS}
+          />
+        </Group>
+      )}
 
-      <Group title="Metacritic">
-        <Select
-          value={params.get("min_metacritic") ?? ""}
-          onChange={(v) => setParam("min_metacritic", v || null)}
-          options={[["", "Any"], ...[90, 80, 70, 60, 50].map((n) => [String(n), `${n} or more`] as const)]}
-        />
-      </Group>
+      {isShown("metacritic") && (
+        <Group title="Metacritic">
+          <Select
+            value={params.get("min_metacritic") ?? ""}
+            onChange={(v) => setParam("min_metacritic", v || null)}
+            options={[["", "Any"], ...[90, 80, 70, 60, 50].map((n) => [String(n), `${n} or more`] as const)]}
+          />
+        </Group>
+      )}
 
-      <Group title="Release year">
-        <Range
-          params={params}
-          setParam={setParam}
-          minKey="from_year"
-          maxKey="to_year"
-          step="1"
-          placeholder={["from", "to"]}
-        />
-      </Group>
+      {isShown("year") && (
+        <Group title="Release year">
+          <Range
+            params={params}
+            setParam={setParam}
+            minKey="from_year"
+            maxKey="to_year"
+            step="1"
+            placeholder={["from", "to"]}
+          />
+        </Group>
+      )}
 
-      <Group title="Platforms">
-        <div className="flex flex-wrap gap-x-4 gap-y-1">
-          {[
-            ["windows", "Windows"],
-            ["mac", "macOS"],
-            ["linux", "Linux / SteamOS"],
-          ].map(([value, label]) => (
-            <Check
-              key={value}
-              label={label}
-              checked={params.getAll("platform").includes(value)}
-              onChange={() => setParam("platform", toggle(params.getAll("platform"), value))}
-            />
-          ))}
-        </div>
-      </Group>
+      {isShown("platforms") && (
+        <Group title="Platforms">
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {[
+              ["windows", "Windows"],
+              ["mac", "macOS"],
+              ["linux", "Linux / SteamOS"],
+            ].map(([value, label]) => (
+              <Check
+                key={value}
+                label={label}
+                checked={params.getAll("platform").includes(value)}
+                onChange={() => setParam("platform", toggle(params.getAll("platform"), value))}
+              />
+            ))}
+          </div>
+        </Group>
+      )}
 
-      {facets.isError && (
+      {facets.isError && (isShown("genres") || isShown("features")) && (
         <p className="text-warn-fg">Could not load genres: {facets.error.message}</p>
       )}
-      <FacetList
-        title="Genres"
-        facets={facets.data?.genres}
-        selected={params.getAll("genre")}
-        onChange={(v) => setParam("genre", v)}
-      />
-      <FacetList
-        title="Features"
-        facets={facets.data?.categories}
-        selected={params.getAll("category")}
-        onChange={(v) => setParam("category", v)}
-      />
+      {isShown("genres") && (
+        <FacetList
+          title="Genres"
+          facets={facets.data?.genres}
+          selected={params.getAll("genre")}
+          onChange={(v) => setParam("genre", v)}
+        />
+      )}
+      {isShown("features") && (
+        <FacetList
+          title="Features"
+          facets={facets.data?.categories}
+          selected={params.getAll("category")}
+          onChange={(v) => setParam("category", v)}
+        />
+      )}
+      <a href="#settings" className="block text-xs text-faint hover:text-muted">
+        Choose which filters to show
+      </a>
     </aside>
   );
 }
