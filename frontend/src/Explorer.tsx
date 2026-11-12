@@ -2,6 +2,7 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { fetchGames } from "./api.ts";
 import FilterPanel from "./FilterPanel.tsx";
+import GamesGrid from "./GamesGrid.tsx";
 import GamesTable from "./GamesTable.tsx";
 import {
   activeFilterCount,
@@ -15,6 +16,7 @@ import {
 export default function Explorer() {
   const { params, setParam, setPage, setSort, clearFilters } = useUrlParams();
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [view, setView] = useView();
   const filterCount = activeFilterCount(params);
   const query = apiParams(params);
   const games = useQuery({
@@ -57,20 +59,26 @@ export default function Explorer() {
               : "Loading games…"}
             {games.isFetching && data && <span className="ml-2 text-faint">updating…</span>}
           </p>
-          <label className="flex items-center gap-2 text-muted">
-            Per page
-            <select
-              value={String(limit)}
-              onChange={(e) =>
-                setParam("limit", e.target.value === String(DEFAULT_LIMIT) ? null : e.target.value)
-              }
-              className="rounded-md border border-line-strong bg-surface px-2 py-1 text-fg hover:border-faint focus:border-accent focus:outline-none"
-            >
-              {[25, 50, 100, 200].map((n) => (
-                <option key={n}>{n}</option>
-              ))}
-            </select>
-          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            {view === "cards" && (
+              <SortControl sort={sort} descending={descending} onSort={setSort} />
+            )}
+            <ViewSwitch view={view} onChange={setView} />
+            <label className="flex items-center gap-2 text-muted">
+              Per page
+              <select
+                value={String(limit)}
+                onChange={(e) =>
+                  setParam("limit", e.target.value === String(DEFAULT_LIMIT) ? null : e.target.value)
+                }
+                className="rounded-md border border-line-strong bg-surface px-2 py-1 text-fg hover:border-faint focus:border-accent focus:outline-none"
+              >
+                {[25, 50, 100, 200].map((n) => (
+                  <option key={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
 
         {games.isError && (
@@ -80,7 +88,11 @@ export default function Explorer() {
         )}
 
         {data && data.games.length > 0 && (
-          <GamesTable games={data.games} sort={sort} descending={descending} onSort={setSort} />
+          view === "cards" ? (
+            <GamesGrid games={data.games} />
+          ) : (
+            <GamesTable games={data.games} sort={sort} descending={descending} onSort={setSort} />
+          )
         )}
 
         {data && data.games.length === 0 && (
@@ -129,6 +141,115 @@ export default function Explorer() {
           </nav>
         )}
       </section>
+    </div>
+  );
+}
+
+type View = "table" | "cards";
+const VIEW_KEY = "explorer.view";
+
+/** Table or cards; remembered in this browser. */
+function useView() {
+  const [view, setView] = useState<View>(() => {
+    try {
+      return localStorage.getItem(VIEW_KEY) === "cards" ? "cards" : "table";
+    } catch {
+      return "table";
+    }
+  });
+  const change = (v: View) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      // storage blocked: the choice lasts until reload
+    }
+  };
+  return [view, change] as const;
+}
+
+function ViewSwitch({ view, onChange }: { view: View; onChange: (v: View) => void }) {
+  const options: [View, string, React.ReactNode][] = [
+    [
+      "table",
+      "Table",
+      <path key="t" d="M3 5h14M3 10h14M3 15h14" />,
+    ],
+    [
+      "cards",
+      "Cards",
+      <g key="c">
+        <rect x="3" y="3" width="6" height="6" rx="1.2" />
+        <rect x="11" y="3" width="6" height="6" rx="1.2" />
+        <rect x="3" y="11" width="6" height="6" rx="1.2" />
+        <rect x="11" y="11" width="6" height="6" rx="1.2" />
+      </g>,
+    ],
+  ];
+  return (
+    <div role="group" aria-label="View" className="flex gap-0.5 rounded-md border border-line-strong bg-surface p-0.5">
+      {options.map(([v, label, icon]) => (
+        <button
+          key={v}
+          onClick={() => onChange(v)}
+          aria-pressed={view === v}
+          className={`inline-flex items-center gap-1.5 rounded px-2 py-1 transition-colors ${view === v ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}
+        >
+          <svg viewBox="0 0 20 20" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+            {icon}
+          </svg>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Sort keys accepted by GET /api/games; the table sorts from its headers. */
+const SORTS: [string, string][] = [
+  ["name", "Name"],
+  ["playtime", "Playtime"],
+  ["recent", "Played in last 2 weeks"],
+  ["last_played", "Last played"],
+  ["review", "Reviews"],
+  ["metacritic", "Metacritic"],
+  ["release", "Release date"],
+];
+
+function SortControl({
+  sort,
+  descending,
+  onSort,
+}: {
+  sort: string;
+  descending: boolean;
+  onSort: (sort: string, order: "asc" | "desc" | null) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 text-muted">
+      <label htmlFor="sort-by">Sort by</label>
+      <div className="flex">
+        <select
+          id="sort-by"
+          value={sort}
+          onChange={(e) => onSort(e.target.value, null)}
+          className="rounded-l-md border border-line-strong bg-surface px-2 py-1 text-fg hover:border-faint focus:border-accent focus:outline-none"
+        >
+          {SORTS.map(([v, label]) => (
+            <option key={v} value={v}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => onSort(sort, descending ? "asc" : "desc")}
+          title={descending ? "Descending, click for ascending" : "Ascending, click for descending"}
+          aria-label={descending ? "Sort ascending" : "Sort descending"}
+          className="-ml-px rounded-r-md border border-line-strong bg-surface px-2 text-fg hover:bg-raised"
+        >
+          {descending ? "↓" : "↑"}
+        </button>
+      </div>
     </div>
   );
 }
