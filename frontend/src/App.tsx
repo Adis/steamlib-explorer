@@ -5,6 +5,7 @@ import Explorer from "./Explorer.tsx";
 import Help from "./Help.tsx";
 import SyncPanel from "./SyncPanel.tsx";
 import { ErrorBox } from "./ui.tsx";
+import { LibraryBig } from "lucide-react";
 
 export default function App() {
   const me = useQuery({ queryKey: ["me"], queryFn: fetchMe });
@@ -117,13 +118,7 @@ function SignIn() {
   );
 }
 
-/** App mark: a stack of game cases. */
+/** App mark: Lucide's "library-big" icon (ISC licence), in the accent colour. */
 function Logo({ className = "h-6 w-6" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className={className}>
-      <rect x="3" y="4" width="4" height="16" rx="1.2" className="fill-accent" />
-      <rect x="9" y="4" width="4" height="16" rx="1.2" className="fill-accent/60" />
-      <rect x="15.2" y="4.6" width="4" height="16" rx="1.2" transform="rotate(-12 17.2 12.6)" className="fill-accent/35" />
-    </svg>
-  );
+  return <LibraryBig aria-hidden className={`text-accent ${className}`} strokeWidth={2} />;
 }
