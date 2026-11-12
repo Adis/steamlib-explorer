@@ -1,5 +1,5 @@
 // Package syncer runs a Refresh: it copies a user's Steam library into the
-// database, then fills in store details and reviews for each app.
+// database, then fills in store details for each app and reviews in batches.
 package syncer
 
 import (
@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"sync"
 	"time"
 
@@ -23,7 +24,7 @@ var ErrAlreadyRunning = errors.New("syncer: a refresh is already running")
 type Steam interface {
 	OwnedGames(ctx context.Context, steamID uint64) ([]steam.OwnedGame, error)
 	AppDetails(ctx context.Context, appID int64) (*steam.AppDetails, error)
-	AppReviews(ctx context.Context, appID int64) (*steam.ReviewSummary, error)
+	AppReviews(ctx context.Context, appIDs []int64) (map[int64]steam.ReviewSummary, error)
 }
 
 // Queries is the part of the generated store a Refresh needs.
@@ -34,6 +35,7 @@ type Queries interface {
 	EnsureApp(ctx context.Context, arg store.EnsureAppParams) error
 	UpsertOwnedGame(ctx context.Context, arg store.UpsertOwnedGameParams) error
 	AppsNeedingDetails(ctx context.Context, arg store.AppsNeedingDetailsParams) ([]int64, error)
+	AppsNeedingReviews(ctx context.Context, arg store.AppsNeedingReviewsParams) ([]int64, error)
 	UpdateAppDetails(ctx context.Context, arg store.UpdateAppDetailsParams) error
 	MarkAppDetailsStatus(ctx context.Context, arg store.MarkAppDetailsStatusParams) error
 	UpdateAppReviews(ctx context.Context, arg store.UpdateAppReviewsParams) error
@@ -160,10 +162,51 @@ func (s *Syncer) refresh(ctx context.Context, log *slog.Logger, runID int64, ste
 		p.fetched++
 		s.saveProgress(ctx, log, runID, p)
 	}
+	return s.fetchReviews(ctx, log, steamID)
+}
+
+// fetchReviews stores review summaries for the user's store apps whose
+// reviews are missing or stale, many apps per request. This also fills in
+// reviews for apps whose details were fetched by an earlier Refresh.
+func (s *Syncer) fetchReviews(ctx context.Context, log *slog.Logger, steamID uint64) error {
+	appIDs, err := s.q.AppsNeedingReviews(ctx, store.AppsNeedingReviewsParams{
+		SteamID:     int64(steamID),
+		StaleBefore: time.Now().Add(-s.StaleAfter),
+	})
+	if err != nil {
+		return fmt.Errorf("list apps needing reviews: %w", err)
+	}
+	log.Info("fetching reviews", "apps", len(appIDs))
+	for batch := range slices.Chunk(appIDs, steam.MaxReviewBatch) {
+		got, err := s.steam.AppReviews(ctx, batch)
+		switch {
+		case stops(err):
+			return err
+		case err != nil:
+			// Left for the next Refresh, like a failed details fetch.
+			log.Warn("reviews failed", "first_appid", batch[0], "apps", len(batch), "error", err)
+			continue
+		}
+		for _, appID := range batch {
+			r, ok := got[appID]
+			if !ok {
+				continue // Steam didn't answer for it; retried next Refresh
+			}
+			if err := s.q.UpdateAppReviews(ctx, store.UpdateAppReviewsParams{
+				Appid:           appID,
+				ReviewScore:     ptr(int32(r.Score)),
+				ReviewScoreDesc: nonEmpty(r.ScoreDesc),
+				ReviewsPositive: ptr(int32(r.Positive)),
+				ReviewsTotal:    ptr(int32(r.TotalCount)),
+			}); err != nil {
+				return fmt.Errorf("save reviews for %d: %w", appID, err)
+			}
+		}
+	}
 	return nil
 }
 
-// fetchApp stores details and reviews for one app. It only returns an error
+// fetchApp stores store details for one app. It only returns an error
 // that should stop the whole Refresh.
 func (s *Syncer) fetchApp(ctx context.Context, log *slog.Logger, appID int64) error {
 	log = log.With("appid", appID)
@@ -182,22 +225,7 @@ func (s *Syncer) fetchApp(ctx context.Context, log *slog.Logger, appID int64) er
 	if err := s.q.UpdateAppDetails(ctx, detailsParams(d)); err != nil {
 		return fmt.Errorf("save details for %d: %w", appID, err)
 	}
-
-	r, err := s.steam.AppReviews(ctx, appID)
-	switch {
-	case stops(err):
-		return err
-	case err != nil:
-		log.Warn("reviews failed", "error", err)
-		return nil
-	}
-	return s.q.UpdateAppReviews(ctx, store.UpdateAppReviewsParams{
-		Appid:           appID,
-		ReviewScore:     ptr(int32(r.Score)),
-		ReviewScoreDesc: ptr(r.ScoreDesc),
-		ReviewsPositive: ptr(int32(r.Positive)),
-		ReviewsTotal:    ptr(int32(r.TotalCount)),
-	})
+	return nil
 }
 
 func (s *Syncer) markApp(ctx context.Context, appID int64, status string) error {

@@ -3,11 +3,11 @@
 // Endpoints used:
 //   - IPlayerService/GetOwnedGames: a user's library, needs an API key
 //   - store.steampowered.com/api/appdetails: store data for one app, no key
-//   - store.steampowered.com/appreviews: review summary for one app, no key
+//   - IStoreBrowseService/GetItems: review summaries for up to 50 apps, no key
 //
-// The two store endpoints throttle at roughly 200 requests per 5 minutes, so
-// every store request waits on one shared limiter, and 429/403 answers are
-// retried with exponential backoff.
+// The store endpoint throttles at roughly 200 requests per 5 minutes, so
+// every store request, and GetItems, waits on one shared limiter, and
+// 429/403 answers are retried with exponential backoff.
 package steam
 
 import (

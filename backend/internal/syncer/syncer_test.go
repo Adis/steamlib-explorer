@@ -24,6 +24,7 @@ type fakeSteam struct {
 	unavailable map[int64]bool
 	rateLimitOn int64 // appid whose details answer ErrRateLimited
 	detailCalls []int64
+	reviewCalls [][]int64
 	block       chan struct{} // when set, AppDetails waits on it
 }
 
@@ -56,8 +57,15 @@ func (f *fakeSteam) AppDetails(ctx context.Context, id int64) (*steam.AppDetails
 	}, nil
 }
 
-func (f *fakeSteam) AppReviews(context.Context, int64) (*steam.ReviewSummary, error) {
-	return &steam.ReviewSummary{Score: 8, ScoreDesc: "Very Positive", Positive: 90, Negative: 10, TotalCount: 100}, nil
+func (f *fakeSteam) AppReviews(_ context.Context, ids []int64) (map[int64]steam.ReviewSummary, error) {
+	f.mu.Lock()
+	f.reviewCalls = append(f.reviewCalls, ids)
+	f.mu.Unlock()
+	out := map[int64]steam.ReviewSummary{}
+	for _, id := range ids {
+		out[id] = steam.ReviewSummary{Score: 8, ScoreDesc: "Very Positive", Positive: 90, TotalCount: 100}
+	}
+	return out, nil
 }
 
 func setup(t *testing.T) (*pgxpool.Pool, *store.Queries) {
@@ -144,11 +152,47 @@ func TestRefresh(t *testing.T) {
 		t.Errorf("stats = %+v", stats)
 	}
 
+	// Reviews are fetched in one batch, only for the app with a store page.
+	if len(f.reviewCalls) != 1 || len(f.reviewCalls[0]) != 1 || f.reviewCalls[0][0] != 10 {
+		t.Errorf("review calls = %v", f.reviewCalls)
+	}
+
 	// A second Refresh doesn't refetch fresh store data.
-	f.detailCalls = nil
+	f.detailCalls, f.reviewCalls = nil, nil
 	run = runToEnd(t, s)
-	if run.Status != "ok" || run.DetailsTotal != 0 || len(f.detailCalls) != 0 {
-		t.Errorf("second run = %+v, detail calls %v", run, f.detailCalls)
+	if run.Status != "ok" || run.DetailsTotal != 0 || len(f.detailCalls) != 0 || len(f.reviewCalls) != 0 {
+		t.Errorf("second run = %+v, detail calls %v, review calls %v", run, f.detailCalls, f.reviewCalls)
+	}
+}
+
+// Apps whose details came from an earlier Refresh but whose reviews never
+// arrived get them on the next Refresh, without refetching details.
+func TestRefreshBackfillsMissingReviews(t *testing.T) {
+	pool, q := setup(t)
+	ctx := context.Background()
+	var games []steam.OwnedGame
+	for id := int64(1); id <= steam.MaxReviewBatch+5; id++ {
+		games = append(games, steam.OwnedGame{AppID: id, Name: "g"})
+	}
+	f := &fakeSteam{games: games}
+	s := New(ctx, f, q)
+	runToEnd(t, s)
+	if _, err := pool.Exec(ctx, `UPDATE apps SET reviews_fetched_at = NULL, reviews_total = NULL,
+		reviews_positive = NULL, review_score = NULL, review_score_desc = NULL`); err != nil {
+		t.Fatal(err)
+	}
+
+	f.detailCalls, f.reviewCalls = nil, nil
+	run := runToEnd(t, s)
+	if run.Status != "ok" || len(f.detailCalls) != 0 {
+		t.Fatalf("run = %+v, detail calls %v", run, f.detailCalls)
+	}
+	if len(f.reviewCalls) != 2 || len(f.reviewCalls[0]) != steam.MaxReviewBatch || len(f.reviewCalls[1]) != 5 {
+		t.Errorf("review batches = %d", len(f.reviewCalls))
+	}
+	var n int
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM apps WHERE review_pct = 90").Scan(&n); err != nil || n != len(games) {
+		t.Errorf("apps with reviews = %d, %v", n, err)
 	}
 }
 

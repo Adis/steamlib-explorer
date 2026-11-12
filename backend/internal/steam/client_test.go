@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -149,27 +150,45 @@ func TestAppDetailsUnavailable(t *testing.T) {
 }
 
 func TestAppReviews(t *testing.T) {
-	var gotPath, gotQuery string
-	serve := serveFile(t, "appreviews_620.json")
+	var gotPath, gotInput string
+	serve := serveFile(t, "getitems_reviews.json")
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		gotPath, gotQuery = r.URL.Path, r.URL.RawQuery
+		gotPath, gotInput = r.URL.Path, r.URL.Query().Get("input_json")
 		serve(w, r)
 	})
-	s, err := c.AppReviews(context.Background(), 620)
+	got, err := c.AppReviews(context.Background(), []int64{10, 620, 999001, 999002})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gotPath != "/appreviews/620" || !strings.Contains(gotQuery, "num_per_page=0") {
-		t.Errorf("request = %s?%s", gotPath, gotQuery)
+	if gotPath != "/IStoreBrowseService/GetItems/v1/" {
+		t.Errorf("path = %s", gotPath)
 	}
-	if s.Score != 9 || s.ScoreDesc != "Overwhelmingly Positive" || s.Positive != 398000 || s.TotalCount != 403000 {
-		t.Errorf("summary = %+v", s)
+	for _, want := range []string{`{"appid":10}`, `{"appid":999002}`, `"country_code":"us"`, `"include_reviews":true`} {
+		if !strings.Contains(gotInput, want) {
+			t.Errorf("input_json %s is missing %s", gotInput, want)
+		}
+	}
+	want := map[int64]ReviewSummary{
+		10:     {Score: 9, ScoreDesc: "Overwhelmingly Positive", Positive: 163799, TotalCount: 170624},
+		620:    {Score: 9, ScoreDesc: "Overwhelmingly Positive", Positive: 385113, TotalCount: 392972},
+		999001: {}, // on the store, no reviews yet
+		// 999002 is unknown to Steam and left out
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("summaries = %+v\nwant %+v", got, want)
+	}
+}
+
+func TestAppReviewsBatchLimit(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) { t.Error("unexpected request") })
+	if _, err := c.AppReviews(context.Background(), make([]int64, MaxReviewBatch+1)); err == nil {
+		t.Error("want an error for an oversized batch")
 	}
 }
 
 func TestStoreRetriesOnThrottle(t *testing.T) {
 	var calls atomic.Int32
-	body, err := os.ReadFile("testdata/appreviews_620.json")
+	body, err := os.ReadFile("testdata/getitems_reviews.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +199,7 @@ func TestStoreRetriesOnThrottle(t *testing.T) {
 		}
 		w.Write(body)
 	})
-	if _, err := c.AppReviews(context.Background(), 620); err != nil {
+	if _, err := c.AppReviews(context.Background(), []int64{620}); err != nil {
 		t.Fatalf("err = %v, want success after 2 retries", err)
 	}
 	if calls.Load() != 3 {
@@ -204,13 +223,13 @@ func TestStoreGivesUpAfterRetries(t *testing.T) {
 }
 
 func TestStorePacing(t *testing.T) {
-	srv := httptest.NewServer(serveFile(t, "appreviews_620.json"))
+	srv := httptest.NewServer(serveFile(t, "getitems_reviews.json"))
 	defer srv.Close()
 	c := New("", WithBaseURLs(srv.URL, srv.URL), WithStoreRate(50*time.Millisecond))
 
 	start := time.Now()
 	for i := 0; i < 3; i++ {
-		if _, err := c.AppReviews(context.Background(), 620); err != nil {
+		if _, err := c.AppReviews(context.Background(), []int64{620}); err != nil {
 			t.Fatal(err)
 		}
 	}
