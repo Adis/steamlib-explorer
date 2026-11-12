@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { SIDEBAR_FILTERS, useSidebarFilters } from "./sidebarFilters.ts";
 import { THEMES, useTheme } from "./theme.ts";
 
 /** Settings page (#settings). Settings are saved in this browser. */
@@ -15,6 +16,10 @@ export default function Settings({ signedIn }: { signedIn: boolean }) {
 
       <section className="rounded-xl border border-line bg-surface p-5">
         <ThemePicker />
+      </section>
+
+      <section className="rounded-xl border border-line bg-surface p-5">
+        <SidebarFilterToggles />
       </section>
     </article>
   );
@@ -64,5 +69,42 @@ function ThemePreview({ colors }: { colors: readonly [string, string, string] })
         <span className="h-3.5 w-9 rounded-sm" style={{ background: accent }} />
       </span>
     </span>
+  );
+}
+
+function SidebarFilterToggles() {
+  const { isShown, setShown } = useSidebarFilters();
+  return (
+    <fieldset>
+      <legend className="font-semibold tracking-tight">Sidebar filters</legend>
+      <p className="mt-0.5 mb-4 text-sm text-muted">
+        Choose which filters the library sidebar shows. A hidden filter that is
+        already set still applies until you clear it.
+      </p>
+      <div className="grid gap-x-6 sm:grid-cols-2">
+        {SIDEBAR_FILTERS.map((f) => {
+          const on = isShown(f.id);
+          return (
+            <label
+              key={f.id}
+              className="flex cursor-pointer items-center justify-between gap-3 border-b border-line py-2.5 text-sm"
+            >
+              <span className={on ? "text-fg" : "text-muted"}>{f.label}</span>
+              <input
+                type="checkbox"
+                role="switch"
+                checked={on}
+                onChange={(e) => setShown(f.id, e.target.checked)}
+                className="peer sr-only"
+              />
+              <span
+                aria-hidden
+                className="relative h-5 w-9 shrink-0 rounded-full bg-line-strong transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-4"
+              />
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }
