@@ -71,7 +71,7 @@ export default function Explorer() {
                 onChange={(e) =>
                   setParam("limit", e.target.value === String(DEFAULT_LIMIT) ? null : e.target.value)
                 }
-                className="rounded-md border border-line-strong bg-surface px-2 py-1 text-fg hover:border-faint focus:border-accent focus:outline-none"
+                className="rounded-md border border-control bg-surface px-2 py-1 text-fg hover:border-faint focus:border-accent focus:outline-none"
               >
                 {[25, 50, 100, 200].map((n) => (
                   <option key={n}>{n}</option>
@@ -187,7 +187,7 @@ function ViewSwitch({ view, onChange }: { view: View; onChange: (v: View) => voi
     ],
   ];
   return (
-    <div role="group" aria-label="View" className="flex gap-0.5 rounded-md border border-line-strong bg-surface p-0.5">
+    <div role="group" aria-label="View" className="flex gap-0.5 rounded-md border border-control bg-surface p-0.5">
       {options.map(([v, label, icon]) => (
         <button
           key={v}
@@ -233,7 +233,7 @@ function SortControl({
           id="sort-by"
           value={sort}
           onChange={(e) => onSort(e.target.value, null)}
-          className="rounded-l-md border border-line-strong bg-surface px-2 py-1 text-fg hover:border-faint focus:border-accent focus:outline-none"
+          className="rounded-l-md border border-control bg-surface px-2 py-1 text-fg hover:border-faint focus:border-accent focus:outline-none"
         >
           {SORTS.map(([v, label]) => (
             <option key={v} value={v}>
@@ -245,7 +245,7 @@ function SortControl({
           onClick={() => onSort(sort, descending ? "asc" : "desc")}
           title={descending ? "Descending, click for ascending" : "Ascending, click for descending"}
           aria-label={descending ? "Sort ascending" : "Sort descending"}
-          className="-ml-px rounded-r-md border border-line-strong bg-surface px-2 text-fg hover:bg-raised"
+          className="-ml-px rounded-r-md border border-control bg-surface px-2 text-fg hover:bg-raised"
         >
           {descending ? "↓" : "↑"}
         </button>

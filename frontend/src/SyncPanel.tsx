@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, fetchSyncStatus, startSync, type SyncRun, type SyncStatus } from "./api.ts";
-import { ErrorBox } from "./ui.tsx";
+import { ErrorBox, formatDateTime } from "./ui.tsx";
 
 /** Library status, the Sync button, and progress while a sync runs. */
 export default function SyncPanel() {
@@ -45,8 +45,8 @@ export default function SyncPanel() {
         <button
           onClick={() => sync.mutate()}
           disabled={running}
-          title="Fetches your owned games, then store details and reviews for new games. The progress bar shows the time left."
-          className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent shadow-sm hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+          title="Fetches your owned games, then store details and reviews for new games and for games whose store data is older than 30 days, about 3 seconds per game."
+          className="inline-flex items-center gap-2 rounded-md border border-control px-4 py-2 text-sm font-medium text-fg hover:border-accent hover:bg-raised disabled:cursor-not-allowed disabled:opacity-60"
         >
           <SyncIcon spinning={running} />
           {running ? "Syncing…" : "Sync library"}
@@ -66,16 +66,7 @@ export default function SyncPanel() {
         <ErrorBox className="mt-3">Could not load sync status: {status.error.message}</ErrorBox>
       )}
 
-      {stats && (
-        <div className="mt-4 space-y-3">
-          <Stats stats={stats} />
-          <p className="text-xs text-faint">
-            A sync fetches store details and reviews for new games and for games
-            whose store data is older than 30 days, about 3 seconds per game. While
-            it runs, the time left is estimated from its pace so far.
-          </p>
-        </div>
-      )}
+      {stats && <Stats stats={stats} />}
     </section>
   );
 }
@@ -138,20 +129,27 @@ function formatTimeLeft(seconds: number) {
   return `about ${h} h${m ? ` ${m} min` : ""} left`;
 }
 
+/**
+ * What the last sync saved, on one line. "No store page" and "Failed" only
+ * stand out when they are above zero.
+ */
 function Stats({ stats }: { stats: SyncStatus["stats"] }) {
   const items = [
-    ["Games owned", stats.games],
-    ["With store details", stats.with_details],
-    ["With reviews", stats.with_reviews],
-    ["No store page", stats.unavailable],
-    ["Failed", stats.failed],
-  ] as const;
+    { label: "with store details", value: stats.with_details, problem: false },
+    { label: "with reviews", value: stats.with_reviews, problem: false },
+    { label: "no store page", value: stats.unavailable, problem: true },
+    { label: "failed", value: stats.failed, problem: true },
+  ];
   return (
-    <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-      {items.map(([label, value]) => (
-        <div key={label} className="rounded-lg border border-line bg-canvas/60 px-3 py-2">
-          <dt className="text-xs text-muted">{label}</dt>
-          <dd className="mt-0.5 text-xl font-semibold tracking-tight tabular-nums">{value}</dd>
+    <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1 border-t border-line pt-3 text-sm text-muted">
+      {items.map(({ label, value, problem }) => (
+        <div key={label} className="flex items-baseline gap-1.5">
+          <dt>{label}</dt>
+          <dd
+            className={`order-first font-semibold tabular-nums ${problem && value > 0 ? "text-warn" : "text-fg"}`}
+          >
+            {value.toLocaleString()}
+          </dd>
         </div>
       ))}
     </dl>
@@ -159,7 +157,7 @@ function Stats({ stats }: { stats: SyncStatus["stats"] }) {
 }
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleString();
+  return formatDateTime(iso);
 }
 
 function SyncIcon({ spinning }: { spinning: boolean }) {

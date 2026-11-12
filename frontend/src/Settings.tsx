@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { SIDEBAR_FILTERS, useSidebarFilters } from "./sidebarFilters.ts";
+import { TABLE_COLUMNS, useTableColumns } from "./tableColumns.ts";
 import { THEMES, useTheme } from "./theme.ts";
 
 /** Settings page (#settings). Settings are saved in this browser. */
@@ -21,6 +22,10 @@ export default function Settings({ signedIn }: { signedIn: boolean }) {
       <section className="rounded-xl border border-line bg-surface p-5">
         <SidebarFilterToggles />
       </section>
+
+      <section className="rounded-xl border border-line bg-surface p-5">
+        <TableColumnToggles />
+      </section>
     </article>
   );
 }
@@ -39,11 +44,11 @@ function ThemePicker() {
               key={t.id}
               onClick={() => setTheme(t.id)}
               aria-pressed={selected}
-              className={`rounded-lg border p-2 text-left text-sm transition-colors ${selected ? "border-accent ring-1 ring-accent" : "border-line-strong hover:border-faint"}`}
+              className={`rounded-lg border p-2 text-left text-sm transition-colors ${selected ? "border-accent ring-1 ring-accent" : "border-line-strong hover:border-control"}`}
             >
               <ThemePreview colors={t.swatch} />
               <span className="mt-1.5 flex items-center justify-between gap-1 px-0.5">
-                <span className={selected ? "font-medium text-fg" : "text-muted"}>{t.name}</span>
+                <span className={selected ? "font-medium text-fg" : "text-fg"}>{t.name}</span>
                 {selected && <Check aria-hidden className="h-3.5 w-3.5 shrink-0 text-accent" />}
               </span>
             </button>
@@ -75,14 +80,49 @@ function ThemePreview({ colors }: { colors: readonly [string, string, string] })
 function SidebarFilterToggles() {
   const { isShown, setShown } = useSidebarFilters();
   return (
+    <ToggleGroup
+      title="Sidebar filters"
+      description="Choose which filters the library sidebar shows. A hidden filter that is already set still applies until you clear it."
+      items={SIDEBAR_FILTERS}
+      isShown={isShown}
+      setShown={setShown}
+    />
+  );
+}
+
+function TableColumnToggles() {
+  const { isShown, setShown } = useTableColumns();
+  return (
+    <ToggleGroup
+      title="Table columns"
+      description="Choose which columns the table view shows. The game name is always shown."
+      items={TABLE_COLUMNS}
+      isShown={isShown}
+      setShown={setShown}
+    />
+  );
+}
+
+/** A titled grid of on/off switches, one per item. */
+function ToggleGroup<Id extends string>({
+  title,
+  description,
+  items,
+  isShown,
+  setShown,
+}: {
+  title: string;
+  description: string;
+  items: readonly { id: Id; label: string }[];
+  isShown: (id: Id) => boolean;
+  setShown: (id: Id, shown: boolean) => void;
+}) {
+  return (
     <fieldset>
-      <legend className="font-semibold tracking-tight">Sidebar filters</legend>
-      <p className="mt-0.5 mb-4 text-sm text-muted">
-        Choose which filters the library sidebar shows. A hidden filter that is
-        already set still applies until you clear it.
-      </p>
+      <legend className="font-semibold tracking-tight">{title}</legend>
+      <p className="mt-0.5 mb-4 text-sm text-muted">{description}</p>
       <div className="grid gap-x-6 sm:grid-cols-2">
-        {SIDEBAR_FILTERS.map((f) => {
+        {items.map((f) => {
           const on = isShown(f.id);
           return (
             <label
@@ -99,7 +139,7 @@ function SidebarFilterToggles() {
               />
               <span
                 aria-hidden
-                className="relative h-5 w-9 shrink-0 rounded-full bg-line-strong transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-4"
+                className="relative h-5 w-9 shrink-0 rounded-full bg-control transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-4"
               />
             </label>
           );
