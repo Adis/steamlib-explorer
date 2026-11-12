@@ -55,7 +55,7 @@ export default function SyncPanel() {
         <button
           onClick={() => sync.mutate()}
           disabled={running}
-          title="Fetches your owned games, then store details and reviews for new games, about 3 seconds per game"
+          title="Fetches your owned games, then store details and reviews for new games. The progress bar shows the time left."
           className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent shadow-sm hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           <SyncIcon spinning={running} />
@@ -81,7 +81,8 @@ export default function SyncPanel() {
           <Stats stats={stats} />
           <p className="text-xs text-faint">
             A sync fetches store details and reviews for new games and for games
-            whose store data is older than 30 days, about 3 seconds per game.
+            whose store data is older than 30 days, about 3 seconds per game. While
+            it runs, the time left is estimated from its pace so far.
             Every request is logged in the backend console and in{" "}
             <code>backend/logs/api-calls.txt</code>.
           </p>
@@ -110,14 +111,30 @@ function Progress({ run }: { run: SyncRun }) {
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="mt-2 text-sm tabular-nums text-muted">
-        {run.status === "running" && run.details_total === 0
-          ? "Reading your library…"
-          : `Store details ${run.details_fetched} of ${run.details_total}`}
+      <p className="mt-2 flex flex-wrap justify-between gap-x-4 text-sm tabular-nums text-muted">
+        <span>{progressLabel(run)}</span>
+        {run.seconds_left !== null && <span>{formatTimeLeft(run.seconds_left)}</span>}
       </p>
       {run.error && <ErrorBox className="mt-3">{run.error}</ErrorBox>}
     </div>
   );
+}
+
+function progressLabel(run: SyncRun) {
+  if (run.status === "running") {
+    if (run.details_started_at === null) return "Reading your library…";
+    if (run.details_fetched >= run.details_total) return "Fetching reviews…";
+  }
+  return `Store details ${run.details_fetched} of ${run.details_total}`;
+}
+
+function formatTimeLeft(seconds: number) {
+  if (seconds < 60) return "less than a minute left";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `about ${minutes} min left`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `about ${h} h${m ? ` ${m} min` : ""} left`;
 }
 
 function Stats({ stats }: { stats: SyncStatus["stats"] }) {

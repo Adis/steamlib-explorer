@@ -129,7 +129,7 @@ func (q *Queries) FinishSyncRun(ctx context.Context, arg FinishSyncRunParams) er
 }
 
 const latestSyncRun = `-- name: LatestSyncRun :one
-SELECT id, steam_id, started_at, finished_at, status, games_seen, details_fetched, error, details_total FROM sync_runs WHERE steam_id = $1 ORDER BY started_at DESC LIMIT 1
+SELECT id, steam_id, started_at, finished_at, status, games_seen, details_fetched, error, details_total, details_started_at FROM sync_runs WHERE steam_id = $1 ORDER BY started_at DESC LIMIT 1
 `
 
 func (q *Queries) LatestSyncRun(ctx context.Context, steamID int64) (SyncRun, error) {
@@ -145,6 +145,7 @@ func (q *Queries) LatestSyncRun(ctx context.Context, steamID int64) (SyncRun, er
 		&i.DetailsFetched,
 		&i.Error,
 		&i.DetailsTotal,
+		&i.DetailsStartedAt,
 	)
 	return i, err
 }
@@ -316,7 +317,8 @@ func (q *Queries) UpdateAppReviews(ctx context.Context, arg UpdateAppReviewsPara
 }
 
 const updateSyncProgress = `-- name: UpdateSyncProgress :exec
-UPDATE sync_runs SET games_seen = $2, details_total = $3, details_fetched = $4
+UPDATE sync_runs SET games_seen = $2, details_total = $3, details_fetched = $4,
+    details_started_at = COALESCE(details_started_at, now())
 WHERE id = $1
 `
 
@@ -327,6 +329,7 @@ type UpdateSyncProgressParams struct {
 	DetailsFetched int32
 }
 
+// The first progress save marks when fetching store details began.
 func (q *Queries) UpdateSyncProgress(ctx context.Context, arg UpdateSyncProgressParams) error {
 	_, err := q.db.Exec(ctx, updateSyncProgress,
 		arg.ID,

@@ -77,7 +77,9 @@ WHERE appid = $1;
 INSERT INTO sync_runs (steam_id) VALUES ($1) RETURNING id;
 
 -- name: UpdateSyncProgress :exec
-UPDATE sync_runs SET games_seen = $2, details_total = $3, details_fetched = $4
+-- The first progress save marks when fetching store details began.
+UPDATE sync_runs SET games_seen = $2, details_total = $3, details_fetched = $4,
+    details_started_at = COALESCE(details_started_at, now())
 WHERE id = $1;
 
 -- name: FinishSyncRun :exec

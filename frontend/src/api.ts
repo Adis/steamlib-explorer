@@ -15,6 +15,8 @@ export type SyncRun = {
   games_seen: number;
   details_total: number;
   details_fetched: number;
+  details_started_at: string | null; // null while the library is still being read
+  seconds_left: number | null; // estimate while store details are fetched
   error: string | null;
 };
 

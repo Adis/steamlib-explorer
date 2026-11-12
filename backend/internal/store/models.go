@@ -58,15 +58,16 @@ type Session struct {
 }
 
 type SyncRun struct {
-	ID             int64
-	SteamID        int64
-	StartedAt      time.Time
-	FinishedAt     *time.Time
-	Status         string
-	GamesSeen      int32
-	DetailsFetched int32
-	Error          *string
-	DetailsTotal   int32
+	ID               int64
+	SteamID          int64
+	StartedAt        time.Time
+	FinishedAt       *time.Time
+	Status           string
+	GamesSeen        int32
+	DetailsFetched   int32
+	Error            *string
+	DetailsTotal     int32
+	DetailsStartedAt *time.Time
 }
 
 type User struct {
