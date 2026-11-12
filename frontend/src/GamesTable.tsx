@@ -198,14 +198,7 @@ function NameCell({ game }: { game: Game }) {
 function ReviewCell({ game }: { game: Game }) {
   if (game.review_pct === null) return <Muted>–</Muted>;
   const pct = game.review_pct;
-  const color =
-    pct >= 80
-      ? "text-emerald-400"
-      : pct >= 70
-        ? "text-lime-400"
-        : pct >= 40
-          ? "text-amber-400"
-          : "text-rose-400";
+  const color = reviewColor(pct);
   return (
     <span title={`${game.review_score_desc ?? ""} · ${game.reviews_total?.toLocaleString() ?? 0} reviews`}>
       <span className={`font-medium ${color}`}>{Math.round(pct)}%</span>
@@ -238,8 +231,19 @@ function Muted({ children }: { children: React.ReactNode }) {
   return <span className="text-faint">{children}</span>;
 }
 
-function formatHours(minutes: number) {
+export function formatHours(minutes: number) {
   if (minutes < 60) return `${minutes} min`;
   const h = minutes / 60;
   return `${h < 10 ? h.toFixed(1) : Math.round(h).toLocaleString()} h`;
+}
+
+/** Text colour for a positive-review percentage. */
+export function reviewColor(pct: number) {
+  return pct >= 80
+    ? "text-emerald-400"
+    : pct >= 70
+      ? "text-lime-400"
+      : pct >= 40
+        ? "text-amber-400"
+        : "text-rose-400";
 }
