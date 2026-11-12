@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, fetchSyncStatus, startSync, type SyncRun, type SyncStatus } from "./api.ts";
 import { ErrorBox } from "./ui.tsx";
@@ -6,7 +6,6 @@ import { ErrorBox } from "./ui.tsx";
 /** Library status, the Sync button, and progress while a sync runs. */
 export default function SyncPanel() {
   const queryClient = useQueryClient();
-  const [showDetails, setShowDetails] = useState(false);
   const status = useQuery({
     queryKey: ["sync"],
     queryFn: fetchSyncStatus,
@@ -41,15 +40,6 @@ export default function SyncPanel() {
             )}
             {run && !running && ` · ${runLabel(run)} ${formatTime(run.finished_at ?? run.started_at)}`}
             {!run && status.data && " · never synced"}
-            {status.data && (
-              <button
-                onClick={() => setShowDetails(!showDetails)}
-                aria-expanded={showDetails}
-                className="ml-3 text-link hover:text-link-hover"
-              >
-                {showDetails ? "Hide details" : "Details"}
-              </button>
-            )}
           </p>
         </div>
         <button
@@ -76,15 +66,13 @@ export default function SyncPanel() {
         <ErrorBox className="mt-3">Could not load sync status: {status.error.message}</ErrorBox>
       )}
 
-      {showDetails && stats && (
+      {stats && (
         <div className="mt-4 space-y-3">
           <Stats stats={stats} />
           <p className="text-xs text-faint">
             A sync fetches store details and reviews for new games and for games
             whose store data is older than 30 days, about 3 seconds per game. While
             it runs, the time left is estimated from its pace so far.
-            Every request is logged in the backend console and in{" "}
-            <code>backend/logs/api-calls.txt</code>.
           </p>
         </div>
       )}
@@ -161,9 +149,9 @@ function Stats({ stats }: { stats: SyncStatus["stats"] }) {
   return (
     <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">
       {items.map(([label, value]) => (
-        <div key={label} className="rounded-lg border border-line bg-canvas/60 p-3">
+        <div key={label} className="rounded-lg border border-line bg-canvas/60 px-3 py-2">
           <dt className="text-xs text-muted">{label}</dt>
-          <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">{value}</dd>
+          <dd className="mt-0.5 text-xl font-semibold tracking-tight tabular-nums">{value}</dd>
         </div>
       ))}
     </dl>
