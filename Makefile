@@ -5,7 +5,17 @@ MIGRATIONS := backend/db/migrations
 -include .env
 export
 
-.PHONY: db-up db-down run web web-install build test test-db generate migrate-up migrate-down migrate-status
+.PHONY: dev db-up db-down run web web-install build test test-db generate migrate-up migrate-down migrate-status
+
+dev:            ## Start everything, e.g. after a git pull: Postgres, new npm packages, backend and frontend (Ctrl+C stops both)
+	$(MAKE) db-up frontend/node_modules/.package-lock.json
+	$(MAKE) -j2 run web
+
+# npm writes this file on every install, so packages are installed again only
+# when package.json or package-lock.json is newer.
+frontend/node_modules/.package-lock.json: frontend/package.json frontend/package-lock.json
+	cd frontend && npm install
+	touch $@
 
 db-up:          ## Start Postgres in Docker
 	docker compose up -d --wait db
