@@ -45,7 +45,7 @@ func TestParseGameFiltersDefaults(t *testing.T) {
 
 func TestParseGameFilters(t *testing.T) {
 	v, err := url.ParseQuery("q=50%25_off&genre=Action&genre=&genre=RPG&category=Co-op&played=true" +
-		"&min_hours=1.5&max_hours=10&min_review=80&min_metacritic=75" +
+		"&min_hours=1.5&max_hours=10&min_review=80&min_review_score=6&min_metacritic=75" +
 		"&released_after=2015-01-01&released_before=2020-12-31&platform=linux&platform=mac" +
 		"&sort=playtime&limit=20&offset=40")
 	if err != nil {
@@ -64,8 +64,8 @@ func TestParseGameFilters(t *testing.T) {
 	if !*p.Played || *p.MinMinutes != 90 || *p.MaxMinutes != 600 {
 		t.Errorf("played/minutes = %v %d %d", *p.Played, *p.MinMinutes, *p.MaxMinutes)
 	}
-	if *p.MinReviewPct != 80 || *p.MinMetacritic != 75 {
-		t.Errorf("review/metacritic = %v %d", *p.MinReviewPct, *p.MinMetacritic)
+	if *p.MinReviewPct != 80 || *p.MinReviewScore != 6 || *p.MinMetacritic != 75 {
+		t.Errorf("review/score/metacritic = %v %d %d", *p.MinReviewPct, *p.MinReviewScore, *p.MinMetacritic)
 	}
 	if p.ReleasedAfter.Format(time.DateOnly) != "2015-01-01" || p.ReleasedBefore.Format(time.DateOnly) != "2020-12-31" {
 		t.Errorf("dates = %v %v", p.ReleasedAfter, p.ReleasedBefore)
@@ -97,7 +97,7 @@ func TestParseGameFiltersOrder(t *testing.T) {
 
 func TestListGamesRejectsBadParams(t *testing.T) {
 	for _, query := range []string{
-		"played=maybe", "min_hours=-1", "max_hours=x", "min_review=101", "min_metacritic=7.5",
+		"played=maybe", "min_hours=-1", "max_hours=x", "min_review=101", "min_review_score=0", "min_review_score=10", "min_metacritic=7.5",
 		"released_after=2020", "platform=amiga", "sort=price", "order=up",
 		"limit=0", "limit=201", "offset=-1",
 	} {
