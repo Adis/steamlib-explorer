@@ -45,6 +45,42 @@ func (q *Queries) AppsNeedingDetails(ctx context.Context, arg AppsNeedingDetails
 	return items, nil
 }
 
+const appsNeedingReviews = `-- name: AppsNeedingReviews :many
+SELECT a.appid
+FROM owned_games o
+JOIN apps a ON a.appid = o.appid
+WHERE o.steam_id = $1
+  AND a.details_status = 'ok'
+  AND (a.reviews_fetched_at IS NULL OR a.reviews_fetched_at < $2::timestamptz)
+ORDER BY a.reviews_fetched_at NULLS FIRST, a.appid
+`
+
+type AppsNeedingReviewsParams struct {
+	SteamID     int64
+	StaleBefore time.Time
+}
+
+// The user's store apps whose reviews are missing or older than stale_before, oldest first.
+func (q *Queries) AppsNeedingReviews(ctx context.Context, arg AppsNeedingReviewsParams) ([]int64, error) {
+	rows, err := q.db.Query(ctx, appsNeedingReviews, arg.SteamID, arg.StaleBefore)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int64{}
+	for rows.Next() {
+		var appid int64
+		if err := rows.Scan(&appid); err != nil {
+			return nil, err
+		}
+		items = append(items, appid)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const ensureApp = `-- name: EnsureApp :exec
 INSERT INTO apps (appid, name)
 VALUES ($1, $2)

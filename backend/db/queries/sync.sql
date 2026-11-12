@@ -22,6 +22,16 @@ WHERE o.steam_id = $1
   AND (a.details_fetched_at IS NULL OR a.details_fetched_at < sqlc.arg(stale_before)::timestamptz)
 ORDER BY a.details_fetched_at NULLS FIRST, a.appid;
 
+-- name: AppsNeedingReviews :many
+-- The user's store apps whose reviews are missing or older than stale_before, oldest first.
+SELECT a.appid
+FROM owned_games o
+JOIN apps a ON a.appid = o.appid
+WHERE o.steam_id = $1
+  AND a.details_status = 'ok'
+  AND (a.reviews_fetched_at IS NULL OR a.reviews_fetched_at < sqlc.arg(stale_before)::timestamptz)
+ORDER BY a.reviews_fetched_at NULLS FIRST, a.appid;
+
 -- name: UpdateAppDetails :exec
 UPDATE apps SET
     name               = sqlc.arg(name),

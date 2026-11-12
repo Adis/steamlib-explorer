@@ -1,0 +1,9 @@
+{"response":{"store_items":[
+{"item_type":0,"id":10,"success":1,"visible":true,"name":"Counter-Strike","store_url_path":"app/10/CounterStrike/","appid":10,"type":0,
+ "reviews":{"summary_filtered":{"review_count":170624,"percent_positive":96,"review_score":9,"review_score_label":"Overwhelmingly Positive"},
+            "summary_language_specific":{"review_count":35367,"percent_positive":96,"review_score":8,"review_score_label":"Very Positive"}}},
+{"item_type":0,"id":620,"success":1,"visible":true,"name":"Portal 2","appid":620,"type":0,
+ "reviews":{"summary_filtered":{"review_count":392972,"percent_positive":98,"review_score":9,"review_score_label":"Overwhelmingly Positive"}}},
+{"item_type":0,"id":999001,"success":1,"visible":true,"name":"No reviews yet","appid":999001,"type":0},
+{"item_type":0,"id":999002,"success":2}
+]}}
