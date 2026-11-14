@@ -10,6 +10,9 @@ export const THEMES = [
   { id: "amber", name: "Graphite & amber", swatch: ["#0c0c0e", "#141417", "#f5a524"] },
   { id: "violet", name: "Violet", swatch: ["#0d0b13", "#15121d", "#8b7cf6"] },
   { id: "light", name: "Light", swatch: ["#f5f6f8", "#ffffff", "#2563eb"] },
+  // Retro DOS file manager look: blue panels, double-line frames, a cyan
+  // highlight bar and a function-key bar at the bottom (see index.css).
+  { id: "dos", name: "Retro DOS", swatch: ["#0000aa", "#00aaaa", "#ffff55"] },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];

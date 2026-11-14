@@ -22,7 +22,7 @@ function GameCard({ game }: { game: Game }) {
       href={game.store_url}
       target="_blank"
       rel="noreferrer"
-      className="group flex h-full flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-lg shadow-black/10 transition duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:shadow-black/30"
+      className="group flex h-full flex-col overflow-hidden panel rounded-xl border border-line bg-surface shadow-lg shadow-black/10 transition duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:shadow-black/30"
     >
       <div className="relative aspect-[460/215] overflow-hidden bg-raised">
         {game.header_image && (

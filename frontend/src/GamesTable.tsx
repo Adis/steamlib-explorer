@@ -109,7 +109,7 @@ export default function GamesTable({ games, sort, descending, onSort }: Props) {
   };
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-line bg-surface/40 shadow-lg shadow-black/10">
+    <div className="overflow-x-auto panel rounded-xl border border-line bg-surface/40 shadow-lg shadow-black/10">
       <table className="w-full text-sm">
         <thead className="border-b border-line bg-surface text-left text-[11px] uppercase tracking-wider text-faint">
           {table.getHeaderGroups().map((hg) => (

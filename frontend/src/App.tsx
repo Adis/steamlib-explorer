@@ -15,7 +15,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_80%_40%_at_50%_-10%,color-mix(in_oklab,var(--color-accent)_var(--glow),transparent),transparent)]">
-      <header className="sticky top-0 z-10 border-b border-line bg-canvas/80 backdrop-blur">
+      <header className="app-header sticky top-0 z-10 border-b border-line bg-canvas/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1536px] items-center justify-between px-4">
           <h1>
             <a href="#" className="flex items-center gap-2.5">
@@ -48,6 +48,7 @@ export default function App() {
           </div>
         )}
       </main>
+      <FunctionKeyBar page={page} />
     </div>
   );
 }
@@ -99,7 +100,7 @@ function UserBadge({ user }: { user: User }) {
 
 function SignIn() {
   return (
-    <section className="mx-auto mt-16 max-w-xl rounded-xl border border-line bg-surface p-10 text-center shadow-xl shadow-black/20">
+    <section className="mx-auto mt-16 max-w-xl panel rounded-xl border border-line bg-surface p-10 text-center shadow-xl shadow-black/20">
       <Logo className="mx-auto mb-5 h-10 w-10" />
       <h2 className="text-2xl font-semibold tracking-tight">Explore your Steam library</h2>
       <p className="mt-2 text-muted">
@@ -147,5 +148,27 @@ function NavLink({
       <Icon aria-hidden className="h-4 w-4" />
       {label}
     </a>
+  );
+}
+
+/**
+ * Function-key style bar along the bottom of the screen. Only the Retro DOS
+ * theme shows it (index.css); the other themes hide it.
+ */
+function FunctionKeyBar({ page }: { page: string }) {
+  const keys = [
+    { n: 1, label: "Help", href: "#help", current: page === "help" },
+    { n: 2, label: "Library", href: "#", current: page !== "help" && page !== "settings" },
+    { n: 3, label: "Settings", href: "#settings", current: page === "settings" },
+  ];
+  return (
+    <nav aria-label="Function keys" className="fkey-bar">
+      {keys.map((k) => (
+        <a key={k.n} href={k.href} aria-current={k.current ? "page" : undefined}>
+          <span className="fkey-n">{k.n}</span>
+          <span className="fkey-label">{k.label}</span>
+        </a>
+      ))}
+    </nav>
   );
 }
