@@ -4,6 +4,8 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import type { ReactNode } from "react";
+import { Minus, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { Game } from "./api.ts";
 import { useTableColumns } from "./tableColumns.ts";
 import { formatDate } from "./ui.tsx";
@@ -206,9 +208,9 @@ function ReviewCell({ game }: { game: Game }) {
   if (game.review_pct === null) return <Muted>–</Muted>;
   return (
     <span>
-      <span className={`font-medium ${reviewColor(game.review_pct)}`}>
+      <ReviewLabel pct={game.review_pct}>
         {game.review_score_desc || `${Math.round(game.review_pct)}%`}
-      </span>
+      </ReviewLabel>
       <span className="block text-xs text-faint">{reviewDetail(game)}</span>
     </span>
   );
@@ -238,7 +240,7 @@ function Platforms({ p }: { p: Game["platforms"] }) {
   );
 }
 
-function Muted({ children }: { children: React.ReactNode }) {
+function Muted({ children }: { children: ReactNode }) {
   return <span className="text-faint">{children}</span>;
 }
 
@@ -249,6 +251,20 @@ export function formatHours(minutes: number) {
 }
 
 /** Text colour for a positive-review percentage. */
+/**
+ * The rating in its colour, after a thumbs up, a dash or a thumbs down, so
+ * it can be read without telling the colours apart.
+ */
+export function ReviewLabel({ pct, children }: { pct: number; children: ReactNode }) {
+  const Icon = pct >= 70 ? ThumbsUp : pct >= 40 ? Minus : ThumbsDown;
+  return (
+    <span className={`inline-flex items-center gap-1 font-medium ${reviewColor(pct)}`}>
+      <Icon aria-hidden className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+      {children}
+    </span>
+  );
+}
+
 export function reviewColor(pct: number) {
   return pct >= 80
     ? "text-review-great"

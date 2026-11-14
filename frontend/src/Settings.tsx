@@ -1,7 +1,18 @@
 import { Check } from "lucide-react";
 import { SIDEBAR_FILTERS, useSidebarFilters } from "./sidebarFilters.ts";
 import { TABLE_COLUMNS, useTableColumns } from "./tableColumns.ts";
-import { isAccessible, TEXT_SIZES, THEMES, useTextSize, useTheme, type Theme, type ThemeId } from "./theme.ts";
+import {
+  COLOR_VISIONS,
+  isAccessible,
+  TEXT_SIZES,
+  THEMES,
+  useColorVision,
+  useReduceMotion,
+  useTextSize,
+  useTheme,
+  type Theme,
+  type ThemeId,
+} from "./theme.ts";
 
 /** Settings page (#settings). Settings are saved in this browser. */
 export default function Settings({ signedIn }: { signedIn: boolean }) {
@@ -36,6 +47,8 @@ export default function Settings({ signedIn }: { signedIn: boolean }) {
           <ThemeOptions themes={THEMES.filter(isAccessible)} theme={theme} setTheme={setTheme} />
         </fieldset>
         <TextSizePicker />
+        <ColorVisionPicker />
+        <ReduceMotionSwitch />
       </section>
 
       <section className="panel rounded-xl border border-line bg-surface p-5">
@@ -156,6 +169,98 @@ function TableColumnToggles() {
 }
 
 /** A titled grid of on/off switches, one per item. */
+/** Sample rating colours for each colour vision option, best to worst (dark themes). */
+const CV_SAMPLES: Record<string, string[]> = {
+  default: ["#34d399", "#a3e635", "#fbbf24", "#fb7185"],
+  rg: ["#3b9eff", "#93c5fd", "#a1a1aa", "#f59e0b"],
+  by: ["#2dd4bf", "#a5f3fc", "#a1a1aa", "#f87171"],
+};
+
+/** Review rating colours that work with colour blindness, on top of any theme. */
+function ColorVisionPicker() {
+  const [cv, setCv] = useColorVision();
+  return (
+    <fieldset className="mt-6">
+      <legend className="text-sm font-medium">Colour vision</legend>
+      <p className="mt-0.5 mb-3 text-sm text-muted">
+        Colours for Steam review ratings. Ratings also show a thumbs up, dash or thumbs down, so
+        they never rely on colour alone. Works with any theme.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {COLOR_VISIONS.map((c) => {
+          const selected = cv === c.id;
+          return (
+            <button
+              key={c.id}
+              onClick={() => setCv(c.id)}
+              aria-pressed={selected}
+              className={`theme-option flex flex-col gap-1.5 rounded-lg border p-3 text-left text-sm transition-colors ${selected ? "border-accent ring-1 ring-accent" : "border-line-strong hover:border-control"}`}
+            >
+              <span aria-hidden className="flex gap-1">
+                {CV_SAMPLES[c.id].map((color) => (
+                  <span key={color} className="h-3 w-6 rounded-sm" style={{ background: color }} />
+                ))}
+              </span>
+              <span className="flex items-center justify-between gap-1">
+                <span className={selected ? "font-medium text-fg" : "text-fg"}>{c.name}</span>
+                {selected && <Check aria-hidden className="h-3.5 w-3.5 shrink-0 text-accent" />}
+              </span>
+              <span className="text-xs text-muted">{c.detail}</span>
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+function ReduceMotionSwitch() {
+  const [on, setOn] = useReduceMotion();
+  return (
+    <div className="mt-6">
+      <SwitchRow
+        label="Reduce motion"
+        description="Turns off animations: the card lift and cover zoom on hover, and the spinning sync icon. Follows your system setting until you change it here."
+        on={on}
+        setOn={setOn}
+      />
+    </div>
+  );
+}
+
+/** A label with an on/off switch on the right. */
+function SwitchRow({
+  label,
+  description,
+  on,
+  setOn,
+}: {
+  label: string;
+  description?: string;
+  on: boolean;
+  setOn: (on: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center justify-between gap-3 border-b border-line py-2.5 text-sm">
+      <span>
+        <span className={description ? "font-medium text-fg" : on ? "text-fg" : "text-muted"}>{label}</span>
+        {description && <span className="mt-0.5 block text-muted">{description}</span>}
+      </span>
+      <input
+        type="checkbox"
+        role="switch"
+        checked={on}
+        onChange={(e) => setOn(e.target.checked)}
+        className="peer sr-only"
+      />
+      <span
+        aria-hidden
+        className="relative h-5 w-9 shrink-0 rounded-full bg-control transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-4"
+      />
+    </label>
+  );
+}
+
 function ToggleGroup<Id extends string>({
   title,
   description,
@@ -174,28 +279,9 @@ function ToggleGroup<Id extends string>({
       <legend className="font-semibold tracking-tight">{title}</legend>
       <p className="mt-0.5 mb-4 text-sm text-muted">{description}</p>
       <div className="grid gap-x-6 sm:grid-cols-2">
-        {items.map((f) => {
-          const on = isShown(f.id);
-          return (
-            <label
-              key={f.id}
-              className="flex cursor-pointer items-center justify-between gap-3 border-b border-line py-2.5 text-sm"
-            >
-              <span className={on ? "text-fg" : "text-muted"}>{f.label}</span>
-              <input
-                type="checkbox"
-                role="switch"
-                checked={on}
-                onChange={(e) => setShown(f.id, e.target.checked)}
-                className="peer sr-only"
-              />
-              <span
-                aria-hidden
-                className="relative h-5 w-9 shrink-0 rounded-full bg-control transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-4"
-              />
-            </label>
-          );
-        })}
+        {items.map((f) => (
+          <SwitchRow key={f.id} label={f.label} on={isShown(f.id)} setOn={(on) => setShown(f.id, on)} />
+        ))}
       </div>
     </fieldset>
   );

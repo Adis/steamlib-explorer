@@ -1,5 +1,5 @@
 import type { Game } from "./api.ts";
-import { formatHours, reviewColor, reviewDetail } from "./GamesTable.tsx";
+import { formatHours, ReviewLabel, reviewDetail } from "./GamesTable.tsx";
 import { formatDate } from "./ui.tsx";
 
 /** The filtered games as cover-art cards. */
@@ -79,7 +79,7 @@ function Rating({ game }: { game: Game }) {
     return <p className="mt-0.5 truncate text-xs text-faint">No user reviews</p>;
   return (
     <p className="mt-0.5 truncate text-xs">
-      <span className={`font-medium ${reviewColor(game.review_pct)}`}>{game.review_score_desc}</span>
+      <ReviewLabel pct={game.review_pct}>{game.review_score_desc}</ReviewLabel>
       <span className="text-faint"> · {reviewDetail(game)}</span>
     </p>
   );
