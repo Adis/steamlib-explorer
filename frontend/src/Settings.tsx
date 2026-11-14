@@ -1,10 +1,12 @@
 import { Check } from "lucide-react";
 import { SIDEBAR_FILTERS, useSidebarFilters } from "./sidebarFilters.ts";
 import { TABLE_COLUMNS, useTableColumns } from "./tableColumns.ts";
-import { THEMES, useTheme } from "./theme.ts";
+import { isAccessible, TEXT_SIZES, THEMES, useTextSize, useTheme, type Theme, type ThemeId } from "./theme.ts";
 
 /** Settings page (#settings). Settings are saved in this browser. */
 export default function Settings({ signedIn }: { signedIn: boolean }) {
+  // One theme choice, offered in two sections: Theme and Accessibility.
+  const [theme, setTheme] = useTheme();
   return (
     <article className="mx-auto max-w-3xl space-y-8">
       <header>
@@ -16,7 +18,24 @@ export default function Settings({ signedIn }: { signedIn: boolean }) {
       </header>
 
       <section className="panel rounded-xl border border-line bg-surface p-5">
-        <ThemePicker />
+        <fieldset>
+          <legend className="font-semibold tracking-tight">Theme</legend>
+          <p className="mt-0.5 mb-4 text-sm text-muted">Colours used across the app.</p>
+          <ThemeOptions themes={THEMES.filter((t) => !isAccessible(t))} theme={theme} setTheme={setTheme} />
+        </fieldset>
+      </section>
+
+      <section className="panel rounded-xl border border-line bg-surface p-5">
+        <h3 className="font-semibold tracking-tight">Accessibility</h3>
+        <fieldset className="mt-4">
+          <legend className="text-sm font-medium">High contrast</legend>
+          <p className="mt-0.5 mb-3 text-sm text-muted">
+            Very strong contrast for all text, bold edges and a thick focus ring. Picking one
+            replaces the theme above.
+          </p>
+          <ThemeOptions themes={THEMES.filter(isAccessible)} theme={theme} setTheme={setTheme} />
+        </fieldset>
+        <TextSizePicker />
       </section>
 
       <section className="panel rounded-xl border border-line bg-surface p-5">
@@ -30,27 +49,60 @@ export default function Settings({ signedIn }: { signedIn: boolean }) {
   );
 }
 
-function ThemePicker() {
-  const [theme, setTheme] = useTheme();
+/** A row of theme cards; the chosen one is marked. */
+function ThemeOptions({
+  themes,
+  theme,
+  setTheme,
+}: {
+  themes: readonly Theme[];
+  theme: ThemeId;
+  setTheme: (id: ThemeId) => void;
+}) {
   return (
-    <fieldset>
-      <legend className="font-semibold tracking-tight">Theme</legend>
-      <p className="mt-0.5 mb-4 text-sm text-muted">Colours used across the app.</p>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {THEMES.map((t) => {
-          const selected = theme === t.id;
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      {themes.map((t) => {
+        const selected = theme === t.id;
+        return (
+          <button
+            key={t.id}
+            onClick={() => setTheme(t.id)}
+            aria-pressed={selected}
+            className={`theme-option flex flex-col rounded-lg border p-2 text-left text-sm transition-colors ${selected ? "border-accent ring-1 ring-accent" : "border-line-strong hover:border-control"}`}
+          >
+            <ThemePreview colors={t.swatch} />
+            <span className="mt-1.5 flex items-center justify-between gap-1 px-0.5">
+              <span className={selected ? "font-medium text-fg" : "text-fg"}>{t.name}</span>
+              {selected && <Check aria-hidden className="h-3.5 w-3.5 shrink-0 text-accent" />}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Text size for the whole app, on top of any theme. */
+function TextSizePicker() {
+  const [size, setSize] = useTextSize();
+  return (
+    <fieldset className="mt-6">
+      <legend className="text-sm font-medium">Text size</legend>
+      <p className="mt-0.5 mb-3 text-sm text-muted">Makes text and the space around it larger. Works with any theme.</p>
+      <div className="flex flex-wrap gap-3">
+        {TEXT_SIZES.map((s) => {
+          const selected = size === s;
           return (
             <button
-              key={t.id}
-              onClick={() => setTheme(t.id)}
+              key={s}
+              onClick={() => setSize(s)}
               aria-pressed={selected}
-              className={`theme-option flex flex-col rounded-lg border p-2 text-left text-sm transition-colors ${selected ? "border-accent ring-1 ring-accent" : "border-line-strong hover:border-control"}`}
+              className={`theme-option flex min-w-24 items-baseline justify-center gap-2 rounded-lg border px-4 py-2 transition-colors ${selected ? "border-accent ring-1 ring-accent" : "border-line-strong hover:border-control"}`}
             >
-              <ThemePreview colors={t.swatch} />
-              <span className="mt-1.5 flex items-center justify-between gap-1 px-0.5">
-                <span className={selected ? "font-medium text-fg" : "text-fg"}>{t.name}</span>
-                {selected && <Check aria-hidden className="h-3.5 w-3.5 shrink-0 text-accent" />}
+              <span aria-hidden className="leading-none text-fg" style={{ fontSize: `${(16 * s) / 100}px` }}>
+                Aa
               </span>
+              <span className="text-sm text-muted">{s}%</span>
             </button>
           );
         })}

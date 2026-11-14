@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 
+// "accessible" themes are listed under Accessibility in Settings.
 export const THEMES = [
   { id: "midnight", name: "Midnight", swatch: ["#0a0d14", "#11161f", "#3d9df5"] },
   { id: "amber", name: "Graphite & amber", swatch: ["#0c0c0e", "#141417", "#f5a524"] },
@@ -13,7 +14,14 @@ export const THEMES = [
   // Retro DOS file manager look: blue panels, double-line frames, a cyan
   // highlight bar and a function-key bar at the bottom (see index.css).
   { id: "dos", name: "Retro DOS", swatch: ["#0000aa", "#00aaaa", "#ffff55"] },
+  // High contrast: at least 7:1 for all text (WCAG AAA), bold edges.
+  { id: "hc-dark", name: "High contrast dark", swatch: ["#000000", "#ffffff", "#ffd400"], group: "accessible" },
+  { id: "hc-light", name: "High contrast light", swatch: ["#ffffff", "#000000", "#0033aa"], group: "accessible" },
 ] as const;
+
+export type Theme = (typeof THEMES)[number];
+
+export const isAccessible = (t: Theme) => "group" in t && t.group === "accessible";
 
 export type ThemeId = (typeof THEMES)[number]["id"];
 
@@ -46,4 +54,36 @@ export function useTheme() {
     }
   };
   return [theme, change] as const;
+}
+
+// Text size: scales the root font size, so text and the spacing around it
+// grow together, like browser zoom but for this app only. index.html applies
+// the saved size before the app loads.
+
+export const TEXT_SIZES = [100, 125, 150] as const;
+export type TextSize = (typeof TEXT_SIZES)[number];
+
+const TEXT_KEY = "textSize";
+
+function savedTextSize(): TextSize {
+  try {
+    const v = Number(localStorage.getItem(TEXT_KEY));
+    return (TEXT_SIZES as readonly number[]).includes(v) ? (v as TextSize) : 100;
+  } catch {
+    return 100;
+  }
+}
+
+export function useTextSize() {
+  const [size, setSize] = useState<TextSize>(savedTextSize);
+  const change = (s: TextSize) => {
+    document.documentElement.style.fontSize = s === 100 ? "" : `${s}%`;
+    setSize(s);
+    try {
+      localStorage.setItem(TEXT_KEY, String(s));
+    } catch {
+      // storage blocked: the size lasts until reload
+    }
+  };
+  return [size, change] as const;
 }

@@ -1,7 +1,7 @@
 /** Help page: why Steam may not share a library, and the two ways to fix it. */
 export default function Help({ signedIn }: { signedIn: boolean }) {
   return (
-    <article className="mx-auto max-w-3xl space-y-8 text-[15px] leading-relaxed">
+    <article className="mx-auto max-w-3xl space-y-8 text-[0.9375rem] leading-relaxed">
       <header>
         <a href="#" className="text-sm text-link hover:text-link-hover">
           {signedIn ? "← Back to your library" : "← Back to sign in"}
