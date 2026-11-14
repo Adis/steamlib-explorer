@@ -120,6 +120,7 @@ function ExtLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <a href={href} target="_blank" rel="noreferrer" className="text-link hover:text-link-hover">
       {children}
+      <span className="sr-only"> (opens in a new tab)</span>
     </a>
   );
 }

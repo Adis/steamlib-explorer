@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchMe, logout, type User } from "./api.ts";
 import Explorer from "./Explorer.tsx";
@@ -12,9 +12,37 @@ export default function App() {
   const me = useQuery({ queryKey: ["me"], queryFn: fetchMe });
   const page = useHashPage();
   const subpage = page === "help" || page === "settings";
+  const mainRef = useRef<HTMLElement>(null);
+  const firstPage = useRef(true);
+
+  // A page change happens without a reload, so tell assistive technology:
+  // a new tab title, and focus moves to the top of the new page's content.
+  useEffect(() => {
+    document.title =
+      page === "help" ? "Help · Steamlib Explorer" : page === "settings" ? "Settings · Steamlib Explorer" : "Steamlib Explorer";
+    if (firstPage.current) {
+      firstPage.current = false;
+      return;
+    }
+    mainRef.current?.focus({ preventScroll: true });
+  }, [page]);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_80%_40%_at_50%_-10%,color-mix(in_oklab,var(--color-accent)_var(--glow),transparent),transparent)]">
+      {/* First thing the Tab key reaches: jumps past the header and filters. */}
+      <a
+        href={me.data && !subpage ? "#games" : "#main"}
+        onClick={(e) => {
+          // A plain #fragment would be read as a page change by useHashPage.
+          e.preventDefault();
+          const target = document.getElementById(me.data && !subpage ? "games" : "main");
+          target?.focus();
+          target?.scrollIntoView();
+        }}
+        className="skip-link rounded-md bg-accent px-4 py-2 font-medium text-on-accent"
+      >
+        {me.data && !subpage ? "Skip to games" : "Skip to content"}
+      </a>
       <header className="app-header sticky top-0 z-10 border-b border-line bg-canvas/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1536px] items-center justify-between px-4">
           <h1>
@@ -33,7 +61,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1536px] px-4 py-8">
+      <main id="main" ref={mainRef} tabIndex={-1} className="mx-auto max-w-[1536px] px-4 py-8 outline-none">
         {page === "help" && <Help signedIn={!!me.data} />}
         {page === "settings" && <Settings signedIn={!!me.data} />}
         {!subpage && me.isPending && <p className="text-muted">Loading…</p>}

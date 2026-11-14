@@ -300,6 +300,20 @@
     outline-offset: 2px;
   }
 
+  /* Keep the element that has keyboard focus clear of the sticky header
+     (and of the Retro DOS function-key bar at the bottom). */
+  html {
+    scroll-padding-top: 4.5rem;
+    scroll-padding-bottom: 1rem;
+  }
+
+  /* Links inside running text are underlined, so they don't rely on colour
+     alone (WCAG 1.4.1). Game cards are links in a list but not in text. */
+  :where(p, li) a:not(.panel) {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
@@ -307,6 +321,18 @@
 }
 
 @layer components {
+  /* "Skip to games": off screen until the keyboard reaches it. */
+  .skip-link {
+    position: fixed;
+    left: 1rem;
+    top: 0.5rem;
+    z-index: 50;
+    translate: 0 -200%;
+  }
+  .skip-link:focus {
+    translate: none;
+  }
+
   /* Filter sidebar: keep room for the scrollbar (overlay scrollbars on
      Linux/macOS would otherwise sit on top of the counts) and keep it thin. */
   .sidebar-scroll {
@@ -323,6 +349,9 @@
 
 /* Retro DOS rules beyond the colour tokens. */
 :root[data-theme="dos"] {
+  /* Keep focused elements clear of the function-key bar. */
+  scroll-padding-bottom: 3rem;
+
   body {
     /* VT323 is drawn small for its size; this scales it up to read like
        the other themes without changing any layout sizes. */
@@ -355,14 +384,6 @@
   /* The sorted column stands out in white. */
   thead .text-fg {
     color: #fff;
-  }
-
-  /* Yellow is also the heading colour, so links in running text get an
-     underline to read as links. */
-  main p a,
-  main li a:not(.panel) {
-    text-decoration: underline;
-    text-underline-offset: 2px;
   }
 
   /* The chosen theme: a cyan frame would look like every other frame here. */
@@ -455,9 +476,7 @@
     outline-offset: 3px;
   }
 
-  /* Links are underlined, so they don't rely on colour. */
-  main p a,
-  main li a:not(.panel),
+  /* Link-styled buttons are underlined too, so they don't rely on colour. */
   main .text-link {
     text-decoration: underline;
     text-underline-offset: 2px;

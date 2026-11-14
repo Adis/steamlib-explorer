@@ -51,7 +51,10 @@ export default function Explorer() {
         </div>
       </div>
 
-      <section className="min-w-0 flex-1 space-y-3">
+      <section id="games" tabIndex={-1} aria-labelledby="games-heading" className="min-w-0 flex-1 space-y-3 outline-none">
+        <h2 id="games-heading" className="sr-only">
+          Games
+        </h2>
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
           <p className="font-medium text-fg tabular-nums" aria-live="polite">
             {data
@@ -71,7 +74,7 @@ export default function Explorer() {
                 onChange={(e) =>
                   setParam("limit", e.target.value === String(DEFAULT_LIMIT) ? null : e.target.value)
                 }
-                className="rounded-md border border-control bg-surface px-2 py-1 text-fg hover:border-faint focus:border-accent focus:outline-none"
+                className="rounded-md border border-control bg-surface px-2 py-1 text-fg hover:border-faint focus:border-accent"
               >
                 {[25, 50, 100, 200].map((n) => (
                   <option key={n}>{n}</option>
@@ -233,7 +236,7 @@ function SortControl({
           id="sort-by"
           value={sort}
           onChange={(e) => onSort(e.target.value, null)}
-          className="rounded-l-md border border-control bg-surface px-2 py-1 text-fg hover:border-faint focus:border-accent focus:outline-none"
+          className="rounded-l-md border border-control bg-surface px-2 py-1 text-fg hover:border-faint focus:border-accent"
         >
           {SORTS.map(([v, label]) => (
             <option key={v} value={v}>
