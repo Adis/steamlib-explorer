@@ -5,20 +5,43 @@ MIGRATIONS := backend/db/migrations
 -include .env
 export
 
-.PHONY: dev db-up db-down run web web-install build test test-db generate migrate-up migrate-down migrate-status
+.PHONY: dev check-tools db-up db-down run web web-install build test test-db generate migrate-up migrate-down migrate-status
+
+# Put $(FAIL) at the start of a recipe line to get a shell function that
+# prints what went wrong and how to fix it, then stops make:
+#   @$(FAIL) some-command || fail "What went wrong" "How to fix it"
+FAIL = fail() { printf '\n\033[1;31m✗ %s\033[0m\n  %s\n\n' "$$1" "$$2" >&2; exit 1; };
 
 dev:            ## Start everything, e.g. after a git pull: Postgres, new npm packages, backend and frontend (Ctrl+C stops both)
-	$(MAKE) db-up frontend/node_modules/.package-lock.json
-	$(MAKE) -j2 run web
+	@$(MAKE) --no-print-directory check-tools
+	@$(MAKE) --no-print-directory db-up
+	@$(MAKE) --no-print-directory frontend/node_modules/.package-lock.json
+	@echo "→ Starting the backend and frontend (Ctrl+C stops both)…"
+	@$(MAKE) --no-print-directory -j2 run web
+
+check-tools:    ## Check that docker, go and npm are installed
+	@$(FAIL) for tool in docker go npm; do \
+	  command -v $$tool >/dev/null 2>&1 || fail "$$tool is not installed or not on your PATH." "Install it, open a new terminal and run make dev again."; \
+	done
 
 # npm writes this file on every install, so packages are installed again only
 # when package.json or package-lock.json is newer.
 frontend/node_modules/.package-lock.json: frontend/package.json frontend/package-lock.json
-	cd frontend && npm install
-	touch $@
+	@echo "→ Frontend packages changed, running npm install…"
+	@$(FAIL) cd frontend && npm install || fail "npm install failed in frontend/ (the npm errors are above)." \
+	  "Retry with: cd frontend && npm install. A network error usually just needs a retry; otherwise delete frontend/node_modules and try again."
+	@touch $@
 
 db-up:          ## Start Postgres in Docker
-	docker compose up -d --wait db
+	@echo "→ Starting Postgres in Docker…"
+	@$(FAIL) out=$$(docker info 2>&1) || case "$$out" in \
+	  *"permission denied"*) fail "Docker refused the connection: your user may not use Docker (permission denied)." \
+	    "Add yourself to the docker group: sudo usermod -aG docker \$$USER, then log out and back in." ;; \
+	  *) fail "Docker is not running: make could not reach the Docker daemon." \
+	    "Start it with: sudo systemctl start docker (or open Docker Desktop), then run make dev again." ;; \
+	esac
+	@$(FAIL) docker compose up -d --wait db || fail "The Postgres container did not start or did not become healthy (Docker's message is above)." \
+	  "See why with: docker compose logs db. If port 5432 is already taken, stop the other Postgres first."
 
 db-down:        ## Stop Postgres (data is kept in the pgdata volume)
 	docker compose down
