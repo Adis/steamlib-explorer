@@ -15,15 +15,15 @@ export default function Settings({ signedIn }: { signedIn: boolean }) {
         <p className="mt-1 text-sm text-muted">Saved in this browser.</p>
       </header>
 
-      <section className="rounded-xl border border-line bg-surface p-5">
+      <section className="panel rounded-xl border border-line bg-surface p-5">
         <ThemePicker />
       </section>
 
-      <section className="rounded-xl border border-line bg-surface p-5">
+      <section className="panel rounded-xl border border-line bg-surface p-5">
         <SidebarFilterToggles />
       </section>
 
-      <section className="rounded-xl border border-line bg-surface p-5">
+      <section className="panel rounded-xl border border-line bg-surface p-5">
         <TableColumnToggles />
       </section>
     </article>
@@ -36,7 +36,7 @@ function ThemePicker() {
     <fieldset>
       <legend className="font-semibold tracking-tight">Theme</legend>
       <p className="mt-0.5 mb-4 text-sm text-muted">Colours used across the app.</p>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {THEMES.map((t) => {
           const selected = theme === t.id;
           return (
@@ -44,7 +44,7 @@ function ThemePicker() {
               key={t.id}
               onClick={() => setTheme(t.id)}
               aria-pressed={selected}
-              className={`rounded-lg border p-2 text-left text-sm transition-colors ${selected ? "border-accent ring-1 ring-accent" : "border-line-strong hover:border-control"}`}
+              className={`theme-option flex flex-col rounded-lg border p-2 text-left text-sm transition-colors ${selected ? "border-accent ring-1 ring-accent" : "border-line-strong hover:border-control"}`}
             >
               <ThemePreview colors={t.swatch} />
               <span className="mt-1.5 flex items-center justify-between gap-1 px-0.5">

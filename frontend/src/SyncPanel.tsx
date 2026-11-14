@@ -28,7 +28,7 @@ export default function SyncPanel() {
   }, [queryClient, run?.status, run?.games_seen]);
 
   return (
-    <section className="rounded-xl border border-line bg-surface px-5 py-4 shadow-lg shadow-black/10">
+    <section className="panel rounded-xl border border-line bg-surface px-5 py-4 shadow-lg shadow-black/10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="font-semibold tracking-tight">Your library</h2>

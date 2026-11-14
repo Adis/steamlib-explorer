@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/pixelify-sans";
+/* Retro DOS theme only; the browser downloads it only when that theme is on. */
+@import "@fontsource/vt323/latin.css";
 
 /*
  * Design tokens. Components use these names (bg-surface, text-muted,
@@ -120,6 +122,41 @@
   --glow: 5%;
 }
 
+/*
+ * Retro DOS: an original take on the classic blue two-panel file managers.
+ * VGA text-mode colours, a terminal font, square double-line frames, a cyan
+ * menu bar and highlight bar, and a function-key bar at the bottom. Besides
+ * the tokens it needs a few rules of its own (end of this file).
+ */
+:root[data-theme="dos"] {
+  --font-sans: "VT323", ui-monospace, monospace;
+  --font-pixel: "VT323", ui-monospace, monospace;
+  --color-canvas: #0000aa;
+  --color-surface: #0000aa;
+  --color-raised: #0000d0;
+  --color-line: #00aaaa;
+  --color-line-strong: #55ffff;
+  --color-control: #00aaaa;
+  --color-fg: #55ffff;
+  --color-muted: #aaaaaa;
+  --color-faint: #00aaaa;
+  --color-accent: #00aaaa;
+  --color-accent-hover: #55ffff;
+  --color-on-accent: #000000;
+  --color-link: #ffff55;
+  --color-link-hover: #ffffff;
+  --color-review-great: #55ff55;
+  --color-review-good: #c8ff55;
+  --color-review-mixed: #ffff55;
+  --color-review-bad: #ff7777;
+  /* Errors look like the red DOS critical-error box. */
+  --color-warn: #ffff55;
+  --color-warn-bg: #aa0000;
+  --color-warn-line: #ffffff;
+  --color-warn-fg: #ffffff;
+  --glow: 0%;
+}
+
 @layer base {
   :root {
     color-scheme: dark;
@@ -159,5 +196,128 @@
     scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: var(--color-line-strong) transparent;
+  }
+}
+
+/* Bottom function-key bar: only the Retro DOS theme shows it. */
+.fkey-bar {
+  display: none;
+}
+
+/* Retro DOS rules beyond the colour tokens. */
+:root[data-theme="dos"] {
+  body {
+    /* VT323 is drawn small for its size; this scales it up to read like
+       the other themes without changing any layout sizes. */
+    font-size-adjust: 0.62;
+    /* It has one weight: no fake bold. Headings use colour instead. */
+    font-synthesis: none;
+    padding-bottom: 2rem;
+  }
+
+  /* Text mode has no rounded corners. */
+  *,
+  *::before,
+  *::after {
+    border-radius: 0;
+  }
+
+  .panel {
+    border-style: double;
+    border-width: 4px;
+    box-shadow: none;
+  }
+
+  /* Headings in yellow, like panel column titles. */
+  h2,
+  legend,
+  thead,
+  .panel > h3:first-child {
+    color: var(--color-link);
+  }
+  /* The sorted column stands out in white. */
+  thead .text-fg {
+    color: #fff;
+  }
+
+  /* Yellow is also the heading colour, so links in running text get an
+     underline to read as links. */
+  main p a,
+  main li a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* The chosen theme: a cyan frame would look like every other frame here. */
+  .theme-option[aria-pressed="true"] {
+    border-color: var(--color-link);
+    box-shadow: 0 0 0 1px var(--color-link);
+  }
+
+  /* Menu bar along the top, black on cyan. */
+  .app-header {
+    background: var(--color-accent);
+    border-bottom: 0;
+    backdrop-filter: none;
+    color: #000;
+
+    a,
+    button,
+    span,
+    svg {
+      color: #000;
+    }
+    a:hover,
+    button:hover,
+    a[aria-current="page"] {
+      background: #000;
+      color: var(--color-accent-hover);
+    }
+    a:hover *,
+    button:hover *,
+    a[aria-current="page"] * {
+      color: var(--color-accent-hover);
+    }
+    /* The usual cyan focus ring would vanish on the cyan bar. */
+    :focus-visible {
+      outline-color: #000;
+    }
+  }
+
+  /* Highlight bar on the table row under the pointer. */
+  tbody tr:hover {
+    background: var(--color-accent);
+  }
+  tbody tr:hover * {
+    color: var(--color-on-accent);
+  }
+
+  .fkey-bar {
+    display: flex;
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 10;
+    gap: 1ch;
+    padding: 0 1ch;
+    background: #000;
+    line-height: 2rem;
+
+    a {
+      display: flex;
+    }
+    .fkey-n {
+      color: #fff;
+      padding-right: 0.5ch;
+    }
+    .fkey-label {
+      background: var(--color-accent);
+      color: #000;
+      min-width: 9ch;
+      padding: 0 0.5ch;
+    }
+    a:hover .fkey-label,
+    a[aria-current="page"] .fkey-label {
+      background: var(--color-accent-hover);
+    }
   }
 }

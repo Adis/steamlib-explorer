@@ -109,7 +109,7 @@ export default function Help({ signedIn }: { signedIn: boolean }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3 rounded-xl border border-line bg-surface px-6 py-5">
+    <section className="space-y-3 panel rounded-xl border border-line bg-surface px-6 py-5">
       <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
       {children}
     </section>
