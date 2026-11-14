@@ -123,6 +123,64 @@
 }
 
 /*
+ * High contrast themes (Settings > Accessibility). Every text colour is at
+ * least 7:1 against the background (WCAG AAA), edges are solid and strong,
+ * and there is no dim text. Extra rules are at the end of this file.
+ */
+:root[data-theme="hc-dark"] {
+  --color-canvas: #000000;
+  --color-surface: #000000;
+  --color-raised: #262626;
+  --color-line: #a3a3a3;
+  --color-line-strong: #ffffff;
+  --color-control: #ffffff;
+  --color-fg: #ffffff;
+  --color-muted: #e5e5e5;
+  --color-faint: #d4d4d4;
+  --color-accent: #ffd400;
+  --color-accent-hover: #ffe566;
+  --color-on-accent: #000000;
+  --color-link: #7dd3fc;
+  --color-link-hover: #ffffff;
+  --color-review-great: #4ade80;
+  --color-review-good: #bef264;
+  --color-review-mixed: #fde68a;
+  --color-review-bad: #fca5a5;
+  --color-warn: #fdba74;
+  --color-warn-bg: #000000;
+  --color-warn-line: #fdba74;
+  --color-warn-fg: #ffffff;
+  --glow: 0%;
+}
+
+:root[data-theme="hc-light"] {
+  color-scheme: light;
+  --color-canvas: #ffffff;
+  --color-surface: #ffffff;
+  --color-raised: #e5e5e5;
+  --color-line: #525252;
+  --color-line-strong: #000000;
+  --color-control: #000000;
+  --color-fg: #000000;
+  --color-muted: #1f1f1f;
+  --color-faint: #333333;
+  --color-accent: #0033aa;
+  --color-accent-hover: #002277;
+  --color-on-accent: #ffffff;
+  --color-link: #0033aa;
+  --color-link-hover: #000000;
+  --color-review-great: #065f2c;
+  --color-review-good: #3f5208;
+  --color-review-mixed: #6b4400;
+  --color-review-bad: #9b0f1e;
+  --color-warn: #8a3a00;
+  --color-warn-bg: #ffffff;
+  --color-warn-line: #8a3a00;
+  --color-warn-fg: #000000;
+  --glow: 0%;
+}
+
+/*
  * Retro DOS: an original take on the classic blue two-panel file managers.
  * VGA text-mode colours, a terminal font, square double-line frames, a cyan
  * menu bar and highlight bar, and a function-key bar at the bottom. Besides
@@ -243,7 +301,7 @@
   /* Yellow is also the heading colour, so links in running text get an
      underline to read as links. */
   main p a,
-  main li a {
+  main li a:not(.panel) {
     text-decoration: underline;
     text-underline-offset: 2px;
   }
@@ -319,5 +377,37 @@
     a[aria-current="page"] .fkey-label {
       background: var(--color-accent-hover);
     }
+  }
+}
+
+/* High contrast rules beyond the colour tokens. */
+:root[data-theme="hc-dark"],
+:root[data-theme="hc-light"] {
+  /* Solid, visible edges instead of soft shadows and half-transparent fills. */
+  .panel {
+    border-width: 2px;
+    border-color: var(--color-line-strong);
+    box-shadow: none;
+  }
+
+  /* A focus ring that can't be missed. */
+  :focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
+
+  /* Links are underlined, so they don't rely on colour. */
+  main p a,
+  main li a:not(.panel),
+  main .text-link {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* The header is solid, not see-through. */
+  header.app-header {
+    background: var(--color-canvas);
+    backdrop-filter: none;
+    border-bottom: 2px solid var(--color-line-strong);
   }
 }

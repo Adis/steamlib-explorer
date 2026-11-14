@@ -34,7 +34,7 @@ function GameCard({ game }: { game: Game }) {
           />
         )}
         {game.playtime_2weeks_minutes > 0 && (
-          <span className="absolute left-2 top-2 rounded-md bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-on-accent">
+          <span className="absolute left-2 top-2 rounded-md bg-accent px-1.5 py-0.5 text-[0.6875rem] font-semibold text-on-accent">
             Recently played
           </span>
         )}
@@ -92,7 +92,7 @@ function Genres({ game }: { game: Game }) {
   if (game.genres.length === 0) return null;
   const shown = game.genres.slice(0, MAX_GENRES);
   const more = game.genres.length - shown.length;
-  const tag = "min-w-0 truncate rounded-full bg-raised px-2 py-0.5 text-[11px] text-muted";
+  const tag = "min-w-0 truncate rounded-full bg-raised px-2 py-0.5 text-[0.6875rem] text-muted";
   return (
     <ul className="flex gap-1 border-t border-line pt-2.5" title={game.genres.join(", ")}>
       {shown.map((g) => (

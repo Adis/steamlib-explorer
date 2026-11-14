@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Steamlib Explorer</title>
     <script>
-      // Apply the theme saved in Settings before anything renders (see src/theme.ts).
+      // Apply the theme and text size saved in Settings before anything renders (see src/theme.ts).
       try {
         var t = localStorage.getItem("theme");
         if (t && t !== "midnight") document.documentElement.dataset.theme = t;
+        var s = localStorage.getItem("textSize");
+        if (s === "125" || s === "150") document.documentElement.style.fontSize = s + "%";
       } catch (e) {}
     </script>
   </head>

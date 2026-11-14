@@ -111,7 +111,7 @@ export default function GamesTable({ games, sort, descending, onSort }: Props) {
   return (
     <div className="overflow-x-auto panel rounded-xl border border-line bg-surface/40 shadow-lg shadow-black/10">
       <table className="w-full text-sm">
-        <thead className="border-b border-line bg-surface text-left text-[11px] uppercase tracking-wider text-faint">
+        <thead className="border-b border-line bg-surface text-left text-[0.6875rem] uppercase tracking-wider text-faint">
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
               {hg.headers.map((h) => {
@@ -230,7 +230,7 @@ function Platforms({ p }: { p: Game["platforms"] }) {
   return (
     <span className="flex gap-1 text-xs">
       {supported.map(([label]) => (
-        <span key={String(label)} className="rounded border border-line-strong px-1.5 py-px text-[11px] text-muted">
+        <span key={String(label)} className="rounded border border-line-strong px-1.5 py-px text-[0.6875rem] text-muted">
           {label}
         </span>
       ))}
