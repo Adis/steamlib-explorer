@@ -4,11 +4,12 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -81,7 +82,7 @@ func run() error {
 	refresher := syncer.New(syncCtx, steamClient, queries)
 
 	srv := &http.Server{
-		Addr: fmt.Sprintf(":%d", cfg.Port),
+		Addr: net.JoinHostPort(cfg.ListenHost, strconv.Itoa(cfg.Port)),
 		Handler: api.NewRouter(api.Deps{
 			DB: pool, Auth: authService, Refresher: refresher, SyncQ: queries, Games: queries,
 		}),

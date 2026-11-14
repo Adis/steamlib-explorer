@@ -30,11 +30,22 @@ Start everything (Ctrl+C stops the backend and frontend):
 make dev
 ```
 
-`make dev` starts Postgres 17 on localhost:5432, installs the frontend's packages when `package.json` or `package-lock.json` changed, then runs the backend on :8080 (it applies new migrations first) and the frontend on http://localhost:5173 in one terminal. After a `git pull`, `make dev` is all you need. To run the pieces in separate terminals instead, use `make db-up`, `make web-install`, `make run` and `make web`.
+`make dev` starts Postgres 17 on localhost:5432, installs the frontend's packages when `package.json` or `package-lock.json` changed, then runs the backend on localhost:8080 (it applies new migrations first) and the frontend on http://localhost:5173 in one terminal. After a `git pull`, `make dev` is all you need. To run the pieces in separate terminals instead, use `make db-up`, `make web-install`, `make run` and `make web`.
 
 Open http://localhost:5173, sign in through Steam and press **Sync library**. Games appear in the table as soon as the library is read; store details and reviews fill in as the sync goes (reload or wait for it to finish). Filter with the panel on the left and click a column heading to sort, or click it again to reverse. Filters are kept in the address bar, so a filtered view can be bookmarked. **Details** next to the library count shows how many games have store details and reviews.
 
 In development the browser only talks to Vite on port 5173, which forwards `/api` and `/auth` to the backend, so `PUBLIC_URL` must be `http://localhost:5173` (as in `.env.example`).
+
+### Remote access
+
+By default the app works only on the computer that runs it: Postgres, the backend and the frontend all listen on localhost, so other devices on your network can't reach them, whatever your firewall says. To open the app to your phone or another computer on your network:
+
+1. In `.env`, set `LISTEN_HOST=0.0.0.0` (the backend and the Vite frontend both use it).
+2. Set `PUBLIC_URL` to the address the other device will type, for example `http://192.168.1.20:5173` or `http://my-pc.lan:5173`. Steam sends you back there after sign-in, so you must open the app at exactly that address (also on this computer).
+3. Allow port 5173 in your firewall, for example `sudo ufw allow from 192.168.1.0/24 to any port 5173 proto tcp`.
+4. Run `make dev` again.
+
+Only port 5173 needs to be reachable: Vite forwards to the backend, which talks to Postgres on localhost. Keep Postgres on `127.0.0.1` in `docker-compose.yml`. Docker writes its own firewall rules ahead of ufw's, so a published container port is open to the network even when ufw says deny. The development servers have no HTTPS, so only open them on a network you trust, never to the internet.
 
 ### Logs
 
@@ -48,6 +59,7 @@ Every incoming request (`msg="api request"`) and every call to Steam (`msg="outg
 | `STEAM_API_KEY` | yes | | [Steam Web API key](https://steamcommunity.com/dev/apikey), used to read libraries and profiles |
 | `PUBLIC_URL` | no | `http://localhost:$PORT` | Address the browser uses for the app; Steam redirects back here |
 | `PORT` | no | `8080` | Port the backend listens on |
+| `LISTEN_HOST` | no | `127.0.0.1` (backend), `localhost` (frontend) | Interface the backend and the Vite frontend listen on; `0.0.0.0` allows other devices (see [Remote access](#remote-access)) |
 | `LOG_FILE` | no | `logs/api-calls.txt` | File that also receives every log line, relative to `backend/`; `-` logs to the console only |
 
 Steam shares a user's owned games and playtime only when their profile's Game details are public, or when the request uses that user's own API key. So the owner of `STEAM_API_KEY` can keep their profile private (even Friends only or Private); everyone else who signs in needs public game details. The in-app **Help** page explains both options.

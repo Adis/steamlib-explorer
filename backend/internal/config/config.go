@@ -13,6 +13,9 @@ import (
 type Config struct {
 	DatabaseURL string // DATABASE_URL, required
 	Port        int    // PORT, default 8080
+	// ListenHost is the interface the backend listens on (LISTEN_HOST, default
+	// 127.0.0.1, so only this machine can connect; 0.0.0.0 opens it to the network).
+	ListenHost  string
 	SteamAPIKey string // STEAM_API_KEY, required
 	// PublicURL is the address browsers use for the app (PUBLIC_URL, default
 	// http://localhost:8080). Steam sends users back here after sign-in.
@@ -26,6 +29,7 @@ func Load() (Config, error) {
 	cfg := Config{
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		Port:        8080,
+		ListenHost:  os.Getenv("LISTEN_HOST"),
 		SteamAPIKey: os.Getenv("STEAM_API_KEY"),
 		PublicURL:   strings.TrimRight(os.Getenv("PUBLIC_URL"), "/"),
 		LogFile:     os.Getenv("LOG_FILE"),
@@ -35,6 +39,9 @@ func Load() (Config, error) {
 		cfg.LogFile = "logs/api-calls.txt"
 	case "-":
 		cfg.LogFile = ""
+	}
+	if cfg.ListenHost == "" {
+		cfg.ListenHost = "127.0.0.1"
 	}
 	if cfg.DatabaseURL == "" {
 		return cfg, errors.New("DATABASE_URL is required")
