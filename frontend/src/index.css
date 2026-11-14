@@ -181,6 +181,65 @@
 }
 
 /*
+ * Colour vision (Settings > Accessibility), on top of any theme. Only the
+ * review rating is colour-coded, so only its four colours change. Each
+ * rating also shows an icon, so it never depends on colour alone.
+ * Red-green safe: blues (good) and orange (bad). Blue-yellow safe: teal and
+ * blues (good) and red (bad). Mixed is neutral grey. The shades were picked
+ * so all four stay apart under simulated colour blindness and keep at least
+ * 4.5:1 contrast (7:1 in the high-contrast themes). Dark backgrounds first,
+ * then the light and high-contrast-light themes, which need their own shades.
+ */
+:root[data-cv="rg"] {
+  --color-review-great: #3b9eff;
+  --color-review-good: #93c5fd;
+  --color-review-mixed: #a1a1aa;
+  --color-review-bad: #f59e0b;
+}
+:root[data-cv="by"] {
+  --color-review-great: #2dd4bf;
+  --color-review-good: #a5f3fc;
+  --color-review-mixed: #a1a1aa;
+  --color-review-bad: #f87171;
+}
+:root[data-cv="rg"][data-theme="dos"] {
+  --color-review-great: #55ffff;
+  --color-review-good: #ffffff;
+  --color-review-mixed: #aaaaaa;
+  --color-review-bad: #ffaa55;
+}
+:root[data-cv="by"][data-theme="dos"] {
+  --color-review-great: #55ffff;
+  --color-review-good: #ffffff;
+  --color-review-mixed: #aaaaaa;
+  --color-review-bad: #ff7777;
+}
+:root[data-cv="rg"][data-theme="light"] {
+  --color-review-great: #0369a1;
+  --color-review-good: #4f46e5;
+  --color-review-mixed: #27272a;
+  --color-review-bad: #c2410c;
+}
+:root[data-cv="by"][data-theme="light"] {
+  --color-review-great: #1e3a8a;
+  --color-review-good: #2563eb;
+  --color-review-mixed: #27272a;
+  --color-review-bad: #7f1d1d;
+}
+:root[data-cv="rg"][data-theme="hc-light"] {
+  --color-review-great: #075985;
+  --color-review-good: #4338ca;
+  --color-review-mixed: #27272a;
+  --color-review-bad: #9a3412;
+}
+:root[data-cv="by"][data-theme="hc-light"] {
+  --color-review-great: #134e4a;
+  --color-review-good: #1e40af;
+  --color-review-mixed: #27272a;
+  --color-review-bad: #7f1d1d;
+}
+
+/*
  * Retro DOS: an original take on the classic blue two-panel file managers.
  * VGA text-mode colours, a terminal font, square double-line frames, a cyan
  * menu bar and highlight bar, and a function-key bar at the bottom. Besides
@@ -409,5 +468,27 @@
     background: var(--color-canvas);
     backdrop-filter: none;
     border-bottom: 2px solid var(--color-line-strong);
+  }
+}
+
+/*
+ * Reduce motion (Settings > Accessibility): data-motion="reduce" when the
+ * setting is on. Without a choice saved there, the system setting decides
+ * (theme.ts sets the attribute from prefers-reduced-motion).
+ */
+:root[data-motion="reduce"] {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* No card lift or cover zoom on hover. */
+  .group:hover,
+  .group:hover * {
+    translate: none !important;
+    scale: none !important;
   }
 }

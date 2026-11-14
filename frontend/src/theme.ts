@@ -87,3 +87,72 @@ export function useTextSize() {
   };
   return [size, change] as const;
 }
+
+// Colour vision: swaps the review rating colours for a palette that people
+// with red-green or blue-yellow colour blindness can tell apart (index.css).
+
+export const COLOR_VISIONS = [
+  { id: "default", name: "Default", detail: "Green to red" },
+  { id: "rg", name: "Red-green safe", detail: "Blue to orange, for protanopia and deuteranopia" },
+  { id: "by", name: "Blue-yellow safe", detail: "Teal to red, for tritanopia" },
+] as const;
+export type ColorVision = (typeof COLOR_VISIONS)[number]["id"];
+
+/** A setting saved in localStorage and mirrored on <html> as a data attribute. */
+function usePageSetting<T extends string>(
+  key: string,
+  values: readonly T[],
+  fallback: T,
+  applyTo: (v: T) => void,
+) {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const v = localStorage.getItem(key) as T | null;
+      return v && values.includes(v) ? v : fallback;
+    } catch {
+      return fallback;
+    }
+  });
+  const change = (v: T) => {
+    applyTo(v);
+    setValue(v);
+    try {
+      localStorage.setItem(key, v);
+    } catch {
+      // storage blocked: the choice lasts until reload
+    }
+  };
+  return [value, change] as const;
+}
+
+export function useColorVision() {
+  return usePageSetting<ColorVision>(
+    "colorVision",
+    COLOR_VISIONS.map((c) => c.id),
+    "default",
+    (v) => {
+      if (v === "default") delete document.documentElement.dataset.cv;
+      else document.documentElement.dataset.cv = v;
+    },
+  );
+}
+
+// Reduce motion: on or off when chosen here; until then it follows the
+// system setting (prefers-reduced-motion), which index.html applies.
+
+const systemReducesMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+export function useReduceMotion() {
+  const [value, change] = usePageSetting<"on" | "off" | "system">(
+    "reduceMotion",
+    ["on", "off", "system"],
+    "system",
+    (v) => {
+      const reduce = v === "on" || (v === "system" && systemReducesMotion());
+      if (reduce) document.documentElement.dataset.motion = "reduce";
+      else delete document.documentElement.dataset.motion;
+    },
+  );
+  const on = value === "on" || (value === "system" && systemReducesMotion());
+  return [on, (reduce: boolean) => change(reduce ? "on" : "off")] as const;
+}
