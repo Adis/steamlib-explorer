@@ -67,6 +67,11 @@ export default function SyncPanel() {
       )}
 
       {stats && <Stats stats={stats} />}
+
+      {/* Tells screen readers when a sync starts and ends, without reading every progress tick. */}
+      <p className="sr-only" aria-live="polite">
+        {running ? "Sync started." : run && run.status === "ok" ? `Sync finished. ${run.games_seen.toLocaleString()} games.` : ""}
+      </p>
     </section>
   );
 }
@@ -84,7 +89,14 @@ function Progress({ run }: { run: SyncRun }) {
         : 100;
   return (
     <div className="mt-3">
-      <div className="h-1.5 overflow-hidden rounded-full bg-raised">
+      <div
+        role="progressbar"
+        aria-label="Store details fetched"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+        className="h-1.5 overflow-hidden rounded-full bg-raised"
+      >
         <div
           className={`h-full rounded-full transition-all ${run.status === "error" ? "bg-warn" : "bg-accent"}`}
           style={{ width: `${pct}%` }}

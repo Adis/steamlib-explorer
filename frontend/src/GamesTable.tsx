@@ -113,6 +113,7 @@ export default function GamesTable({ games, sort, descending, onSort }: Props) {
   return (
     <div className="overflow-x-auto panel rounded-xl border border-line bg-surface/40 shadow-lg shadow-black/10">
       <table className="w-full text-sm">
+        <caption className="sr-only">Your games. Column headers with a button sort the table.</caption>
         <thead className="border-b border-line bg-surface text-left text-[0.6875rem] uppercase tracking-wider text-faint">
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
@@ -190,6 +191,7 @@ function NameCell({ game }: { game: Game }) {
           className="font-medium tracking-tight hover:text-link"
         >
           {game.name}
+          <span className="sr-only"> (opens in a new tab)</span>
         </a>
         <div className="truncate text-xs text-faint">
           {game.details_status === "pending"

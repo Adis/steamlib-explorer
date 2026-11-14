@@ -43,6 +43,7 @@ function GameCard({ game }: { game: Game }) {
       <div className="flex flex-1 flex-col p-3">
         <h3 className="truncate font-medium tracking-tight group-hover:text-link" title={game.name}>
           {game.name}
+          <span className="sr-only"> (opens in a new tab)</span>
         </h3>
         <Rating game={game} />
 

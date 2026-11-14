@@ -66,6 +66,7 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
             value={params.get("min_review_score") ?? ""}
             onChange={(v) => setParam("min_review_score", v || null)}
             options={REVIEW_RATINGS}
+            label="Steam reviews"
           />
         </Group>
       )}
@@ -75,6 +76,7 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
           <Select
             value={params.get("min_metacritic") ?? ""}
             onChange={(v) => setParam("min_metacritic", v || null)}
+            label="Metacritic"
             options={[["", "Any"], ...[90, 80, 70, 60, 50].map((n) => [String(n), `${n} or more`] as const)]}
           />
         </Group>
@@ -164,7 +166,7 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 }
 
 const inputClass =
-  "w-full rounded-md border border-control bg-surface px-2.5 py-1.5 text-fg placeholder:text-faint transition-colors hover:border-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25";
+  "w-full rounded-md border border-control bg-surface px-2.5 py-1.5 text-fg placeholder:text-faint transition-colors hover:border-faint focus:border-accent";
 
 /** Name search; waits for a pause in typing before filtering. */
 function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -240,13 +242,15 @@ function Select({
   value,
   onChange,
   options,
+  label,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: (readonly [string, string])[];
+  label: string;
 }) {
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
+    <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label} className={inputClass}>
       {options.map(([v, label]) => (
         <option key={v} value={v}>
           {label}
