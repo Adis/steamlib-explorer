@@ -8,6 +8,7 @@ import {
   activeFilterCount,
   apiParams,
   DEFAULT_LIMIT,
+  DEFAULT_SORT,
   limitOf,
   pageOf,
   useUrlParams,
@@ -26,7 +27,7 @@ export default function Explorer() {
     placeholderData: keepPreviousData,
   });
 
-  const sort = params.get("sort") || "name";
+  const sort = params.get("sort") || DEFAULT_SORT;
   const order = params.get("order");
   const descending = order ? order === "desc" : sort !== "name";
   const page = pageOf(params);

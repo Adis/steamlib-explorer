@@ -6,6 +6,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export const DEFAULT_LIMIT = 50;
 
+/** Sort used when the address bar has none; must match the backend default. */
+export const DEFAULT_SORT = "review";
+
 /** Query parameters passed to the backend unchanged. */
 const PASS_THROUGH = [
   "q",
@@ -115,7 +118,7 @@ export function useUrlParams() {
     (sort: string, order: "asc" | "desc" | null) => {
       const next = new URLSearchParams(current.current);
       next.delete("page");
-      if (sort === "name") next.delete("sort");
+      if (sort === DEFAULT_SORT) next.delete("sort");
       else next.set("sort", sort);
       if (order) next.set("order", order);
       else next.delete("order");

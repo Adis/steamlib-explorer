@@ -44,6 +44,8 @@ ORDER BY
     CASE WHEN sqlc.arg(sort)::text = 'metacritic'  AND sqlc.arg(descending)::boolean     THEN a.metacritic_score END DESC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'release'     AND NOT sqlc.arg(descending)::boolean THEN a.release_date END ASC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'release'     AND sqlc.arg(descending)::boolean     THEN a.release_date END DESC NULLS LAST,
+    -- Among equally rated games, the least played come first.
+    CASE WHEN sqlc.arg(sort)::text = 'review' THEN o.playtime_forever END ASC,
     lower(a.name), a.appid
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
