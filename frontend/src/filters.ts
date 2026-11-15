@@ -60,14 +60,46 @@ export function activeFilterCount(p: UrlParams) {
     .length;
 }
 
+/** localStorage key holding the explorer's last query string. */
+const LAST_VIEW_KEY = "explorer.lastView";
+
+function saveLastView(qs: string) {
+  try {
+    localStorage.setItem(LAST_VIEW_KEY, qs);
+  } catch {
+    // Storage blocked: the view just isn't remembered.
+  }
+}
+
+/**
+ * The address bar's parameters, or, when it has none, the sort, filters and
+ * page from the last visit, so reopening the app resumes where you left off.
+ */
+function initialParams(): URLSearchParams {
+  const search = window.location.search;
+  if (search) {
+    saveLastView(search.slice(1)); // an opened link counts as the last view
+    return new URLSearchParams(search);
+  }
+  let saved = "";
+  try {
+    saved = localStorage.getItem(LAST_VIEW_KEY) ?? "";
+  } catch {
+    // Storage blocked: start from the defaults.
+  }
+  if (saved) {
+    const { pathname, hash } = window.location;
+    window.history.replaceState(null, "", `${pathname}?${saved}${hash}`);
+  }
+  return new URLSearchParams(saved);
+}
+
 /**
  * The page's query string as state. setParam replaces one parameter and goes
  * back to page 1; setPage changes only the page.
  */
 export function useUrlParams() {
-  const [params, setParams] = useState(
-    () => new URLSearchParams(window.location.search),
-  );
+  const [params, setParams] = useState(initialParams);
   const current = useRef(params);
 
   useEffect(() => {
@@ -87,6 +119,7 @@ export function useUrlParams() {
       "",
       qs ? `?${qs}` : window.location.pathname,
     );
+    saveLastView(qs);
     setParams(next);
   }, []);
 
