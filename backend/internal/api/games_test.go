@@ -35,7 +35,7 @@ func TestParseGameFiltersDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.Sort != "name" || p.Descending || p.PageLimit != 50 || p.PageOffset != 0 {
+	if p.Sort != "review" || !p.Descending || p.PageLimit != 50 || p.PageOffset != 0 {
 		t.Errorf("defaults = %+v", p)
 	}
 	if p.NamePattern != nil || p.Genres != nil || p.Played != nil || p.MinMinutes != nil || p.WindowsOnly {

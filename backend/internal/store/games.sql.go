@@ -126,6 +126,8 @@ ORDER BY
     CASE WHEN $16::text = 'metacritic'  AND $17::boolean     THEN a.metacritic_score END DESC NULLS LAST,
     CASE WHEN $16::text = 'release'     AND NOT $17::boolean THEN a.release_date END ASC NULLS LAST,
     CASE WHEN $16::text = 'release'     AND $17::boolean     THEN a.release_date END DESC NULLS LAST,
+    -- Among equally rated games, the least played come first.
+    CASE WHEN $16::text = 'review' THEN o.playtime_forever END ASC,
     lower(a.name), a.appid
 LIMIT $19 OFFSET $18
 `

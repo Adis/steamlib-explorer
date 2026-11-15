@@ -101,7 +101,8 @@ func listGames(q GameQueries) http.HandlerFunc {
 // parseGameFilters turns query parameters into query arguments. All are
 // optional; see the README for the list.
 func parseGameFilters(v url.Values) (store.ListGamesParams, error) {
-	p := store.ListGamesParams{Sort: "name", PageLimit: defaultPageSize}
+	// Best rated first by default; the query breaks ties by least playtime.
+	p := store.ListGamesParams{Sort: "review", PageLimit: defaultPageSize}
 	var err error
 
 	if s := strings.TrimSpace(v.Get("q")); s != "" {
