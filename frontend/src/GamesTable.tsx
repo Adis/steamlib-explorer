@@ -183,7 +183,7 @@ function NameCell({ game }: { game: Game }) {
       ) : (
         <div className="h-[37px] w-[80px] shrink-0 rounded bg-raised" />
       )}
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <a
           href={game.store_url}
           target="_blank"
@@ -193,7 +193,10 @@ function NameCell({ game }: { game: Game }) {
           {game.name}
           <span className="sr-only"> (opens in a new tab)</span>
         </a>
-        <div className="truncate text-xs text-faint">
+        {/* Long genre lists are cut off with an ellipsis instead of widening
+            the column: contain-inline-size keeps this line out of the
+            table's width calculation, so the table fits its box. */}
+        <div className="truncate text-xs text-faint contain-inline-size" title={game.details_status === "ok" ? game.genres.join(", ") : undefined}>
           {game.details_status === "pending"
             ? "Store details not fetched yet"
             : game.details_status === "unavailable"
