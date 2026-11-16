@@ -5,7 +5,7 @@ MIGRATIONS := backend/db/migrations
 -include .env
 export
 
-.PHONY: dev check-tools db-up db-down run web web-install build test test-db generate migrate-up migrate-down migrate-status
+.PHONY: dev check-tools db-up db-down run web web-install web-build build serve test test-db generate migrate-up migrate-down migrate-status
 
 # Put $(FAIL) at the start of a recipe line to get a shell function that
 # prints what went wrong and how to fix it, then stops make:
@@ -55,8 +55,14 @@ web-install:    ## Install the frontend's npm packages
 web:            ## Run the frontend on http://localhost:5173 (proxies /api and /auth to the backend)
 	cd frontend && npm run dev
 
-build:          ## Build the backend binary into backend/bin/server
+web-build: frontend/node_modules/.package-lock.json ## Build the frontend into backend/internal/webui/dist, where the backend embeds it
+	cd frontend && npm run build
+
+build: web-build ## Build one binary, backend/bin/server, that serves the API and the frontend on http://localhost:8080
 	cd backend && go build -o bin/server ./cmd/server
+
+serve: db-up build ## Build the one binary and run it: the whole app on http://localhost:8080, no Vite
+	cd backend && PUBLIC_URL=http://localhost:$(or $(PORT),8080) ./bin/server
 
 test:           ## Run the backend tests
 	cd backend && go test ./...

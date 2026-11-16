@@ -36,6 +36,10 @@ Open http://localhost:5173, sign in through Steam and press **Sync library**. Ga
 
 In development the browser only talks to Vite on port 5173, which forwards `/api` and `/auth` to the backend, so `PUBLIC_URL` must be `http://localhost:5173` (as in `.env.example`).
 
+### One binary
+
+`make build` builds the frontend into `backend/internal/webui/dist` and then the backend, which embeds it, so `backend/bin/server` alone serves the whole app on http://localhost:8080 (the API and the pages, no Vite or Node needed). `make serve` builds it and runs it against the Docker Postgres with `PUBLIC_URL=http://localhost:8080`, whatever `.env` says. This is the first step towards a desktop app; it still needs Postgres for now. A binary built without the frontend (plain `go build`) still runs and shows a page saying how to build it.
+
 ### Remote access
 
 By default the app works only on the computer that runs it: Postgres, the backend and the frontend all listen on localhost, so other devices on your network can't reach them, whatever your firewall says. To open the app to your phone or another computer on your network:
@@ -64,7 +68,7 @@ Every incoming request (`msg="api request"`) and every call to Steam (`msg="outg
 
 Steam shares a user's owned games and playtime only when their profile's Game details are public, or when the request uses that user's own API key. So the owner of `STEAM_API_KEY` can keep their profile private (even Friends only or Private); everyone else who signs in needs public game details. The in-app **Help** page explains both options.
 
-`make test` runs the backend tests, `make test-db` also runs the ones that need Postgres, `make generate` rebuilds the sqlc code after you edit `backend/db/queries`, and `make build` puts a binary in `backend/bin/server`. The `migrate-*` targets are still there for rolling back or checking status by hand.
+`make test` runs the backend tests, `make test-db` also runs the ones that need Postgres, `make generate` rebuilds the sqlc code after you edit `backend/db/queries`, and `make build` puts the one-binary app in `backend/bin/server` (see [One binary](#one-binary)). The `migrate-*` targets are still there for rolling back or checking status by hand.
 
 `make migrate-down` rolls back the last migration and `make db-down` stops Postgres (data stays in the `pgdata` volume).
 
