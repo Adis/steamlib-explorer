@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Steamlib Explorer
+GenericName=Steam library explorer
+Comment=Browse and filter your Steam library
+Exec=steamlib-explorer
+Icon=steamlib-explorer
+Terminal=false
+Categories=Game;Utility;
+Keywords=Steam;games;library;
+StartupNotify=false
