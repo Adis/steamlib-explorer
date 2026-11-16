@@ -11,7 +11,7 @@ import (
 )
 
 type Config struct {
-	DatabaseURL string // DATABASE_URL, required
+	DatabaseURL string // DATABASE_URL, required: postgres://... or sqlite:<file>
 	Port        int    // PORT, default 8080
 	// ListenHost is the interface the backend listens on (LISTEN_HOST, default
 	// 127.0.0.1, so only this machine can connect; 0.0.0.0 opens it to the network).

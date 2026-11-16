@@ -19,6 +19,23 @@ func Run(t *testing.T, open func(t *testing.T) store.Store) {
 	t.Run("ListGamesAndFacets", func(t *testing.T) { testListGames(t, open(t)) })
 	t.Run("SyncRuns", func(t *testing.T) { testSyncRuns(t, open(t)) })
 	t.Run("AppsNeedingRefresh", func(t *testing.T) { testAppsNeeding(t, open(t)) })
+	t.Run("NameSearchBeyondASCII", func(t *testing.T) { testNameSearchUnicode(t, open(t)) })
+}
+
+func testNameSearchUnicode(t *testing.T, s store.Store) {
+	ctx := context.Background()
+	seed(t, s, []app{
+		{id: 1, name: "Élan Vital", owner: 1},
+		{id: 2, name: "ÖKOSYSTEM", owner: 1},
+		{id: 3, name: "Plain", owner: 1},
+	})
+	for search, want := range map[string]int64{"élan": 1, "ÉLAN": 1, "ökosystem": 2} {
+		rows, err := s.ListGames(ctx, store.ListGamesParams{SteamID: 1, NameContains: &search, Sort: "name", PageLimit: 10})
+		must(t, err)
+		if len(rows) != 1 || rows[0].Appid != want {
+			t.Errorf("search %q = %+v, want app %d", search, rows, want)
+		}
+	}
 }
 
 func must(t *testing.T, err error) {

@@ -154,6 +154,12 @@ func (s *Store) AppsNeedingReviews(ctx context.Context, arg store.AppsNeedingRev
 }
 
 func (s *Store) UpdateAppDetails(ctx context.Context, arg store.UpdateAppDetailsParams) error {
+	// The list columns are NOT NULL; a nil list means none.
+	for _, l := range []*[]string{&arg.Developers, &arg.Publishers, &arg.Genres, &arg.Categories} {
+		if *l == nil {
+			*l = []string{}
+		}
+	}
 	return mapErr(s.q.UpdateAppDetails(ctx, UpdateAppDetailsParams(arg)))
 }
 
