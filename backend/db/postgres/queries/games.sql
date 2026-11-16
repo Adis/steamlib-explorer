@@ -40,6 +40,9 @@ ORDER BY
     CASE WHEN sqlc.arg(sort)::text = 'recent'      AND sqlc.arg(descending)::boolean     THEN o.playtime_2weeks END DESC,
     CASE WHEN sqlc.arg(sort)::text = 'last_played' AND NOT sqlc.arg(descending)::boolean THEN o.last_played_at END ASC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'last_played' AND sqlc.arg(descending)::boolean     THEN o.last_played_at END DESC NULLS LAST,
+    -- Review sort: Steam's rating (Overwhelmingly Positive, Very Positive, ...) first, then the percentage.
+    CASE WHEN sqlc.arg(sort)::text = 'review'      AND NOT sqlc.arg(descending)::boolean THEN a.review_score END ASC NULLS LAST,
+    CASE WHEN sqlc.arg(sort)::text = 'review'      AND sqlc.arg(descending)::boolean     THEN a.review_score END DESC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'review'      AND NOT sqlc.arg(descending)::boolean THEN a.review_pct END ASC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'review'      AND sqlc.arg(descending)::boolean     THEN a.review_pct END DESC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'metacritic'  AND NOT sqlc.arg(descending)::boolean THEN a.metacritic_score END ASC NULLS LAST,
