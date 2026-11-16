@@ -134,6 +134,9 @@ func parseGameFilters(v url.Values) (store.ListGamesParams, error) {
 	if p.MinReviewScore, err = intParam(v, "min_review_score", 1, 9); err != nil {
 		return p, err
 	}
+	if p.MinReviews, err = intParam(v, "min_reviews", 0, math.MaxInt32); err != nil {
+		return p, err
+	}
 	if p.MinMetacritic, err = intParam(v, "min_metacritic", 0, 100); err != nil {
 		return p, err
 	}

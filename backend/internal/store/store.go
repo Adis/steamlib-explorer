@@ -179,6 +179,9 @@ type ListGamesParams struct {
 	MaxMinutes     *int32
 	MinReviewPct   *float64
 	MinReviewScore *int32
+	// MinReviews keeps games with at least this many reviews, and games
+	// whose review count isn't known yet.
+	MinReviews     *int32
 	MinMetacritic  *int32
 	ReleasedAfter  *time.Time
 	ReleasedBefore *time.Time

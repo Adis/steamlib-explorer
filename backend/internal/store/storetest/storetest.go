@@ -164,6 +164,8 @@ func testListGames(t *testing.T, s store.Store) {
 		{"min review", store.ListGamesParams{MinReviewPct: ptr(80.0)}, []int64{10}},
 		{"min review score", store.ListGamesParams{MinReviewScore: ptr[int32](6)}, []int64{10}},
 		{"min review score mixed", store.ListGamesParams{MinReviewScore: ptr[int32](5)}, []int64{10, 20}},
+		{"min reviews keeps unknown counts", store.ListGamesParams{MinReviews: ptr[int32](100)}, []int64{10, 20, 30}},
+		{"min reviews", store.ListGamesParams{MinReviews: ptr[int32](101)}, []int64{30}},
 		{"min metacritic", store.ListGamesParams{MinMetacritic: ptr[int32](75)}, []int64{10}},
 		{"released between", store.ListGamesParams{ReleasedAfter: date("2016-01-01"), ReleasedBefore: date("2020-12-31")}, []int64{20}},
 		{"released on the boundary days", store.ListGamesParams{ReleasedAfter: date("2020-01-01"), ReleasedBefore: date("2020-01-01")}, []int64{20}},
