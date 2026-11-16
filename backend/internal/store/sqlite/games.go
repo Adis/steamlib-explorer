@@ -87,6 +87,12 @@ func (s *Store) ListGames(ctx context.Context, arg store.ListGamesParams) ([]sto
 		if arg.Descending {
 			dir = " DESC"
 		}
+		if arg.Sort == "review" {
+			// Steam's rating (Overwhelmingly Positive, Very Positive, ...)
+			// comes first, so a "Positive" game at 100% from a handful of
+			// reviews stays below the Overwhelmingly Positive ones.
+			order = append(order, "a.review_score"+dir+" NULLS LAST")
+		}
 		order = append(order, col+dir+" NULLS LAST")
 		if arg.Sort == "review" { // among equally rated games, the least played come first
 			order = append(order, "o.playtime_forever ASC")

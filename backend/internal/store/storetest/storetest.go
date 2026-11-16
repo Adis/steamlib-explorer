@@ -20,6 +20,7 @@ func Run(t *testing.T, open func(t *testing.T) store.Store) {
 	t.Run("SyncRuns", func(t *testing.T) { testSyncRuns(t, open(t)) })
 	t.Run("AppsNeedingRefresh", func(t *testing.T) { testAppsNeeding(t, open(t)) })
 	t.Run("NameSearchBeyondASCII", func(t *testing.T) { testNameSearchUnicode(t, open(t)) })
+	t.Run("ReviewSortByRatingFirst", func(t *testing.T) { testReviewSortByRating(t, open(t)) })
 }
 
 func testNameSearchUnicode(t *testing.T, s store.Store) {
@@ -34,6 +35,36 @@ func testNameSearchUnicode(t *testing.T, s store.Store) {
 		must(t, err)
 		if len(rows) != 1 || rows[0].Appid != want {
 			t.Errorf("search %q = %+v, want app %d", search, rows, want)
+		}
+	}
+}
+
+// Steam rates a game with few reviews only "Positive" even at 100%, so the
+// review sort orders by Steam's rating before the percentage.
+func testReviewSortByRating(t *testing.T, s store.Store) {
+	ctx := context.Background()
+	seed(t, s, []app{
+		{id: 1, name: "Positive 100%", positive: 20, total: 20, reviewScore: 6, owner: 1},
+		{id: 2, name: "Overwhelmingly Positive 96%", positive: 960, total: 1000, reviewScore: 9, owner: 1},
+		{id: 3, name: "Very Positive 97%", positive: 97, total: 100, reviewScore: 8, owner: 1},
+		{id: 4, name: "Overwhelmingly Positive 98%", positive: 980, total: 1000, reviewScore: 9, owner: 1},
+		{id: 5, name: "No reviews", owner: 1},
+	})
+	for _, tt := range []struct {
+		desc bool
+		want []int64
+	}{
+		{true, []int64{4, 2, 3, 1, 5}},
+		{false, []int64{1, 3, 2, 4, 5}},
+	} {
+		rows, err := s.ListGames(ctx, store.ListGamesParams{SteamID: 1, Sort: "review", Descending: tt.desc, PageLimit: 10})
+		must(t, err)
+		var got []int64
+		for _, r := range rows {
+			got = append(got, r.Appid)
+		}
+		if !slices.Equal(got, tt.want) {
+			t.Errorf("review sort (descending %v) = %v, want %v", tt.desc, got, tt.want)
 		}
 	}
 }
