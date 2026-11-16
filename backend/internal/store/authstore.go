@@ -5,13 +5,11 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-
 	"github.com/Adis/steamlib-explorer/backend/internal/auth"
 )
 
-// AuthStore implements auth.Store on top of the generated queries.
-type AuthStore struct{ Q *Queries }
+// AuthStore implements auth.Store on top of a Store.
+type AuthStore struct{ Q Store }
 
 var _ auth.Store = AuthStore{}
 
@@ -30,7 +28,7 @@ func (s AuthStore) CreateSession(ctx context.Context, tokenHash []byte, steamID 
 
 func (s AuthStore) SessionUser(ctx context.Context, tokenHash []byte) (auth.User, error) {
 	u, err := s.Q.GetSessionUser(ctx, tokenHash)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, ErrNotFound) {
 		return auth.User{}, auth.ErrNoSession
 	}
 	if err != nil {

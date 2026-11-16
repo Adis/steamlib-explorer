@@ -38,7 +38,7 @@ func TestParseGameFiltersDefaults(t *testing.T) {
 	if p.Sort != "review" || !p.Descending || p.PageLimit != 50 || p.PageOffset != 0 {
 		t.Errorf("defaults = %+v", p)
 	}
-	if p.NamePattern != nil || p.Genres != nil || p.Played != nil || p.MinMinutes != nil || p.WindowsOnly {
+	if p.NameContains != nil || p.Genres != nil || p.Played != nil || p.MinMinutes != nil || p.WindowsOnly {
 		t.Errorf("filters should be off by default: %+v", p)
 	}
 }
@@ -55,8 +55,8 @@ func TestParseGameFilters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *p.NamePattern != `%50\%\_off%` {
-		t.Errorf("name pattern = %q", *p.NamePattern)
+	if *p.NameContains != `50%_off` {
+		t.Errorf("name = %q", *p.NameContains)
 	}
 	if len(p.Genres) != 2 || p.Genres[1] != "RPG" || len(p.Categories) != 1 {
 		t.Errorf("genres %v categories %v", p.Genres, p.Categories)
