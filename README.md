@@ -1,6 +1,49 @@
 # steamlib-explorer
 Personal, self-hosted repository of Steam games allowing you to browse and filter your Steam library looking for a new game to play.
 
+There are two ways to run it: [download the app](#download-the-app) from GitHub Releases, or [build it yourself](#build-it-yourself) from this repository. Either way it runs on your own computer, opens in your browser, and needs a free [Steam Web API key](https://steamcommunity.com/dev/apikey).
+
+## Download the app
+
+Get the latest version from the [Releases page](https://github.com/Adis/steamlib-explorer/releases/latest). It needs no Docker, database or other software.
+
+**Windows (64-bit)**
+
+1. Download `steamlib-explorer_<version>_windows_setup.exe` and run it. It installs for your user only, so it doesn't ask for administrator rights.
+2. The download isn't code signed, so Windows SmartScreen may warn the first time: press **More info**, then **Run anyway**.
+3. Start **Steamlib Explorer** from the Start menu. It opens in your browser and puts an icon in the system tray (bottom right) with **Open Steamlib Explorer** and **Quit**.
+
+Uninstall it from Windows Settings, Apps. Your library and settings in `%AppData%\steamlib-explorer` are kept, so a reinstall picks up where you left off. If you'd rather not install anything, the `_windows_amd64.zip` holds just `steamlib-explorer.exe`, which you can run from any folder.
+
+**Linux (x86-64 or ARM64)**
+
+Download the package for your distribution and install it:
+
+| Distribution | File | Install with |
+| --- | --- | --- |
+| Debian, Ubuntu, Mint | `.deb` | `sudo apt install ./steamlib-explorer_<version>_amd64.deb` |
+| Fedora, openSUSE | `.rpm` | `sudo dnf install ./steamlib-explorer-<version>-1.x86_64.rpm` |
+| Arch, Manjaro | `.pkg.tar.zst` | `sudo pacman -U steamlib-explorer-<version>-1-x86_64.pkg.tar.zst` |
+
+Then start **Steamlib Explorer** from your applications menu, or run `steamlib-explorer`. For any other distribution, the `_linux_amd64.tar.gz` holds just the program. The tray icon needs a desktop with a system tray (KDE, Xfce, Cinnamon, or GNOME with the AppIndicator extension, which Ubuntu ships); without one the app still runs and you open http://localhost:8080 yourself.
+
+**First start**
+
+The first page asks for your [Steam Web API key](https://steamcommunity.com/dev/apikey); the app checks it with Steam and remembers it. Then sign in through Steam and press **Sync library**. Everything stays on your computer, in your data folder (see [SQLite](#sqlite)). The **Help** page in the app explains what to do if your Steam library is private.
+
+## Build it yourself
+
+You need [Go](https://go.dev/dl/) 1.25 or newer, [Node.js](https://nodejs.org/en/download) 20.19 or newer and [GNU Make](https://www.gnu.org/software/make/); no Docker. Clone the repository and build the desktop app:
+
+```sh
+git clone https://github.com/Adis/steamlib-explorer.git
+cd steamlib-explorer
+make desktop
+backend/bin/steamlib-explorer
+```
+
+It works the same as the download: same first start, same data folder, tray icon and browser. After a `git pull`, run `make desktop` again; your library is kept. `make desktop-windows` cross-builds the Windows `.exe` from Linux. To work on the code, with live reload and optionally Postgres, see [Development](#development) below.
+
 ## Development
 
 ### Requirements
@@ -38,7 +81,7 @@ In development the browser only talks to Vite on port 5173, which forwards `/api
 
 ### One binary
 
-`make build` builds the frontend into `backend/internal/webui/dist` and then the backend, which embeds it, so `backend/bin/server` alone serves the whole app on http://localhost:8080 (the API and the pages, no Vite or Node needed). `make serve` builds it and runs it against the Docker Postgres with `PUBLIC_URL=http://localhost:8080`, whatever `.env` says. This is the first step towards a desktop app; it still needs Postgres for now. A binary built without the frontend (plain `go build`) still runs and shows a page saying how to build it.
+`make build` builds the frontend into `backend/internal/webui/dist` and then the backend, which embeds it, so `backend/bin/server` alone serves the whole app on http://localhost:8080 (the API and the pages, no Vite or Node needed). `make serve` builds it and runs it with `PUBLIC_URL=http://localhost:8080`, whatever `.env` says, starting the Docker Postgres first only when `DATABASE_URL` points at Postgres. A binary built without the frontend (plain `go build`) still runs and shows a page saying how to build it.
 
 ### Remote access
 
@@ -53,7 +96,7 @@ Only port 5173 needs to be reachable: Vite forwards to the backend, which talks 
 
 ### SQLite
 
-The backend can also keep everything in one SQLite file instead of Postgres, so it runs without Docker. This is what the desktop app will use. When `DATABASE_URL` is not set, the backend uses `steamlib.db` in your data folder, created on first start:
+The backend can also keep everything in one SQLite file instead of Postgres, so it runs without Docker. This is what the desktop app uses. When `DATABASE_URL` is not set, the backend uses `steamlib.db` in your data folder, created on first start:
 
 | OS | Data folder |
 | --- | --- |
