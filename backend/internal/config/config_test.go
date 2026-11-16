@@ -20,7 +20,7 @@ func TestLoad(t *testing.T) {
 		{"public url trailing slash", "postgres://x", "k", "", "", "https://games.example.com/", 8080, "127.0.0.1", "https://games.example.com", false},
 		{"listen on all interfaces", "postgres://x", "k", "", "0.0.0.0", "", 8080, "0.0.0.0", "http://localhost:8080", false},
 		{"no db url uses the default SQLite file", "", "k", "", "", "", 8080, "127.0.0.1", "http://localhost:8080", false},
-		{"missing api key", "postgres://x", "", "", "", "", 0, "", "", true},
+		{"no api key is fine: the setup page asks", "postgres://x", "", "", "", "", 8080, "127.0.0.1", "http://localhost:8080", false},
 		{"bad port", "postgres://x", "k", "abc", "", "", 0, "", "", true},
 		{"port out of range", "postgres://x", "k", "70000", "", "", 0, "", "", true},
 		{"public url without scheme", "postgres://x", "k", "", "", "example.com", 0, "", "", true},

@@ -18,7 +18,7 @@ Personal, self-hosted repository of Steam games allowing you to browse and filte
 
 ### First run
 
-Copy the example settings once, then set `STEAM_API_KEY` in `.env`:
+Copy the example settings once, then set `STEAM_API_KEY` in `.env` (or leave it empty and paste the key into the setup page the app shows on first start):
 
 ```sh
 cp .env.example .env
@@ -73,6 +73,10 @@ It starts the Docker Postgres if needed and copies every user, game, library ent
 
 SQLite runs in WAL mode, so the explorer can read while a sync writes. Back up the `.db` file together with its `-wal` and `-shm` files, or stop the app first.
 
+### First start without any settings
+
+Started with no `.env` at all, the backend uses the SQLite file in your data folder and shows a one-time setup page asking for your Steam Web API key. It checks the key with Steam and saves it in `settings.json` next to the database (readable only by you). The page only works while no key is set, and only accepts JSON, so another website can't set a key for you; to change the key later, edit or delete `settings.json`, or set `STEAM_API_KEY`. `backend/bin/server -open` also opens the app in your default browser once it is listening.
+
 ### Logs
 
 Every incoming request (`msg="api request"`) and every call to Steam (`msg="outgoing call"`, with status, duration and the first 300 characters of the response) is logged to the backend console and appended to `backend/logs/api-calls.txt`. The Steam API key is replaced with `REDACTED`. Sync progress lines (`refresh started`, `library saved`, `refresh finished`) carry the `run_id`.
@@ -83,7 +87,7 @@ Every incoming request (`msg="api request"`) and every call to Steam (`msg="outg
 | --- | --- | --- | --- |
 | `DATABASE_URL` | no | `steamlib.db` in your data folder | `postgres://…` for Postgres, or `sqlite:` and a file path for SQLite, e.g. `sqlite:steamlib.db` (relative to `backend/`) or `sqlite:/home/me/steamlib.db`; see [SQLite](#sqlite) |
 | `STEAMLIB_DATA_DIR` | no | see [SQLite](#sqlite) | Folder for the default SQLite file |
-| `STEAM_API_KEY` | yes | | [Steam Web API key](https://steamcommunity.com/dev/apikey), used to read libraries and profiles |
+| `STEAM_API_KEY` | no | the key saved by the setup page | [Steam Web API key](https://steamcommunity.com/dev/apikey), used to read libraries and profiles. Without one, the app shows a setup page that checks the key with Steam and saves it in `settings.json` in the data folder; this variable wins over the saved key |
 | `PUBLIC_URL` | no | `http://localhost:$PORT` | Address the browser uses for the app; Steam redirects back here |
 | `PORT` | no | `8080` | Port the backend listens on |
 | `LISTEN_HOST` | no | `127.0.0.1` (backend), `localhost` (frontend) | Interface the backend and the Vite frontend listen on; `0.0.0.0` allows other devices (see [Remote access](#remote-access)) |

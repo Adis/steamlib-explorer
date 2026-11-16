@@ -18,6 +18,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -42,7 +43,8 @@ const (
 // Client is safe for concurrent use. Share one Client so all store requests
 // go through the same limiter.
 type Client struct {
-	apiKey    string
+	keyMu     sync.RWMutex
+	apiKey    string // set later by SetAPIKey when the app starts without one
 	http      *http.Client
 	apiBase   string
 	storeBase string
@@ -95,6 +97,42 @@ func New(apiKey string, opts ...Option) *Client {
 	return c
 }
 
+// APIKey is the Web API key in use; empty until one is set.
+func (c *Client) APIKey() string {
+	c.keyMu.RLock()
+	defer c.keyMu.RUnlock()
+	return c.apiKey
+}
+
+// SetAPIKey switches to another Web API key, e.g. one entered on the setup page.
+func (c *Client) SetAPIKey(key string) {
+	c.keyMu.Lock()
+	c.apiKey = key
+	c.keyMu.Unlock()
+}
+
+// ErrBadAPIKey means Steam refused a Web API key.
+var ErrBadAPIKey = errors.New("steam: Web API key refused")
+
+// CheckAPIKey asks Steam whether key works, with one cheap profile lookup.
+// It returns ErrBadAPIKey when Steam refuses the key.
+func (c *Client) CheckAPIKey(ctx context.Context, key string) error {
+	q := url.Values{}
+	q.Set("key", key)
+	q.Set("steamids", "76561197960287930") // any public profile works
+	var r struct {
+		Response struct {
+			Players []json.RawMessage `json:"players"`
+		} `json:"response"`
+	}
+	_, err := c.getJSON(ctx, c.apiBase+"/ISteamUser/GetPlayerSummaries/v2/?"+q.Encode(), &r)
+	var se *StatusError
+	if errors.As(err, &se) && (se.Status == http.StatusUnauthorized || se.Status == http.StatusForbidden) {
+		return ErrBadAPIKey
+	}
+	return err
+}
+
 // StatusError is a non-200 answer that wasn't retried.
 type StatusError struct {
 	URL    string
@@ -114,6 +152,11 @@ func (c *Client) getJSON(ctx context.Context, u string, v any) (status int, err 
 	req.Header.Set("Accept", "application/json")
 	resp, err := c.http.Do(req)
 	if err != nil {
+		// A failed request's error repeats the URL, key included.
+		var ue *url.Error
+		if errors.As(err, &ue) {
+			ue.URL = redact(ue.URL)
+		}
 		return 0, err
 	}
 	defer resp.Body.Close()

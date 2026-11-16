@@ -1,17 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchMe, logout, type User } from "./api.ts";
+import { fetchMe, fetchSetup, logout, type User } from "./api.ts";
 import Explorer from "./Explorer.tsx";
 import Help from "./Help.tsx";
 import Settings from "./Settings.tsx";
+import Setup from "./Setup.tsx";
 import SyncPanel from "./SyncPanel.tsx";
 import { ErrorBox } from "./ui.tsx";
 import { CircleHelp, LibraryBig, LogOut, Settings as SettingsIcon, type LucideIcon } from "lucide-react";
 
 export default function App() {
   const me = useQuery({ queryKey: ["me"], queryFn: fetchMe });
+  const setup = useQuery({ queryKey: ["setup"], queryFn: fetchSetup, staleTime: Infinity });
   const page = useHashPage();
+  // Until a Steam API key is set, the home page is the setup form.
+  const needsKey = setup.data?.needs_api_key === true;
   const subpage = page === "help" || page === "settings";
+  const home = !subpage && !needsKey;
   const mainRef = useRef<HTMLElement>(null);
   const firstPage = useRef(true);
 
@@ -64,12 +69,13 @@ export default function App() {
       <main id="main" ref={mainRef} tabIndex={-1} className="mx-auto max-w-[1536px] px-4 py-8 outline-none">
         {page === "help" && <Help signedIn={!!me.data} />}
         {page === "settings" && <Settings signedIn={!!me.data} />}
-        {!subpage && me.isPending && <p className="text-muted">Loading…</p>}
-        {!subpage && me.isError && (
+        {!subpage && needsKey && <Setup />}
+        {home && me.isPending && <p className="text-muted">Loading…</p>}
+        {home && me.isError && (
           <ErrorBox>Could not reach the backend: {me.error.message}</ErrorBox>
         )}
-        {!subpage && me.data === null && <SignIn />}
-        {!subpage && me.data && (
+        {home && me.data === null && <SignIn />}
+        {home && me.data && (
           <div className="space-y-6">
             <SyncPanel />
             <Explorer />

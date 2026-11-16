@@ -20,7 +20,7 @@ type PlayerSummary struct {
 // PlayerSummary fetches a user's display name and avatar.
 func (c *Client) PlayerSummary(ctx context.Context, steamID uint64) (*PlayerSummary, error) {
 	q := url.Values{}
-	q.Set("key", c.apiKey)
+	q.Set("key", c.APIKey())
 	q.Set("steamids", strconv.FormatUint(steamID, 10))
 	u := c.apiBase + "/ISteamUser/GetPlayerSummaries/v2/?" + q.Encode()
 

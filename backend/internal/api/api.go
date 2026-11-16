@@ -25,6 +25,7 @@ type Deps struct {
 	Refresher Refresher
 	SyncQ     SyncQueries
 	Games     GameQueries
+	Setup     KeySetup
 	// UI serves the frontend for every path the routes above do not match.
 	// Nil leaves those paths as 404s.
 	UI http.Handler
@@ -44,6 +45,12 @@ func NewRouter(d Deps) http.Handler {
 		r.Get("/auth/steam/login", d.Auth.Login)
 		r.Get("/auth/steam/callback", d.Auth.Callback)
 		r.Post("/auth/logout", d.Auth.Logout)
+
+		// First-run setup, before anyone can sign in.
+		if d.Setup != nil {
+			r.Get("/api/setup", setupStatus(d.Setup))
+			r.Post("/api/setup", saveAPIKey(d.Setup))
+		}
 
 		r.Route("/api", func(r chi.Router) {
 			r.Use(d.Auth.RequireUser)

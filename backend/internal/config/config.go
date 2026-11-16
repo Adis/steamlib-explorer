@@ -2,7 +2,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -19,8 +18,12 @@ type Config struct {
 	Port        int // PORT, default 8080
 	// ListenHost is the interface the backend listens on (LISTEN_HOST, default
 	// 127.0.0.1, so only this machine can connect; 0.0.0.0 opens it to the network).
-	ListenHost  string
-	SteamAPIKey string // STEAM_API_KEY, required
+	ListenHost string
+	// SteamAPIKey is STEAM_API_KEY. When unset, the key saved in SettingsFile
+	// is used, and without one the app asks for it on a setup page.
+	SteamAPIKey string
+	// SettingsFile is settings.json in the user's data folder.
+	SettingsFile string
 	// PublicURL is the address browsers use for the app (PUBLIC_URL, default
 	// http://localhost:8080). Steam sends users back here after sign-in.
 	PublicURL string
@@ -54,9 +57,11 @@ func Load() (Config, error) {
 		}
 		cfg.DatabaseURL = "sqlite:" + db
 	}
-	if cfg.SteamAPIKey == "" {
-		return cfg, errors.New("STEAM_API_KEY is required (get one at https://steamcommunity.com/dev/apikey)")
+	settingsFile, err := paths.SettingsFile()
+	if err != nil {
+		return cfg, err
 	}
+	cfg.SettingsFile = settingsFile
 	if p := os.Getenv("PORT"); p != "" {
 		n, err := strconv.Atoi(p)
 		if err != nil || n < 1 || n > 65535 {

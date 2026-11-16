@@ -39,6 +39,15 @@ func DataDir() (string, error) {
 	return filepath.Join(base, appDir), nil
 }
 
+// SettingsFile is settings.json in the data folder.
+func SettingsFile() (string, error) {
+	dir, err := DataDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "settings.json"), nil
+}
+
 // DefaultDatabase is the SQLite file used when DATABASE_URL is not set.
 func DefaultDatabase() (string, error) {
 	dir, err := DataDir()
