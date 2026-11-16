@@ -81,7 +81,23 @@ Started with no `.env` at all, the backend uses the SQLite file in your data fol
 
 `make desktop` builds `backend/bin/steamlib-explorer`, the desktop version: one file that needs no Docker, Node or settings. Starting it runs the app on http://localhost:8080, opens it in your default browser and puts an icon in the system tray with **Open Steamlib Explorer** and **Quit**. It uses the SQLite file and `settings.json` in your data folder (see [SQLite](#sqlite)) and writes its log to `logs/steamlib-explorer.log` there; if it can't start, the reason is in `startup-error.txt` in the same folder. Starting it a second time just opens the browser on the one already running.
 
-`make desktop-windows` cross-builds `steamlib-explorer.exe` for Windows from Linux; it runs without a console window. On Linux the tray icon needs a desktop with a system tray (KDE, Xfce, Cinnamon, or GNOME with the AppIndicator extension, which Ubuntu ships); without a desktop session it runs without the icon and stops with Ctrl+C. Installers come next.
+`make desktop-windows` cross-builds `steamlib-explorer.exe` for Windows from Linux; it runs without a console window. On Linux the tray icon needs a desktop with a system tray (KDE, Xfce, Cinnamon, or GNOME with the AppIndicator extension, which Ubuntu ships); without a desktop session it runs without the icon and stops with Ctrl+C.
+
+### Installers and releases
+
+The **Release** workflow (`.github/workflows/release.yml`) builds the desktop app with [GoReleaser](https://goreleaser.com) (`.goreleaser.yaml`) and makes:
+
+- Windows: `steamlib-explorer_<version>_windows_setup.exe`, an installer made with Inno Setup (`packaging/windows`). It installs for the current user only, so it needs no administrator rights, adds a Start menu entry (a desktop icon is optional) and an uninstaller, which keeps your library and settings. A `.zip` with just the `.exe` is there too.
+- Linux: `.deb` (Debian, Ubuntu, Mint), `.rpm` (Fedora, openSUSE) and `.pkg.tar.zst` (Arch, `sudo pacman -U <file>`) packages for x86-64 and ARM64, which add **Steamlib Explorer** to the applications menu, plus a `.tar.gz` with just the program.
+
+To release, tag a commit and push the tag:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The workflow then makes a **draft** release with all the downloads; check it on GitHub and press **Publish release**. Pull requests that change the packaging, and a manual run from the Actions tab, build everything the same way as a test and keep the files as workflow artifacts instead of releasing them. To try it locally, `goreleaser release --snapshot --clean` writes the Linux and Windows files to `dist/` (the Windows installer needs Windows). The builds aren't code signed, so Windows SmartScreen warns on first start: **More info**, then **Run anyway**.
 
 ### Logs
 

@@ -1,0 +1,82 @@
+# Release builds of the desktop app (cmd/steamlib-explorer).
+# The release workflow (.github/workflows/release.yml) runs this; locally:
+#   goreleaser release --snapshot --clean
+# The Windows installer is made afterwards on a Windows runner with Inno Setup
+# (packaging/windows) and added to the same release.
+version: 2
+
+project_name: steamlib-explorer
+
+before:
+  hooks:
+    - make web-build
+    # Icon and version info inside the .exe (writes rsrc_windows_*.syso).
+    - sh -c 'cd backend/cmd/steamlib-explorer && go run github.com/tc-hib/go-winres@v0.3.3 simply --icon icon/icon-256.png --manifest gui --product-name "Steamlib Explorer" --file-description "Steamlib Explorer" --file-version "{{ .Major }}.{{ .Minor }}.{{ .Patch }}" --product-version "{{ .Major }}.{{ .Minor }}.{{ .Patch }}"'
+
+builds:
+  - id: desktop
+    dir: backend
+    main: ./cmd/steamlib-explorer
+    binary: steamlib-explorer
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+      # No console window next to the tray icon.
+      - '{{ if eq .Os "windows" }}-H windowsgui{{ end }}'
+    goos: [linux, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - id: desktop
+    ids: [desktop]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+
+nfpms:
+  - id: desktop
+    ids: [desktop]
+    package_name: steamlib-explorer
+    file_name_template: "{{ .ConventionalFileName }}"
+    vendor: Steamlib Explorer
+    homepage: https://github.com/Adis/steamlib-explorer
+    maintainer: Adis <508165+Adis@users.noreply.github.com>
+    description: Explore your Steam library with filters. Runs on your computer, opens in your browser.
+    license: AGPL-3.0
+    formats: [deb, rpm, archlinux]
+    bindir: /usr/bin
+    section: games
+    contents:
+      - src: packaging/linux/steamlib-explorer.desktop
+        dst: /usr/share/applications/steamlib-explorer.desktop
+      - src: packaging/linux/steamlib-explorer.png
+        dst: /usr/share/icons/hicolor/256x256/apps/steamlib-explorer.png
+      - src: LICENSE
+        dst: /usr/share/licenses/steamlib-explorer/LICENSE
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-dev"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^Merge"
+
+release:
+  # Created as a draft: check it, then press Publish on GitHub.
+  draft: true

@@ -31,6 +31,9 @@ import (
 	"github.com/Adis/steamlib-explorer/backend/internal/paths"
 )
 
+// version is set by release builds (-X main.version=1.2.3).
+var version = "dev"
+
 var (
 	//go:embed icon/icon.png
 	iconPNG []byte
@@ -79,7 +82,7 @@ func run() error {
 			systray.SetIcon(iconPNG)
 		}
 		systray.SetTitle("Steamlib Explorer")
-		systray.SetTooltip("Steamlib Explorer is running")
+		systray.SetTooltip("Steamlib Explorer " + version + " is running")
 		open := systray.AddMenuItem("Open Steamlib Explorer", "Show your library in the browser")
 		systray.AddSeparator()
 		quit := systray.AddMenuItem("Quit", "Stop Steamlib Explorer")

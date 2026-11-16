@@ -46,3 +46,10 @@ backend/internal/webui/dist/*
 *.db
 *.db-wal
 *.db-shm
+
+# Windows resources made by go-winres for release builds
+*.syso
+
+# Release builds (goreleaser) and the Windows installer
+dist/
+packaging/windows/Output/
