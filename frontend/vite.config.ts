@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { writeFileSync } from "node:fs";
 
 // In development the browser talks only to Vite (localhost:5173), which
 // forwards /api and /auth to the Go backend. Cookies and the Steam callback
@@ -22,8 +23,24 @@ try {
   // A bad PUBLIC_URL is reported by the backend.
 }
 
+// `npm run build` writes straight into the Go backend, which embeds the build
+// and serves it, so one binary is the whole app. Emptying the folder deletes
+// the .gitkeep that lets the backend compile before the first build, so put
+// it back afterwards.
+const outDir = "../backend/internal/webui/dist";
+const keepGitkeep = {
+  name: "keep-gitkeep",
+  closeBundle() {
+    writeFileSync(`${outDir}/.gitkeep`, "");
+  },
+};
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), keepGitkeep],
+  build: {
+    outDir,
+    emptyOutDir: true,
+  },
   server: {
     host,
     port: 5173,

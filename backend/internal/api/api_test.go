@@ -33,3 +33,20 @@ func TestHealth(t *testing.T) {
 		})
 	}
 }
+
+func TestUIServesOtherPaths(t *testing.T) {
+	ui := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusTeapot) })
+	router := NewRouter(Deps{DB: fakeDB{}, Auth: &auth.Service{}, UI: ui})
+	for path, want := range map[string]int{
+		"/":                http.StatusTeapot,
+		"/assets/index.js": http.StatusTeapot,
+		"/healthz":         http.StatusOK,
+		"/api/me":          http.StatusUnauthorized, // API routes still win over the UI
+	} {
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != want {
+			t.Errorf("GET %s = %d, want %d", path, rec.Code, want)
+		}
+	}
+}

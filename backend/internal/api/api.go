@@ -25,29 +25,41 @@ type Deps struct {
 	Refresher Refresher
 	SyncQ     SyncQueries
 	Games     GameQueries
+	// UI serves the frontend for every path the routes above do not match.
+	// Nil leaves those paths as 404s.
+	UI http.Handler
 }
 
 func NewRouter(d Deps) http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(logging.Requests)
 	r.Use(middleware.Recoverer)
 
-	r.Get("/healthz", health(d.DB))
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequestID)
+		r.Use(middleware.RealIP)
+		r.Use(logging.Requests)
 
-	r.Get("/auth/steam/login", d.Auth.Login)
-	r.Get("/auth/steam/callback", d.Auth.Callback)
-	r.Post("/auth/logout", d.Auth.Logout)
+		r.Get("/healthz", health(d.DB))
 
-	r.Route("/api", func(r chi.Router) {
-		r.Use(d.Auth.RequireUser)
-		r.Get("/me", auth.Me)
-		r.Post("/sync", startSync(d.Refresher))
-		r.Get("/sync", syncStatus(d.SyncQ))
-		r.Get("/games", listGames(d.Games))
-		r.Get("/facets", listFacets(d.Games))
+		r.Get("/auth/steam/login", d.Auth.Login)
+		r.Get("/auth/steam/callback", d.Auth.Callback)
+		r.Post("/auth/logout", d.Auth.Logout)
+
+		r.Route("/api", func(r chi.Router) {
+			r.Use(d.Auth.RequireUser)
+			r.Get("/me", auth.Me)
+			r.Post("/sync", startSync(d.Refresher))
+			r.Get("/sync", syncStatus(d.SyncQ))
+			r.Get("/games", listGames(d.Games))
+			r.Get("/facets", listFacets(d.Games))
+		})
 	})
+
+	// The frontend's files are left out of the request log, which is about
+	// the API and Steam.
+	if d.UI != nil {
+		r.Handle("/*", d.UI)
+	}
 	return r
 }
 

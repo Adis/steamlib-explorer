@@ -21,6 +21,7 @@ import (
 	"github.com/Adis/steamlib-explorer/backend/internal/steam"
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
 	"github.com/Adis/steamlib-explorer/backend/internal/syncer"
+	"github.com/Adis/steamlib-explorer/backend/internal/webui"
 )
 
 func main() {
@@ -85,6 +86,7 @@ func run() error {
 		Addr: net.JoinHostPort(cfg.ListenHost, strconv.Itoa(cfg.Port)),
 		Handler: api.NewRouter(api.Deps{
 			DB: pool, Auth: authService, Refresher: refresher, SyncQ: queries, Games: queries,
+			UI: webui.Handler(),
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
