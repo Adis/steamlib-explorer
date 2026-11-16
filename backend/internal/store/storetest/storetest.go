@@ -40,7 +40,8 @@ func testNameSearchUnicode(t *testing.T, s store.Store) {
 }
 
 // Steam rates a game with few reviews only "Positive" even at 100%, so the
-// review sort orders by Steam's rating before the percentage.
+// review sort orders by Steam's rating first, then the least played, then
+// the percentage.
 func testReviewSortByRating(t *testing.T, s store.Store) {
 	ctx := context.Background()
 	seed(t, s, []app{
@@ -49,13 +50,15 @@ func testReviewSortByRating(t *testing.T, s store.Store) {
 		{id: 3, name: "Very Positive 97%", positive: 97, total: 100, reviewScore: 8, owner: 1},
 		{id: 4, name: "Overwhelmingly Positive 98%", positive: 980, total: 1000, reviewScore: 9, owner: 1},
 		{id: 5, name: "No reviews", owner: 1},
+		{id: 6, name: "Overwhelmingly Positive 99%, played", positive: 990, total: 1000, reviewScore: 9, owner: 1, minutes: 120},
+		{id: 7, name: "Overwhelmingly Positive 95%, played a bit", positive: 950, total: 1000, reviewScore: 9, owner: 1, minutes: 30},
 	})
 	for _, tt := range []struct {
 		desc bool
 		want []int64
 	}{
-		{true, []int64{4, 2, 3, 1, 5}},
-		{false, []int64{1, 3, 2, 4, 5}},
+		{true, []int64{4, 2, 7, 6, 3, 1, 5}},
+		{false, []int64{1, 3, 2, 4, 7, 6, 5}},
 	} {
 		rows, err := s.ListGames(ctx, store.ListGamesParams{SteamID: 1, Sort: "review", Descending: tt.desc, PageLimit: 10})
 		must(t, err)

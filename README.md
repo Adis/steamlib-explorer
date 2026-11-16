@@ -219,7 +219,7 @@ In Postgres, genres and categories are `text[]` columns with GIN indexes, so fil
 | `min_metacritic` | Minimum Metacritic score, 0 to 100 |
 | `released_after`, `released_before` | Release date range, `YYYY-MM-DD` (games without a parseable date are left out) |
 | `platform` | `windows`, `mac` or `linux`; repeat to require several |
-| `sort` | `name`, `playtime`, `recent` (last two weeks), `last_played`, `review` (default; by Steam rating, Overwhelmingly Positive first, then percent positive; equal ratings show the least played first), `metacritic`, `release` |
+| `sort` | `name`, `playtime`, `recent` (last two weeks), `last_played`, `review` (default; by Steam rating, Overwhelmingly Positive first; within a rating the least played come first, then percent positive), `metacritic`, `release` |
 | `order` | `asc` or `desc`; defaults to A to Z for `name` and biggest/newest first for the others. Unknown values sort last |
 | `limit`, `offset` | Page size (1 to 200, default 50) and start |
 
