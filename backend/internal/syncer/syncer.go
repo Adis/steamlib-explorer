@@ -11,8 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgconn"
-
 	"github.com/Adis/steamlib-explorer/backend/internal/steam"
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
 )
@@ -73,8 +71,7 @@ func (s *Syncer) Start(ctx context.Context, steamID uint64) (int64, error) {
 	runID, err := s.q.StartSyncRun(ctx, int64(steamID))
 	if err != nil {
 		s.done(steamID)
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // another process holds the running slot
+		if errors.Is(err, store.ErrConflict) { // another process holds the running slot
 			return 0, ErrAlreadyRunning
 		}
 		return 0, err

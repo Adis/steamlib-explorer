@@ -106,8 +106,7 @@ func parseGameFilters(v url.Values) (store.ListGamesParams, error) {
 	var err error
 
 	if s := strings.TrimSpace(v.Get("q")); s != "" {
-		pattern := "%" + escapeLike(s) + "%"
-		p.NamePattern = &pattern
+		p.NameContains = &s
 	}
 	p.Genres = nonEmptyValues(v["genre"])
 	p.Categories = nonEmptyValues(v["category"])
@@ -227,11 +226,6 @@ func dateParam(v url.Values, name string) (*time.Time, error) {
 		return nil, fmt.Errorf("%s must be a date like 2020-01-31", name)
 	}
 	return &t, nil
-}
-
-// escapeLike makes user input match literally inside ILIKE.
-func escapeLike(s string) string {
-	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
 }
 
 // nonEmptyValues drops blanks and returns nil (filter off) when none remain.

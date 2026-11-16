@@ -3,5 +3,7 @@ package db
 
 import "embed"
 
-//go:embed migrations/*.sql
-var Migrations embed.FS
+// Postgres holds the Postgres migrations, in postgres/migrations.
+//
+//go:embed postgres/migrations/*.sql
+var Postgres embed.FS

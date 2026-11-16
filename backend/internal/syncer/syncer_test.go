@@ -10,9 +10,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Adis/steamlib-explorer/backend/internal/database"
 	"github.com/Adis/steamlib-explorer/backend/internal/steam"
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
+	"github.com/Adis/steamlib-explorer/backend/internal/store/postgres"
 )
 
 const user = uint64(76561197960287930)
@@ -68,28 +68,26 @@ func (f *fakeSteam) AppReviews(_ context.Context, ids []int64) (map[int64]steam.
 	return out, nil
 }
 
-func setup(t *testing.T) (*pgxpool.Pool, *store.Queries) {
+func setup(t *testing.T) (*pgxpool.Pool, store.Store) {
 	t.Helper()
 	url := os.Getenv("TEST_DATABASE_URL")
 	if url == "" {
 		t.Skip("TEST_DATABASE_URL not set")
 	}
 	ctx := context.Background()
-	pool, err := database.Open(ctx, url)
+	st, err := postgres.Open(ctx, url)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(pool.Close)
-	if err := database.Migrate(ctx, pool); err != nil {
-		t.Fatal(err)
-	}
+	t.Cleanup(st.Close)
+	pool := st.Pool()
 	if _, err := pool.Exec(ctx, "TRUNCATE users, apps CASCADE"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := pool.Exec(ctx, "INSERT INTO users (steam_id) VALUES ($1)", int64(user)); err != nil {
 		t.Fatal(err)
 	}
-	return pool, store.New(pool)
+	return pool, st
 }
 
 func runToEnd(t *testing.T, s *Syncer) store.SyncRun {
@@ -98,7 +96,7 @@ func runToEnd(t *testing.T, s *Syncer) store.SyncRun {
 		t.Fatal(err)
 	}
 	s.Wait()
-	run, err := s.q.(*store.Queries).LatestSyncRun(context.Background(), int64(user))
+	run, err := s.q.(store.Store).LatestSyncRun(context.Background(), int64(user))
 	if err != nil {
 		t.Fatal(err)
 	}

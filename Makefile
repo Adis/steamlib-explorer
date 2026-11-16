@@ -1,6 +1,6 @@
 GOOSE   := go run github.com/pressly/goose/v3/cmd/goose@v3.26.0
 SQLC    := go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.29.0
-MIGRATIONS := backend/db/migrations
+MIGRATIONS := backend/db/postgres/migrations
 
 -include .env
 export
@@ -71,7 +71,7 @@ test-db:        ## Run the backend tests, including the ones that need Postgres
 	psql "$(DATABASE_URL)" -qc "DROP DATABASE IF EXISTS steamlib_test" -c "CREATE DATABASE steamlib_test"
 	cd backend && TEST_DATABASE_URL="$(subst /steamlib?,/steamlib_test?,$(DATABASE_URL))" go test -p 1 ./...
 
-generate:       ## Regenerate Go code from backend/db/queries with sqlc
+generate:       ## Regenerate Go code from backend/db/postgres/queries with sqlc
 	cd backend && $(SQLC) generate
 
 migrate-up:     ## Apply all migrations

@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-
 	"github.com/Adis/steamlib-explorer/backend/internal/auth"
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
 	"github.com/Adis/steamlib-explorer/backend/internal/syncer"
@@ -30,7 +28,7 @@ type fakeSyncQ struct{ run *store.SyncRun }
 
 func (f fakeSyncQ) LatestSyncRun(context.Context, int64) (store.SyncRun, error) {
 	if f.run == nil {
-		return store.SyncRun{}, pgx.ErrNoRows
+		return store.SyncRun{}, store.ErrNotFound
 	}
 	return *f.run, nil
 }

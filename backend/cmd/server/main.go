@@ -49,16 +49,12 @@ func run() error {
 		slog.Info("logging to console and file", "file", cfg.LogFile)
 	}
 
-	pool, err := database.Open(ctx, cfg.DatabaseURL)
+	queries, err := database.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return err
 	}
-	defer pool.Close()
+	defer queries.Close()
 
-	if err := database.Migrate(ctx, pool); err != nil {
-		return err
-	}
-	queries := store.New(pool)
 	if n, err := queries.FailRunningSyncs(ctx); err != nil {
 		return err
 	} else if n > 0 {
@@ -85,7 +81,7 @@ func run() error {
 	srv := &http.Server{
 		Addr: net.JoinHostPort(cfg.ListenHost, strconv.Itoa(cfg.Port)),
 		Handler: api.NewRouter(api.Deps{
-			DB: pool, Auth: authService, Refresher: refresher, SyncQ: queries, Games: queries,
+			DB: queries, Auth: authService, Refresher: refresher, SyncQ: queries, Games: queries,
 			UI: webui.Handler(),
 		}),
 		ReadHeaderTimeout: 10 * time.Second,

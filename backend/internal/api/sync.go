@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-
 	"github.com/Adis/steamlib-explorer/backend/internal/auth"
 	"github.com/Adis/steamlib-explorer/backend/internal/steam"
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
@@ -82,7 +80,7 @@ func syncStatus(q SyncQueries) http.HandlerFunc {
 
 		run, err := q.LatestSyncRun(req.Context(), int64(u.SteamID))
 		switch {
-		case errors.Is(err, pgx.ErrNoRows):
+		case errors.Is(err, store.ErrNotFound):
 		case err != nil:
 			slog.Error("load refresh status", "error", err)
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})

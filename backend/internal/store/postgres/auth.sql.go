@@ -3,7 +3,7 @@
 //   sqlc v1.29.0
 // source: auth.sql
 
-package store
+package postgres
 
 import (
 	"context"
