@@ -2,8 +2,11 @@
 // SQLite file, so a synced library moves over without a re-sync. Postgres is
 // only read.
 //
-//	go run ./cmd/pg2sqlite -to steamlib.db                 # reads DATABASE_URL
+//	go run ./cmd/pg2sqlite                                  # DATABASE_URL into the default file
 //	go run ./cmd/pg2sqlite -from postgres://… -to steamlib.db
+//
+// The default file is the one the app opens when DATABASE_URL is not set
+// (see paths.DataDir).
 package main
 
 import (
@@ -15,6 +18,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Adis/steamlib-explorer/backend/internal/paths"
 	"github.com/Adis/steamlib-explorer/backend/internal/store/postgres"
 	"github.com/Adis/steamlib-explorer/backend/internal/store/sqlite"
 	"github.com/Adis/steamlib-explorer/backend/internal/transfer"
@@ -29,7 +33,11 @@ func main() {
 
 func run() error {
 	from := flag.String("from", os.Getenv("DATABASE_URL"), "Postgres URL to copy from (default: DATABASE_URL)")
-	to := flag.String("to", "", "SQLite file to create, e.g. steamlib.db (must not exist yet)")
+	defaultTo, err := paths.DefaultDatabase()
+	if err != nil {
+		defaultTo = ""
+	}
+	to := flag.String("to", defaultTo, "SQLite file to create (must not exist yet)")
 	flag.Parse()
 
 	if !strings.HasPrefix(*from, "postgres://") && !strings.HasPrefix(*from, "postgresql://") {
@@ -70,6 +78,10 @@ func run() error {
 	}
 	fmt.Printf("Copied %d users, %d games, %d library entries, %d syncs and %d sign-in sessions into %s.\n",
 		counts["users"], counts["apps"], counts["owned_games"], counts["sync_runs"], counts["sessions"], path)
-	fmt.Printf("To use it, set DATABASE_URL=sqlite:%s in .env. Postgres is unchanged.\n", path)
+	if path == defaultTo {
+		fmt.Println("The app uses this file when DATABASE_URL is not set: remove DATABASE_URL from .env (or comment it out). Postgres is unchanged.")
+	} else {
+		fmt.Printf("To use it, set DATABASE_URL=sqlite:%s in .env. Postgres is unchanged.\n", path)
+	}
 	return nil
 }

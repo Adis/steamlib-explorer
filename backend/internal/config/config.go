@@ -8,11 +8,15 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/Adis/steamlib-explorer/backend/internal/paths"
 )
 
 type Config struct {
-	DatabaseURL string // DATABASE_URL, required: postgres://... or sqlite:<file>
-	Port        int    // PORT, default 8080
+	// DatabaseURL is DATABASE_URL: postgres://... or sqlite:<file>. When unset,
+	// a SQLite file in the user's data folder (see paths.DataDir).
+	DatabaseURL string
+	Port        int // PORT, default 8080
 	// ListenHost is the interface the backend listens on (LISTEN_HOST, default
 	// 127.0.0.1, so only this machine can connect; 0.0.0.0 opens it to the network).
 	ListenHost  string
@@ -44,7 +48,11 @@ func Load() (Config, error) {
 		cfg.ListenHost = "127.0.0.1"
 	}
 	if cfg.DatabaseURL == "" {
-		return cfg, errors.New("DATABASE_URL is required")
+		db, err := paths.DefaultDatabase()
+		if err != nil {
+			return cfg, err
+		}
+		cfg.DatabaseURL = "sqlite:" + db
 	}
 	if cfg.SteamAPIKey == "" {
 		return cfg, errors.New("STEAM_API_KEY is required (get one at https://steamcommunity.com/dev/apikey)")

@@ -12,15 +12,19 @@ export
 #   @$(FAIL) some-command || fail "What went wrong" "How to fix it"
 FAIL = fail() { printf '\n\033[1;31m✗ %s\033[0m\n  %s\n\n' "$$1" "$$2" >&2; exit 1; };
 
-dev:            ## Start everything, e.g. after a git pull: Postgres, new npm packages, backend and frontend (Ctrl+C stops both)
+# Docker is needed only when DATABASE_URL points at Postgres; without it the
+# backend uses a SQLite file.
+USES_POSTGRES := $(filter postgres://% postgresql://%,$(DATABASE_URL))
+
+dev:            ## Start everything, e.g. after a git pull: Postgres (if used), new npm packages, backend and frontend (Ctrl+C stops both)
 	@$(MAKE) --no-print-directory check-tools
-	@$(MAKE) --no-print-directory db-up
+	@$(if $(USES_POSTGRES),$(MAKE) --no-print-directory db-up,echo "→ Using SQLite, so Docker is not needed")
 	@$(MAKE) --no-print-directory frontend/node_modules/.package-lock.json
 	@echo "→ Starting the backend and frontend (Ctrl+C stops both)…"
 	@$(MAKE) --no-print-directory -j2 run web
 
-check-tools:    ## Check that docker, go and npm are installed
-	@$(FAIL) for tool in docker go npm; do \
+check-tools:    ## Check that go and npm (and docker, for Postgres) are installed
+	@$(FAIL) for tool in $(if $(USES_POSTGRES),docker) go npm; do \
 	  command -v $$tool >/dev/null 2>&1 || fail "$$tool is not installed or not on your PATH." "Install it, open a new terminal and run make dev again."; \
 	done
 
@@ -61,11 +65,12 @@ web-build: frontend/node_modules/.package-lock.json ## Build the frontend into b
 build: web-build ## Build one binary, backend/bin/server, that serves the API and the frontend on http://localhost:8080
 	cd backend && go build -o bin/server ./cmd/server
 
-serve: db-up build ## Build the one binary and run it: the whole app on http://localhost:8080, no Vite
+serve: build ## Build the one binary and run it: the whole app on http://localhost:8080, no Vite
+	@$(if $(USES_POSTGRES),$(MAKE) --no-print-directory db-up,true)
 	cd backend && PUBLIC_URL=http://localhost:$(or $(PORT),8080) ./bin/server
 
-pg-to-sqlite: db-up ## Copy the Postgres in DATABASE_URL into a new SQLite file, backend/steamlib.db (or SQLITE=path)
-	cd backend && go run ./cmd/pg2sqlite -to $(or $(SQLITE),steamlib.db)
+pg-to-sqlite: db-up ## Copy the Postgres in DATABASE_URL into a new SQLite file: the app's default one, or SQLITE=path
+	cd backend && go run ./cmd/pg2sqlite $(if $(SQLITE),-to $(SQLITE))
 
 test:           ## Run the backend tests
 	cd backend && go test ./...
