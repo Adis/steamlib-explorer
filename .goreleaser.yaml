@@ -80,5 +80,3 @@ changelog:
 release:
   # Created as a draft: check it, then press Publish on GitHub.
   draft: true
-  footer: |
-    [Code signing policy](https://github.com/Adis/steamlib-explorer#code-signing-policy)
