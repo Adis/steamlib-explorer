@@ -3,6 +3,19 @@ Personal, self-hosted repository of Steam games allowing you to browse and filte
 
 There are two ways to run it: [download the app](#download-the-app) from GitHub Releases, or [build it yourself](#build-it-yourself) from this repository. Either way it runs on your own computer, opens in your browser, and needs a free [Steam Web API key](https://steamcommunity.com/dev/apikey).
 
+![Your library in the table view, sorted by Steam reviews](docs/screenshots/explorer-table.png)
+
+| Cards view | Filtered: unplayed strategy games rated Very Positive or better |
+| --- | --- |
+| ![Your library as cards with header images](docs/screenshots/explorer-cards.png) | ![300 unplayed strategy games with Very Positive or better reviews](docs/screenshots/explorer-filtered.png) |
+
+<details>
+<summary>Settings: themes, high contrast and text size</summary>
+
+![Settings page with theme picker, high-contrast themes and text size](docs/screenshots/settings.png)
+
+</details>
+
 ## Download the app
 
 Get the latest version from the [Releases page](https://github.com/Adis/steamlib-explorer/releases/latest). It needs no Docker, database or other software.
