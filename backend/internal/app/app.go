@@ -13,11 +13,11 @@ import (
 	"time"
 
 	"github.com/Adis/steamlib-explorer/backend/internal/api"
+	"github.com/Adis/steamlib-explorer/backend/internal/apikey"
 	"github.com/Adis/steamlib-explorer/backend/internal/auth"
 	"github.com/Adis/steamlib-explorer/backend/internal/config"
 	"github.com/Adis/steamlib-explorer/backend/internal/database"
 	"github.com/Adis/steamlib-explorer/backend/internal/logging"
-	"github.com/Adis/steamlib-explorer/backend/internal/settings"
 	"github.com/Adis/steamlib-explorer/backend/internal/steam"
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
 	"github.com/Adis/steamlib-explorer/backend/internal/syncer"
@@ -50,17 +50,21 @@ func Run(ctx context.Context, cfg config.Config, ready func()) error {
 
 	// Every call to Steam goes through the logging transport.
 	steamHTTP := &http.Client{Timeout: 30 * time.Second, Transport: &logging.Transport{Service: "steam"}}
-	// STEAM_API_KEY wins; otherwise the key saved by the setup page, if any.
-	saved, err := settings.Load(cfg.SettingsFile)
-	if err != nil {
-		return err
-	}
+	// STEAM_API_KEY wins, and then the keychain is never touched; otherwise
+	// the key saved by the setup page, if any.
+	keys := &apikey.Store{Keyring: apikey.OSKeyring{}, File: cfg.SettingsFile}
 	apiKey := cfg.SteamAPIKey
 	if apiKey == "" {
-		apiKey = saved.SteamAPIKey
-	}
-	if apiKey == "" {
-		slog.Info("no Steam API key yet: the app will ask for one", "settings_file", cfg.SettingsFile)
+		saved, where, err := keys.Load()
+		if err != nil {
+			return err
+		}
+		apiKey = saved
+		if apiKey == "" {
+			slog.Info("no Steam API key yet: the app will ask for one")
+		} else {
+			slog.Info("using the saved Steam API key", "from", where)
+		}
 	}
 	steamClient := steam.New(apiKey, steam.WithHTTPClient(steamHTTP))
 
@@ -81,7 +85,7 @@ func Run(ctx context.Context, cfg config.Config, ready func()) error {
 		Addr: net.JoinHostPort(cfg.ListenHost, strconv.Itoa(cfg.Port)),
 		Handler: api.NewRouter(api.Deps{
 			DB: queries, Auth: authService, Refresher: refresher, SyncQ: queries, Games: queries,
-			Setup: &keySetup{client: steamClient, file: cfg.SettingsFile},
+			Setup: &keySetup{client: steamClient, keys: keys},
 			UI:    webui.Handler(),
 		}),
 		ReadHeaderTimeout: 10 * time.Second,

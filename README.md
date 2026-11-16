@@ -131,11 +131,23 @@ SQLite runs in WAL mode, so the explorer can read while a sync writes. Back up t
 
 ### First start without any settings
 
-Started with no `.env` at all, the backend uses the SQLite file in your data folder and shows a one-time setup page asking for your Steam Web API key. It checks the key with Steam and saves it in `settings.json` next to the database (readable only by you). The page only works while no key is set, and only accepts JSON, so another website can't set a key for you; to change the key later, edit or delete `settings.json`, or set `STEAM_API_KEY`. `backend/bin/server -open` also opens the app in your default browser once it is listening.
+Started with no `.env` at all, the backend uses the SQLite file in your data folder and shows a one-time setup page asking for your Steam Web API key. The page only works while no key is set, and only accepts JSON, so another website can't set a key for you. `backend/bin/server -open` also opens the app in your default browser once it is listening.
+
+#### Where the API key is kept
+
+The app looks for the key in this order:
+
+1. `STEAM_API_KEY` in the environment (or `.env`). When it is set, the app never touches the keychain or `settings.json`. Use it for servers and Docker.
+2. Your OS keychain, where the setup page saves the key: **Windows Credential Manager** on Windows, and the **Secret Service** on Linux (GNOME Keyring, or KWallet on KDE). Other users and backups of the data folder can't read it there. The entry is called `steamlib-explorer`.
+3. `settings.json` in your data folder, readable only by you. The setup page saves the key here only when there is no keychain, as on a headless server.
+
+A key saved in `settings.json` by an older version moves into the keychain the next time the app starts, and is then removed from the file, so you never have to enter it again. Without a keychain it stays in the file.
+
+To change the key later, delete the `steamlib-explorer` entry (in Credential Manager under **Windows Credentials**, or in Passwords and Keys / KWalletManager on Linux, or with `secret-tool clear service steamlib-explorer username steam-api-key`) and restart the app to get the setup page again. You can also set `STEAM_API_KEY`, which wins over the saved key.
 
 ### Desktop app
 
-`make desktop` builds `backend/bin/steamlib-explorer`, the desktop version: one file that needs no Docker, Node or settings. Starting it runs the app on http://localhost:8080, opens it in your default browser and puts an icon in the system tray with **Open Steamlib Explorer** and **Quit**. It uses the SQLite file and `settings.json` in your data folder (see [SQLite](#sqlite)) and writes its log to `logs/steamlib-explorer.log` there; if it can't start, the reason is in `startup-error.txt` in the same folder. Starting it a second time just opens the browser on the one already running.
+`make desktop` builds `backend/bin/steamlib-explorer`, the desktop version: one file that needs no Docker, Node or settings. Starting it runs the app on http://localhost:8080, opens it in your default browser and puts an icon in the system tray with **Open Steamlib Explorer** and **Quit**. It uses the SQLite file in your data folder (see [SQLite](#sqlite)) and keeps the API key in your OS keychain (see [Where the API key is kept](#where-the-api-key-is-kept)) and writes its log to `logs/steamlib-explorer.log` there; if it can't start, the reason is in `startup-error.txt` in the same folder. Starting it a second time just opens the browser on the one already running.
 
 `make desktop-windows` cross-builds `steamlib-explorer.exe` for Windows from Linux; it runs without a console window. On Linux the tray icon needs a desktop with a system tray (KDE, Xfce, Cinnamon, or GNOME with the AppIndicator extension, which Ubuntu ships); without a desktop session it runs without the icon and stops with Ctrl+C.
 
@@ -165,7 +177,7 @@ Every incoming request (`msg="api request"`) and every call to Steam (`msg="outg
 | --- | --- | --- | --- |
 | `DATABASE_URL` | no | `steamlib.db` in your data folder | `postgres://…` for Postgres, or `sqlite:` and a file path for SQLite, e.g. `sqlite:steamlib.db` (relative to `backend/`) or `sqlite:/home/me/steamlib.db`; see [SQLite](#sqlite) |
 | `STEAMLIB_DATA_DIR` | no | see [SQLite](#sqlite) | Folder for the default SQLite file |
-| `STEAM_API_KEY` | no | the key saved by the setup page | [Steam Web API key](https://steamcommunity.com/dev/apikey), used to read libraries and profiles. Without one, the app shows a setup page that checks the key with Steam and saves it in `settings.json` in the data folder; this variable wins over the saved key |
+| `STEAM_API_KEY` | no | the key saved by the setup page | [Steam Web API key](https://steamcommunity.com/dev/apikey), used to read libraries and profiles. Without one, the app shows a setup page that checks the key with Steam and saves it in your OS keychain, or in `settings.json` in the data folder when there is no keychain (see [Where the API key is kept](#where-the-api-key-is-kept)); this variable wins over the saved key |
 | `PUBLIC_URL` | no | `http://localhost:$PORT` | Address the browser uses for the app; Steam redirects back here |
 | `PORT` | no | `8080` | Port the backend listens on |
 | `LISTEN_HOST` | no | `127.0.0.1` (backend), `localhost` (frontend) | Interface the backend and the Vite frontend listen on; `0.0.0.0` allows other devices (see [Remote access](#remote-access)) |

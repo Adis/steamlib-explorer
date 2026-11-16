@@ -19,10 +19,12 @@ type Config struct {
 	// ListenHost is the interface the backend listens on (LISTEN_HOST, default
 	// 127.0.0.1, so only this machine can connect; 0.0.0.0 opens it to the network).
 	ListenHost string
-	// SteamAPIKey is STEAM_API_KEY. When unset, the key saved in SettingsFile
-	// is used, and without one the app asks for it on a setup page.
+	// SteamAPIKey is STEAM_API_KEY. When unset, the key the setup page saved
+	// in the OS keychain (or SettingsFile without one) is used, and without
+	// one the app asks for it on a setup page.
 	SteamAPIKey string
-	// SettingsFile is settings.json in the user's data folder.
+	// SettingsFile is settings.json in the user's data folder. It holds the
+	// Steam API key only where there is no OS keychain.
 	SettingsFile string
 	// PublicURL is the address browsers use for the app (PUBLIC_URL, default
 	// http://localhost:8080). Steam sends users back here after sign-in.

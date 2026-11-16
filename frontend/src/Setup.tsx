@@ -67,7 +67,8 @@ export default function Setup() {
       </form>
       <p className="mt-6 text-sm text-muted">
         Steam always shows a key's owner their own library, so with your own key your profile can
-        stay private. Keep the key to yourself: Steam's terms don't allow sharing it.
+        stay private. The app keeps the key in your computer's keychain. Keep it to yourself:
+        Steam's terms don't allow sharing it.
       </p>
     </section>
   );
