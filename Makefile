@@ -5,7 +5,7 @@ MIGRATIONS := backend/db/postgres/migrations
 -include .env
 export
 
-.PHONY: dev check-tools db-up db-down run web web-install web-build build serve pg-to-sqlite test test-db generate migrate-up migrate-down migrate-status
+.PHONY: dev check-tools db-up db-down run web web-install web-build build desktop desktop-windows serve pg-to-sqlite test test-db generate migrate-up migrate-down migrate-status
 
 # Put $(FAIL) at the start of a recipe line to get a shell function that
 # prints what went wrong and how to fix it, then stops make:
@@ -64,6 +64,12 @@ web-build: frontend/node_modules/.package-lock.json ## Build the frontend into b
 
 build: web-build ## Build one binary, backend/bin/server, that serves the API and the frontend on http://localhost:8080
 	cd backend && go build -o bin/server ./cmd/server
+
+desktop: web-build ## Build the desktop app (tray icon + browser) for this computer into backend/bin/steamlib-explorer
+	cd backend && go build -o bin/steamlib-explorer ./cmd/steamlib-explorer
+
+desktop-windows: web-build ## Cross-build the desktop app for Windows into backend/bin/steamlib-explorer.exe (no console window)
+	cd backend && CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "-H windowsgui" -o bin/steamlib-explorer.exe ./cmd/steamlib-explorer
 
 serve: build ## Build the one binary and run it: the whole app on http://localhost:8080, no Vite
 	@$(if $(USES_POSTGRES),$(MAKE) --no-print-directory db-up,true)
