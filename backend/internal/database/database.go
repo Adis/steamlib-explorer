@@ -4,6 +4,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
@@ -22,8 +23,10 @@ func Open(ctx context.Context, url string) (store.Store, error) {
 		return nil, err
 	}
 	if engine == "sqlite" {
+		slog.Info("using SQLite", "file", path)
 		return sqlite.Open(ctx, path)
 	}
+	slog.Info("using Postgres")
 	return postgres.Open(ctx, url)
 }
 
