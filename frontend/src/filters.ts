@@ -9,6 +9,13 @@ export const DEFAULT_LIMIT = 50;
 /** Sort used when the address bar has none; must match the backend default. */
 export const DEFAULT_SORT = "review";
 
+/**
+ * Steam shows no rating below this many reviews ("3 user reviews"), so such
+ * games are hidden unless `few_reviews` is set; otherwise a 100% from three
+ * reviews tops the Reviews sort.
+ */
+export const MIN_REVIEWS = 10;
+
 /** Query parameters passed to the backend unchanged. */
 const PASS_THROUGH = [
   "q",
@@ -43,6 +50,7 @@ export function apiParams(p: UrlParams): URLSearchParams {
   for (const [k, v] of p) {
     if (PASS_THROUGH.includes(k) && v.trim() !== "") out.append(k, v);
   }
+  if (p.get("few_reviews") !== "1") out.set("min_reviews", String(MIN_REVIEWS));
   // Half-typed years are ignored instead of producing a 400.
   const from = p.get("from_year");
   if (from && /^\d{4}$/.test(from)) out.set("released_after", `${from}-01-01`);
