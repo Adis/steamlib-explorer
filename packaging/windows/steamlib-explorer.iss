@@ -5,6 +5,8 @@
 #ifndef AppVersion
   #define AppVersion "0.0.0-dev"
 #endif
+; Numeric part for the Windows version resource ("1.2.3" from "1.2.3-dev").
+#define AppNumericVersion Copy(AppVersion, 1, Pos("-", AppVersion + "-") - 1)
 #ifndef SourceExe
   #define SourceExe "..\..\backend\bin\steamlib-explorer.exe"
 #endif
@@ -15,6 +17,12 @@ AppName=Steamlib Explorer
 AppVersion={#AppVersion}
 AppPublisher=Steamlib Explorer
 AppPublisherURL=https://github.com/Adis/steamlib-explorer
+; Code signing checks these: same product name and version as the .exe inside.
+VersionInfoVersion={#AppNumericVersion}
+VersionInfoProductName=Steamlib Explorer
+VersionInfoProductVersion={#AppNumericVersion}
+VersionInfoProductTextVersion={#AppVersion}
+VersionInfoDescription=Steamlib Explorer Setup
 DefaultDirName={localappdata}\Programs\Steamlib Explorer
 DefaultGroupName=Steamlib Explorer
 DisableProgramGroupPage=yes

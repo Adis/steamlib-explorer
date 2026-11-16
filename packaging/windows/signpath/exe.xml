@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SignPath artifact configuration "exe": the program inside the installer.
+     The release workflow uploads steamlib-explorer.exe as a zip and passes the
+     release version (1.2.3 for tag v1.2.3). -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <zip-file>
+    <pe-file path="steamlib-explorer.exe" product-name="Steamlib Explorer" product-version="${version}">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>
