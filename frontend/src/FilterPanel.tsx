@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchFacets, type Facet } from "./api.ts";
-import { activeFilterCount, type SetParam, type UrlParams } from "./filters.ts";
+import { activeFilterCount, MIN_REVIEWS, type SetParam, type UrlParams } from "./filters.ts";
 import { useSidebarFilters } from "./sidebarFilters.ts";
 
 type Props = {
@@ -68,6 +68,13 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
             options={REVIEW_RATINGS}
             label="Steam reviews"
           />
+          <div className="mt-2">
+            <Check
+              label={`Include games with fewer than ${MIN_REVIEWS} reviews`}
+              checked={params.get("few_reviews") === "1"}
+              onChange={() => setParam("few_reviews", params.get("few_reviews") === "1" ? null : "1")}
+            />
+          </div>
         </Group>
       )}
 
