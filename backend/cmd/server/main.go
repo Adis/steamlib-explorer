@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"log/slog"
 	"net"
 	"net/http"
@@ -15,9 +16,11 @@ import (
 
 	"github.com/Adis/steamlib-explorer/backend/internal/api"
 	"github.com/Adis/steamlib-explorer/backend/internal/auth"
+	"github.com/Adis/steamlib-explorer/backend/internal/browser"
 	"github.com/Adis/steamlib-explorer/backend/internal/config"
 	"github.com/Adis/steamlib-explorer/backend/internal/database"
 	"github.com/Adis/steamlib-explorer/backend/internal/logging"
+	"github.com/Adis/steamlib-explorer/backend/internal/settings"
 	"github.com/Adis/steamlib-explorer/backend/internal/steam"
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
 	"github.com/Adis/steamlib-explorer/backend/internal/syncer"
@@ -32,6 +35,9 @@ func main() {
 }
 
 func run() error {
+	openBrowser := flag.Bool("open", false, "open the app in the default browser once it is running")
+	flag.Parse()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -63,7 +69,19 @@ func run() error {
 
 	// Every call to Steam goes through the logging transport.
 	steamHTTP := &http.Client{Timeout: 30 * time.Second, Transport: &logging.Transport{Service: "steam"}}
-	steamClient := steam.New(cfg.SteamAPIKey, steam.WithHTTPClient(steamHTTP))
+	// STEAM_API_KEY wins; otherwise the key saved by the setup page, if any.
+	saved, err := settings.Load(cfg.SettingsFile)
+	if err != nil {
+		return err
+	}
+	apiKey := cfg.SteamAPIKey
+	if apiKey == "" {
+		apiKey = saved.SteamAPIKey
+	}
+	if apiKey == "" {
+		slog.Info("no Steam API key yet: the app will ask for one", "settings_file", cfg.SettingsFile)
+	}
+	steamClient := steam.New(apiKey, steam.WithHTTPClient(steamHTTP))
 
 	authService := &auth.Service{
 		OpenID:    &auth.OpenID{Endpoint: auth.SteamOpenIDEndpoint, HTTP: steamHTTP},
@@ -82,16 +100,27 @@ func run() error {
 		Addr: net.JoinHostPort(cfg.ListenHost, strconv.Itoa(cfg.Port)),
 		Handler: api.NewRouter(api.Deps{
 			DB: queries, Auth: authService, Refresher: refresher, SyncQ: queries, Games: queries,
-			UI: webui.Handler(),
+			Setup: &keySetup{client: steamClient, file: cfg.SettingsFile},
+			UI:    webui.Handler(),
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
+	// Listen before opening the browser, so the page is there when it loads.
+	ln, err := net.Listen("tcp", srv.Addr)
+	if err != nil {
+		return err
+	}
 	errc := make(chan error, 1)
 	go func() {
 		slog.Info("listening", "addr", srv.Addr, "public_url", cfg.PublicURL)
-		errc <- srv.ListenAndServe()
+		errc <- srv.Serve(ln)
 	}()
+	if *openBrowser {
+		if err := browser.Open(cfg.PublicURL); err != nil {
+			slog.Warn("could not open the browser; open the address yourself", "url", cfg.PublicURL, "error", err)
+		}
+	}
 
 	select {
 	case err := <-errc:

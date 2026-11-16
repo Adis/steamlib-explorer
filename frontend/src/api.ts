@@ -65,6 +65,17 @@ export async function fetchMe(): Promise<User | null> {
   }
 }
 
+/** Whether the app still needs a Steam Web API key (first run). */
+export const fetchSetup = () => request<{ needs_api_key: boolean }>("/api/setup");
+
+/** Checks the key with Steam, then saves it; the error message says what was wrong. */
+export const saveApiKey = (key: string) =>
+  request<void>("/api/setup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ steam_api_key: key }),
+  });
+
 export const fetchSyncStatus = () => request<SyncStatus>("/api/sync");
 
 export const startSync = () =>

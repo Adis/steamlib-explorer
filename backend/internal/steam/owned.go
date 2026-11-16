@@ -33,7 +33,7 @@ type ownedGamesResponse struct {
 // It returns ErrPrivateProfile when Steam hides the library.
 func (c *Client) OwnedGames(ctx context.Context, steamID uint64) ([]OwnedGame, error) {
 	q := url.Values{}
-	q.Set("key", c.apiKey)
+	q.Set("key", c.APIKey())
 	q.Set("steamid", strconv.FormatUint(steamID, 10))
 	q.Set("include_appinfo", "1")
 	q.Set("include_played_free_games", "1")

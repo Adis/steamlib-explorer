@@ -80,12 +80,15 @@ export default function Help({ signedIn }: { signedIn: boolean }) {
             . Any domain name works, for example <code>localhost</code>.
           </li>
           <li>
-            Put it in the <code>.env</code> file next to the app as{" "}
-            <code>STEAM_API_KEY=…</code>.
+            The first time the app starts without a key, it asks for one and saves
+            it in <code>settings.json</code> in the app's data folder. Running from
+            source, you can instead put <code>STEAM_API_KEY=…</code> in the{" "}
+            <code>.env</code> file, which wins over the saved key, and restart the
+            app (<code>make dev</code>).
           </li>
           <li>
-            Restart the app (<code>make dev</code>), sign in with the same Steam
-            account the key belongs to and press <strong>Sync library</strong>.
+            Sign in with the same Steam account the key belongs to and press{" "}
+            <strong>Sync library</strong>.
           </li>
         </ol>
         <p className="text-muted">
