@@ -4,15 +4,15 @@ import (
 	"context"
 	"errors"
 	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-
 	"github.com/Adis/steamlib-explorer/backend/internal/steam"
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
 	"github.com/Adis/steamlib-explorer/backend/internal/store/postgres"
+	"github.com/Adis/steamlib-explorer/backend/internal/store/sqlite"
 )
 
 const user = uint64(76561197960287930)
@@ -68,26 +68,66 @@ func (f *fakeSteam) AppReviews(_ context.Context, ids []int64) (map[int64]steam.
 	return out, nil
 }
 
-func setup(t *testing.T) (*pgxpool.Pool, store.Store) {
-	t.Helper()
-	url := os.Getenv("TEST_DATABASE_URL")
-	if url == "" {
-		t.Skip("TEST_DATABASE_URL not set")
-	}
+// eachStore runs test against SQLite, and against Postgres too when
+// TEST_DATABASE_URL points at a disposable database (e.g. `make test-db`).
+// exec runs raw SQL that both engines accept.
+func eachStore(t *testing.T, test func(t *testing.T, q store.Store, exec func(sql string))) {
 	ctx := context.Background()
-	st, err := postgres.Open(ctx, url)
+	prepare := func(t *testing.T, q store.Store) {
+		if _, err := q.UpsertUser(ctx, store.UpsertUserParams{SteamID: int64(user)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Run("sqlite", func(t *testing.T) {
+		st, err := sqlite.Open(ctx, filepath.Join(t.TempDir(), "test.db"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(st.Close)
+		prepare(t, st)
+		test(t, st, func(sql string) {
+			t.Helper()
+			if _, err := st.DB().ExecContext(ctx, sql); err != nil {
+				t.Fatal(err)
+			}
+		})
+	})
+	t.Run("postgres", func(t *testing.T) {
+		url := os.Getenv("TEST_DATABASE_URL")
+		if url == "" {
+			t.Skip("TEST_DATABASE_URL not set")
+		}
+		st, err := postgres.Open(ctx, url)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(st.Close)
+		if _, err := st.Pool().Exec(ctx, "TRUNCATE users, apps CASCADE"); err != nil {
+			t.Fatal(err)
+		}
+		prepare(t, st)
+		test(t, st, func(sql string) {
+			t.Helper()
+			if _, err := st.Pool().Exec(ctx, sql); err != nil {
+				t.Fatal(err)
+			}
+		})
+	})
+}
+
+// games lists the user's games by appid.
+func games(t *testing.T, q store.Store, p store.ListGamesParams) map[int64]store.ListGamesRow {
+	t.Helper()
+	p.SteamID, p.Sort, p.PageLimit = int64(user), "name", 200
+	rows, err := q.ListGames(context.Background(), p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(st.Close)
-	pool := st.Pool()
-	if _, err := pool.Exec(ctx, "TRUNCATE users, apps CASCADE"); err != nil {
-		t.Fatal(err)
+	out := map[int64]store.ListGamesRow{}
+	for _, r := range rows {
+		out[r.Appid] = r
 	}
-	if _, err := pool.Exec(ctx, "INSERT INTO users (steam_id) VALUES ($1)", int64(user)); err != nil {
-		t.Fatal(err)
-	}
-	return pool, st
+	return out
 }
 
 func runToEnd(t *testing.T, s *Syncer) store.SyncRun {
@@ -104,153 +144,147 @@ func runToEnd(t *testing.T, s *Syncer) store.SyncRun {
 }
 
 func TestRefresh(t *testing.T) {
-	pool, q := setup(t)
-	ctx := context.Background()
-	played := time.Date(2026, 11, 1, 20, 0, 0, 0, time.UTC)
-	f := &fakeSteam{
-		games: []steam.OwnedGame{
-			{AppID: 10, Name: "Library name", PlaytimeForever: 600, LastPlayed: &played},
-			{AppID: 20, Name: "Delisted game"},
-		},
-		unavailable: map[int64]bool{20: true},
-	}
-	s := New(ctx, f, q)
+	eachStore(t, func(t *testing.T, q store.Store, _ func(string)) {
+		ctx := context.Background()
+		played := time.Date(2026, 11, 1, 20, 0, 0, 0, time.UTC)
+		f := &fakeSteam{
+			games: []steam.OwnedGame{
+				{AppID: 10, Name: "Library name", PlaytimeForever: 600, LastPlayed: &played},
+				{AppID: 20, Name: "Delisted game"},
+			},
+			unavailable: map[int64]bool{20: true},
+		}
+		s := New(ctx, f, q)
 
-	run := runToEnd(t, s)
-	if run.Status != "ok" || run.GamesSeen != 2 || run.DetailsTotal != 2 || run.DetailsFetched != 2 {
-		t.Fatalf("run = %+v", run)
-	}
+		run := runToEnd(t, s)
+		if run.Status != "ok" || run.GamesSeen != 2 || run.DetailsTotal != 2 || run.DetailsFetched != 2 {
+			t.Fatalf("run = %+v", run)
+		}
 
-	var name, status string
-	var genres []string
-	var pct float64
-	if err := pool.QueryRow(ctx, "SELECT name, details_status, genres, review_pct::float8 FROM apps WHERE appid = 10").Scan(&name, &status, &genres, &pct); err != nil {
-		t.Fatal(err)
-	}
-	if name != "Store name" || status != "ok" || len(genres) != 2 || pct != 90 {
-		t.Errorf("app 10 = %q %q %v %v", name, status, genres, pct)
-	}
-	if err := pool.QueryRow(ctx, "SELECT details_status FROM apps WHERE appid = 20").Scan(&status); err != nil || status != "unavailable" {
-		t.Errorf("app 20 status = %q, %v", status, err)
-	}
-	var minutes int
-	var last time.Time
-	if err := pool.QueryRow(ctx, "SELECT playtime_forever, last_played_at FROM owned_games WHERE appid = 10").Scan(&minutes, &last); err != nil {
-		t.Fatal(err)
-	}
-	if minutes != 600 || !last.Equal(played) {
-		t.Errorf("owned game = %d %v", minutes, last)
-	}
+		all := games(t, q, store.ListGamesParams{})
+		g := all[10]
+		if g.Name != "Store name" || g.DetailsStatus != "ok" || len(g.Genres) != 2 || g.ReviewPct == nil || *g.ReviewPct != 90 {
+			t.Errorf("app 10 = %+v", g)
+		}
+		if all[20].DetailsStatus != "unavailable" {
+			t.Errorf("app 20 status = %q", all[20].DetailsStatus)
+		}
+		if g.PlaytimeForever != 600 || g.LastPlayedAt == nil || !g.LastPlayedAt.Equal(played) {
+			t.Errorf("owned game = %d %v", g.PlaytimeForever, g.LastPlayedAt)
+		}
 
-	stats, err := q.LibraryStats(ctx, int64(user))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if stats.Games != 2 || stats.WithDetails != 1 || stats.Unavailable != 1 || stats.WithReviews != 1 {
-		t.Errorf("stats = %+v", stats)
-	}
+		stats, err := q.LibraryStats(ctx, int64(user))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if stats.Games != 2 || stats.WithDetails != 1 || stats.Unavailable != 1 || stats.WithReviews != 1 {
+			t.Errorf("stats = %+v", stats)
+		}
 
-	// Reviews are fetched in one batch, only for the app with a store page.
-	if len(f.reviewCalls) != 1 || len(f.reviewCalls[0]) != 1 || f.reviewCalls[0][0] != 10 {
-		t.Errorf("review calls = %v", f.reviewCalls)
-	}
+		// Reviews are fetched in one batch, only for the app with a store page.
+		if len(f.reviewCalls) != 1 || len(f.reviewCalls[0]) != 1 || f.reviewCalls[0][0] != 10 {
+			t.Errorf("review calls = %v", f.reviewCalls)
+		}
 
-	// A second Refresh doesn't refetch fresh store data.
-	f.detailCalls, f.reviewCalls = nil, nil
-	run = runToEnd(t, s)
-	if run.Status != "ok" || run.DetailsTotal != 0 || len(f.detailCalls) != 0 || len(f.reviewCalls) != 0 {
-		t.Errorf("second run = %+v, detail calls %v, review calls %v", run, f.detailCalls, f.reviewCalls)
-	}
+		// A second Refresh doesn't refetch fresh store data.
+		f.detailCalls, f.reviewCalls = nil, nil
+		run = runToEnd(t, s)
+		if run.Status != "ok" || run.DetailsTotal != 0 || len(f.detailCalls) != 0 || len(f.reviewCalls) != 0 {
+			t.Errorf("second run = %+v, detail calls %v, review calls %v", run, f.detailCalls, f.reviewCalls)
+		}
+	})
 }
 
 // Apps whose details came from an earlier Refresh but whose reviews never
 // arrived get them on the next Refresh, without refetching details.
 func TestRefreshBackfillsMissingReviews(t *testing.T) {
-	pool, q := setup(t)
-	ctx := context.Background()
-	var games []steam.OwnedGame
-	for id := int64(1); id <= steam.MaxReviewBatch+5; id++ {
-		games = append(games, steam.OwnedGame{AppID: id, Name: "g"})
-	}
-	f := &fakeSteam{games: games}
-	s := New(ctx, f, q)
-	runToEnd(t, s)
-	if _, err := pool.Exec(ctx, `UPDATE apps SET reviews_fetched_at = NULL, reviews_total = NULL,
-		reviews_positive = NULL, review_score = NULL, review_score_desc = NULL`); err != nil {
-		t.Fatal(err)
-	}
+	eachStore(t, func(t *testing.T, q store.Store, exec func(string)) {
+		ctx := context.Background()
+		var owned []steam.OwnedGame
+		for id := int64(1); id <= steam.MaxReviewBatch+5; id++ {
+			owned = append(owned, steam.OwnedGame{AppID: id, Name: "g"})
+		}
+		f := &fakeSteam{games: owned}
+		s := New(ctx, f, q)
+		runToEnd(t, s)
+		exec(`UPDATE apps SET reviews_fetched_at = NULL, reviews_total = NULL,
+			reviews_positive = NULL, review_score = NULL, review_score_desc = NULL`)
 
-	f.detailCalls, f.reviewCalls = nil, nil
-	run := runToEnd(t, s)
-	if run.Status != "ok" || len(f.detailCalls) != 0 {
-		t.Fatalf("run = %+v, detail calls %v", run, f.detailCalls)
-	}
-	if len(f.reviewCalls) != 2 || len(f.reviewCalls[0]) != steam.MaxReviewBatch || len(f.reviewCalls[1]) != 5 {
-		t.Errorf("review batches = %d", len(f.reviewCalls))
-	}
-	var n int
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM apps WHERE review_pct = 90").Scan(&n); err != nil || n != len(games) {
-		t.Errorf("apps with reviews = %d, %v", n, err)
-	}
+		f.detailCalls, f.reviewCalls = nil, nil
+		run := runToEnd(t, s)
+		if run.Status != "ok" || len(f.detailCalls) != 0 {
+			t.Fatalf("run = %+v, detail calls %v", run, f.detailCalls)
+		}
+		if len(f.reviewCalls) != 2 || len(f.reviewCalls[0]) != steam.MaxReviewBatch || len(f.reviewCalls[1]) != 5 {
+			t.Errorf("review batches = %d", len(f.reviewCalls))
+		}
+		if n := len(games(t, q, store.ListGamesParams{MinReviewPct: ptr(90.0)})); n != len(owned) {
+			t.Errorf("apps with reviews = %d, want %d", n, len(owned))
+		}
+	})
 }
 
 func TestRefreshPrivateLibrary(t *testing.T) {
-	_, q := setup(t)
-	s := New(context.Background(), &fakeSteam{ownedErr: steam.ErrPrivateProfile}, q)
-	run := runToEnd(t, s)
-	if run.Status != "error" || run.Error == nil || run.FinishedAt == nil {
-		t.Fatalf("run = %+v", run)
-	}
+	eachStore(t, func(t *testing.T, q store.Store, _ func(string)) {
+		s := New(context.Background(), &fakeSteam{ownedErr: steam.ErrPrivateProfile}, q)
+		run := runToEnd(t, s)
+		if run.Status != "error" || run.Error == nil || run.FinishedAt == nil {
+			t.Fatalf("run = %+v", run)
+		}
+	})
 }
 
 func TestRefreshStopsWhenRateLimited(t *testing.T) {
-	_, q := setup(t)
-	f := &fakeSteam{
-		games:       []steam.OwnedGame{{AppID: 1, Name: "a"}, {AppID: 2, Name: "b"}, {AppID: 3, Name: "c"}},
-		rateLimitOn: 2,
-	}
-	run := runToEnd(t, New(context.Background(), f, q))
-	if run.Status != "error" || run.DetailsFetched != 1 || run.DetailsTotal != 3 {
-		t.Fatalf("run = %+v", run)
-	}
-	if len(f.detailCalls) != 2 {
-		t.Errorf("detail calls = %v, want it to stop at app 2", f.detailCalls)
-	}
+	eachStore(t, func(t *testing.T, q store.Store, _ func(string)) {
+		f := &fakeSteam{
+			games:       []steam.OwnedGame{{AppID: 1, Name: "a"}, {AppID: 2, Name: "b"}, {AppID: 3, Name: "c"}},
+			rateLimitOn: 2,
+		}
+		run := runToEnd(t, New(context.Background(), f, q))
+		if run.Status != "error" || run.DetailsFetched != 1 || run.DetailsTotal != 3 {
+			t.Fatalf("run = %+v", run)
+		}
+		if len(f.detailCalls) != 2 {
+			t.Errorf("detail calls = %v, want it to stop at app 2", f.detailCalls)
+		}
+	})
 }
 
 func TestOneRefreshPerUser(t *testing.T) {
-	_, q := setup(t)
-	f := &fakeSteam{games: []steam.OwnedGame{{AppID: 1, Name: "a"}}, block: make(chan struct{})}
-	s := New(context.Background(), f, q)
-	if _, err := s.Start(context.Background(), user); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s.Start(context.Background(), user); !errors.Is(err, ErrAlreadyRunning) {
-		t.Errorf("second Start err = %v, want ErrAlreadyRunning", err)
-	}
-	close(f.block)
-	s.Wait()
-	if _, err := s.Start(context.Background(), user); err != nil {
-		t.Errorf("Start after finish: %v", err)
-	}
-	s.Wait()
+	eachStore(t, func(t *testing.T, q store.Store, _ func(string)) {
+		f := &fakeSteam{games: []steam.OwnedGame{{AppID: 1, Name: "a"}}, block: make(chan struct{})}
+		s := New(context.Background(), f, q)
+		if _, err := s.Start(context.Background(), user); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.Start(context.Background(), user); !errors.Is(err, ErrAlreadyRunning) {
+			t.Errorf("second Start err = %v, want ErrAlreadyRunning", err)
+		}
+		close(f.block)
+		s.Wait()
+		if _, err := s.Start(context.Background(), user); err != nil {
+			t.Errorf("Start after finish: %v", err)
+		}
+		s.Wait()
+	})
 }
 
 func TestShutdownInterruptsRefresh(t *testing.T) {
-	_, q := setup(t)
-	ctx, cancel := context.WithCancel(context.Background())
-	f := &fakeSteam{games: []steam.OwnedGame{{AppID: 1, Name: "a"}}, block: make(chan struct{})}
-	s := New(ctx, f, q)
-	if _, err := s.Start(context.Background(), user); err != nil {
-		t.Fatal(err)
-	}
-	cancel()
-	s.Wait()
-	run, err := q.LatestSyncRun(context.Background(), int64(user))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if run.Status != "error" || run.Error == nil {
-		t.Errorf("run = %+v, want an interrupted error", run)
-	}
+	eachStore(t, func(t *testing.T, q store.Store, _ func(string)) {
+		ctx, cancel := context.WithCancel(context.Background())
+		f := &fakeSteam{games: []steam.OwnedGame{{AppID: 1, Name: "a"}}, block: make(chan struct{})}
+		s := New(ctx, f, q)
+		if _, err := s.Start(context.Background(), user); err != nil {
+			t.Fatal(err)
+		}
+		cancel()
+		s.Wait()
+		run, err := q.LatestSyncRun(context.Background(), int64(user))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if run.Status != "error" || run.Error == nil {
+			t.Errorf("run = %+v, want an interrupted error", run)
+		}
+	})
 }

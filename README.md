@@ -51,6 +51,12 @@ By default the app works only on the computer that runs it: Postgres, the backen
 
 Only port 5173 needs to be reachable: Vite forwards to the backend, which talks to Postgres on localhost. Keep Postgres on `127.0.0.1` in `docker-compose.yml`. Docker writes its own firewall rules ahead of ufw's, so a published container port is open to the network even when ufw says deny. The development servers have no HTTPS, so only open them on a network you trust, never to the internet.
 
+### SQLite
+
+The backend can also keep everything in one SQLite file instead of Postgres, so it runs without Docker. This is what the desktop app will use. Set `DATABASE_URL=sqlite:steamlib.db` (the file and its folder are created on first start, next to the backend), then `make build` and run `backend/bin/server` from `backend/`, or use `make run` and `make web` as usual. A new SQLite file starts empty: sign in and sync, or wait for the Postgres import that comes next. Your Postgres data is not touched.
+
+SQLite runs in WAL mode, so the explorer can read while a sync writes. Back up the `.db` file together with its `-wal` and `-shm` files, or stop the app first.
+
 ### Logs
 
 Every incoming request (`msg="api request"`) and every call to Steam (`msg="outgoing call"`, with status, duration and the first 300 characters of the response) is logged to the backend console and appended to `backend/logs/api-calls.txt`. The Steam API key is replaced with `REDACTED`. Sync progress lines (`refresh started`, `library saved`, `refresh finished`) carry the `run_id`.
@@ -59,7 +65,7 @@ Every incoming request (`msg="api request"`) and every call to Steam (`msg="outg
 
 | Variable | Required | Default | What it is |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | yes | | Postgres connection string |
+| `DATABASE_URL` | yes | | `postgres://…` for Postgres, or `sqlite:` and a file path for SQLite, e.g. `sqlite:steamlib.db` (relative to `backend/`) or `sqlite:/home/me/steamlib.db`; see [SQLite](#sqlite) |
 | `STEAM_API_KEY` | yes | | [Steam Web API key](https://steamcommunity.com/dev/apikey), used to read libraries and profiles |
 | `PUBLIC_URL` | no | `http://localhost:$PORT` | Address the browser uses for the app; Steam redirects back here |
 | `PORT` | no | `8080` | Port the backend listens on |
@@ -68,13 +74,13 @@ Every incoming request (`msg="api request"`) and every call to Steam (`msg="outg
 
 Steam shares a user's owned games and playtime only when their profile's Game details are public, or when the request uses that user's own API key. So the owner of `STEAM_API_KEY` can keep their profile private (even Friends only or Private); everyone else who signs in needs public game details. The in-app **Help** page explains both options.
 
-`make test` runs the backend tests, `make test-db` also runs the ones that need Postgres, `make generate` rebuilds the sqlc code after you edit `backend/db/postgres/queries`, and `make build` puts the one-binary app in `backend/bin/server` (see [One binary](#one-binary)). The `migrate-*` targets are still there for rolling back or checking status by hand.
+`make test` runs the backend tests (the database ones on SQLite), `make test-db` also runs them on Postgres, `make generate` rebuilds the sqlc code after you edit `backend/db/postgres/queries` or `backend/db/sqlite/queries`, and `make build` puts the one-binary app in `backend/bin/server` (see [One binary](#one-binary)). The `migrate-*` targets (Postgres only) are still there for rolling back or checking status by hand.
 
 `make migrate-down` rolls back the last migration and `make db-down` stops Postgres (data stays in the `pgdata` volume).
 
 ## Database
 
-The schema lives in [`backend/db/postgres/migrations`](backend/db/postgres/migrations) and is applied with [goose](https://github.com/pressly/goose). The migrations are embedded in the backend binary and run every time it starts. The rest of the backend talks to the database only through the `Store` interface in [`backend/internal/store`](backend/internal/store); the Postgres implementation (sqlc queries plus a thin adapter) is in `internal/store/postgres`, and `internal/store/storetest` holds tests every implementation must pass.
+The schema lives in [`backend/db/postgres/migrations`](backend/db/postgres/migrations) for Postgres and [`backend/db/sqlite/migrations`](backend/db/sqlite/migrations) for SQLite, and is applied with [goose](https://github.com/pressly/goose). Both describe the same tables; every schema change adds a new migration to each folder. The migrations are embedded in the backend binary and run every time it starts. The rest of the backend talks to the database only through the `Store` interface in [`backend/internal/store`](backend/internal/store); the Postgres implementation (sqlc queries plus a thin adapter) is in `internal/store/postgres`, the SQLite one in `internal/store/sqlite` (sqlc for the simple queries, the explorer's filter query built in Go), and `internal/store/storetest` holds tests every implementation must pass.
 
 | Table | One row per | Holds |
 | --- | --- | --- |
@@ -84,7 +90,7 @@ The schema lives in [`backend/db/postgres/migrations`](backend/db/postgres/migra
 | `owned_games` | user + app | playtime and last played date |
 | `sync_runs` | sync | status, progress and error of each library sync (one running per user) |
 
-Genres and categories are `text[]` columns with GIN indexes, so filtering by "has all of these genres" is a single indexed check. `apps.review_pct` is computed by Postgres from the positive and total review counts.
+In Postgres, genres and categories are `text[]` columns with GIN indexes, so filtering by "has all of these genres" is a single indexed check; SQLite keeps them as JSON arrays and checks them with `json_each`. `apps.review_pct` is a generated column computed by the database from the positive and total review counts.
 
 ## API
 

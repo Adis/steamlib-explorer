@@ -7,3 +7,8 @@ import "embed"
 //
 //go:embed postgres/migrations/*.sql
 var Postgres embed.FS
+
+// SQLite holds the SQLite migrations, in sqlite/migrations.
+//
+//go:embed sqlite/migrations/*.sql
+var SQLite embed.FS

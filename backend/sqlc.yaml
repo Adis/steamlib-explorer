@@ -42,3 +42,13 @@ sql:
             go_type:
               type: bool
               pointer: true
+  # The explorer's queries (ListGames and the facets) are built in Go in
+  # internal/store/sqlite/games.go: sqlc's SQLite parser can't handle them.
+  - engine: sqlite
+    schema: db/sqlite/migrations
+    queries: db/sqlite/queries
+    gen:
+      go:
+        package: sqlite
+        out: internal/store/sqlite
+        emit_empty_slices: true

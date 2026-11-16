@@ -41,3 +41,8 @@ backend/logs/
 # Frontend build, embedded into the backend binary
 backend/internal/webui/dist/*
 !backend/internal/webui/dist/.gitkeep
+
+# Local SQLite databases
+*.db
+*.db-wal
+*.db-shm
