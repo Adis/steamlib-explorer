@@ -122,17 +122,17 @@ ORDER BY
     CASE WHEN $17::text = 'recent'      AND $18::boolean     THEN o.playtime_2weeks END DESC,
     CASE WHEN $17::text = 'last_played' AND NOT $18::boolean THEN o.last_played_at END ASC NULLS LAST,
     CASE WHEN $17::text = 'last_played' AND $18::boolean     THEN o.last_played_at END DESC NULLS LAST,
-    -- Review sort: Steam's rating (Overwhelmingly Positive, Very Positive, ...) first, then the percentage.
+    -- Review sort: Steam's rating (Overwhelmingly Positive, Very Positive, ...) first,
+    -- then the least played, then the percentage.
     CASE WHEN $17::text = 'review'      AND NOT $18::boolean THEN a.review_score END ASC NULLS LAST,
     CASE WHEN $17::text = 'review'      AND $18::boolean     THEN a.review_score END DESC NULLS LAST,
+    CASE WHEN $17::text = 'review' THEN o.playtime_forever END ASC,
     CASE WHEN $17::text = 'review'      AND NOT $18::boolean THEN a.review_pct END ASC NULLS LAST,
     CASE WHEN $17::text = 'review'      AND $18::boolean     THEN a.review_pct END DESC NULLS LAST,
     CASE WHEN $17::text = 'metacritic'  AND NOT $18::boolean THEN a.metacritic_score END ASC NULLS LAST,
     CASE WHEN $17::text = 'metacritic'  AND $18::boolean     THEN a.metacritic_score END DESC NULLS LAST,
     CASE WHEN $17::text = 'release'     AND NOT $18::boolean THEN a.release_date END ASC NULLS LAST,
     CASE WHEN $17::text = 'release'     AND $18::boolean     THEN a.release_date END DESC NULLS LAST,
-    -- Among equally rated games, the least played come first.
-    CASE WHEN $17::text = 'review' THEN o.playtime_forever END ASC,
     lower(a.name), a.appid
 LIMIT $20 OFFSET $19
 `

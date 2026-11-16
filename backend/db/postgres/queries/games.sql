@@ -40,17 +40,17 @@ ORDER BY
     CASE WHEN sqlc.arg(sort)::text = 'recent'      AND sqlc.arg(descending)::boolean     THEN o.playtime_2weeks END DESC,
     CASE WHEN sqlc.arg(sort)::text = 'last_played' AND NOT sqlc.arg(descending)::boolean THEN o.last_played_at END ASC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'last_played' AND sqlc.arg(descending)::boolean     THEN o.last_played_at END DESC NULLS LAST,
-    -- Review sort: Steam's rating (Overwhelmingly Positive, Very Positive, ...) first, then the percentage.
+    -- Review sort: Steam's rating (Overwhelmingly Positive, Very Positive, ...) first,
+    -- then the least played, then the percentage.
     CASE WHEN sqlc.arg(sort)::text = 'review'      AND NOT sqlc.arg(descending)::boolean THEN a.review_score END ASC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'review'      AND sqlc.arg(descending)::boolean     THEN a.review_score END DESC NULLS LAST,
+    CASE WHEN sqlc.arg(sort)::text = 'review' THEN o.playtime_forever END ASC,
     CASE WHEN sqlc.arg(sort)::text = 'review'      AND NOT sqlc.arg(descending)::boolean THEN a.review_pct END ASC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'review'      AND sqlc.arg(descending)::boolean     THEN a.review_pct END DESC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'metacritic'  AND NOT sqlc.arg(descending)::boolean THEN a.metacritic_score END ASC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'metacritic'  AND sqlc.arg(descending)::boolean     THEN a.metacritic_score END DESC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'release'     AND NOT sqlc.arg(descending)::boolean THEN a.release_date END ASC NULLS LAST,
     CASE WHEN sqlc.arg(sort)::text = 'release'     AND sqlc.arg(descending)::boolean     THEN a.release_date END DESC NULLS LAST,
-    -- Among equally rated games, the least played come first.
-    CASE WHEN sqlc.arg(sort)::text = 'review' THEN o.playtime_forever END ASC,
     lower(a.name), a.appid
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
