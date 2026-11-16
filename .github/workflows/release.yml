@@ -2,6 +2,12 @@
 #   - On a tag like v0.1.0: makes a draft GitHub release with the downloads.
 #   - On pull requests that touch packaging, and on demand: builds everything
 #     as a test and keeps it as workflow artifacts, without releasing.
+# On a tag, the Windows .exe and installer are code signed through SignPath
+# once the SignPath settings below exist; until then they stay unsigned.
+#   Repository variables: SIGNPATH_ORGANIZATION_ID, SIGNPATH_PROJECT_SLUG,
+#     SIGNPATH_SIGNING_POLICY_SLUG (optional, default release-signing)
+#   Repository secret:    SIGNPATH_API_TOKEN
+#   Artifact configurations in SignPath: packaging/windows/signpath/*.xml
 name: Release
 
 on:
@@ -17,10 +23,13 @@ on:
 
 permissions:
   contents: write
+  actions: read # SignPath fetches the unsigned files from the workflow artifacts
 
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+    outputs:
+      exe-artifact-id: ${{ steps.upload-exe.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,6 +66,7 @@ jobs:
             dist/*.pkg.tar.zst
             dist/checksums.txt
       - uses: actions/upload-artifact@v4
+        id: upload-exe
         with:
           name: windows-exe
           path: dist/desktop_windows_amd64_v1/steamlib-explorer.exe
@@ -65,25 +75,73 @@ jobs:
   windows-installer:
     needs: goreleaser
     runs-on: windows-latest
+    env:
+      # Sign only real releases, and only once SignPath is set up.
+      SIGN: ${{ startsWith(github.ref, 'refs/tags/v') && vars.SIGNPATH_ORGANIZATION_ID != '' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Version
+        id: version
+        shell: pwsh
+        run: |
+          $version = if ("${{ github.ref }}".StartsWith("refs/tags/v")) { "${{ github.ref_name }}".Substring(1) } else { "0.0.0-dev" }
+          "version=$version" >> $env:GITHUB_OUTPUT
       - uses: actions/download-artifact@v4
         with:
           name: windows-exe
           path: build
+      - name: Sign the .exe
+        if: env.SIGN == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: exe
+          github-artifact-id: ${{ needs.goreleaser.outputs.exe-artifact-id }}
+          parameters: |
+            version: ${{ toJSON(steps.version.outputs.version) }}
+          wait-for-completion: true
+          # Release signing waits for a person to approve it in SignPath.
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: build-signed
+      - name: Use the signed .exe
+        if: env.SIGN == 'true'
+        shell: pwsh
+        run: Copy-Item build-signed\steamlib-explorer.exe build\steamlib-explorer.exe -Force
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
       - name: Build the installer
         shell: pwsh
         run: |
-          $version = if ("${{ github.ref }}".StartsWith("refs/tags/v")) { "${{ github.ref_name }}".Substring(1) } else { "0.0.0-dev" }
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$version" "/DSourceExe=$env:GITHUB_WORKSPACE\build\steamlib-explorer.exe" packaging\windows\steamlib-explorer.iss
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=${{ steps.version.outputs.version }}" "/DSourceExe=$env:GITHUB_WORKSPACE\build\steamlib-explorer.exe" packaging\windows\steamlib-explorer.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
+        id: upload-installer
         with:
           name: windows-installer
           path: packaging/windows/Output/*.exe
           if-no-files-found: error
+      - name: Sign the installer
+        if: env.SIGN == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: installer
+          github-artifact-id: ${{ steps.upload-installer.outputs.artifact-id }}
+          parameters: |
+            version: ${{ toJSON(steps.version.outputs.version) }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: installer-signed
+      - name: Use the signed installer
+        if: env.SIGN == 'true'
+        shell: pwsh
+        run: Copy-Item installer-signed\*.exe packaging\windows\Output\ -Force
       - name: Add the installer to the draft release
         if: startsWith(github.ref, 'refs/tags/')
         shell: pwsh
