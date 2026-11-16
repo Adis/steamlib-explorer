@@ -5,7 +5,7 @@ MIGRATIONS := backend/db/postgres/migrations
 -include .env
 export
 
-.PHONY: dev check-tools db-up db-down run web web-install web-build build serve test test-db generate migrate-up migrate-down migrate-status
+.PHONY: dev check-tools db-up db-down run web web-install web-build build serve pg-to-sqlite test test-db generate migrate-up migrate-down migrate-status
 
 # Put $(FAIL) at the start of a recipe line to get a shell function that
 # prints what went wrong and how to fix it, then stops make:
@@ -63,6 +63,9 @@ build: web-build ## Build one binary, backend/bin/server, that serves the API an
 
 serve: db-up build ## Build the one binary and run it: the whole app on http://localhost:8080, no Vite
 	cd backend && PUBLIC_URL=http://localhost:$(or $(PORT),8080) ./bin/server
+
+pg-to-sqlite: db-up ## Copy the Postgres in DATABASE_URL into a new SQLite file, backend/steamlib.db (or SQLITE=path)
+	cd backend && go run ./cmd/pg2sqlite -to $(or $(SQLITE),steamlib.db)
 
 test:           ## Run the backend tests
 	cd backend && go test ./...

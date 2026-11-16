@@ -53,7 +53,15 @@ Only port 5173 needs to be reachable: Vite forwards to the backend, which talks 
 
 ### SQLite
 
-The backend can also keep everything in one SQLite file instead of Postgres, so it runs without Docker. This is what the desktop app will use. Set `DATABASE_URL=sqlite:steamlib.db` (the file and its folder are created on first start, next to the backend), then `make build` and run `backend/bin/server` from `backend/`, or use `make run` and `make web` as usual. A new SQLite file starts empty: sign in and sync, or wait for the Postgres import that comes next. Your Postgres data is not touched.
+The backend can also keep everything in one SQLite file instead of Postgres, so it runs without Docker. This is what the desktop app will use. Set `DATABASE_URL=sqlite:steamlib.db` (the file and its folder are created on first start, next to the backend), then `make build` and run `backend/bin/server` from `backend/`, or use `make run` and `make web` as usual. A new SQLite file starts empty: sign in and sync, or copy your Postgres data over first (below).
+
+To move a library you already synced on Postgres, run this once with `DATABASE_URL` still pointing at Postgres:
+
+```sh
+make pg-to-sqlite
+```
+
+It starts the Docker Postgres if needed and copies every user, game, library entry, past sync and sign-in session into a new file, `backend/steamlib.db` (`make pg-to-sqlite SQLITE=other.db` picks another name). Then set `DATABASE_URL=sqlite:steamlib.db` in `.env` and start the app: you stay signed in and nothing needs a re-sync. Postgres is only read, so you can switch back by restoring the old `DATABASE_URL`. The copy refuses to write into a file that already exists, and if anything goes wrong it removes the half-made file. Times are kept to the millisecond (Postgres keeps microseconds).
 
 SQLite runs in WAL mode, so the explorer can read while a sync writes. Back up the `.db` file together with its `-wal` and `-shm` files, or stop the app first.
 
