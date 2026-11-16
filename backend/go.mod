@@ -3,7 +3,9 @@ module github.com/Adis/steamlib-explorer/backend
 go 1.25.0
 
 require (
+	fyne.io/systray v1.11.0
 	github.com/go-chi/chi/v5 v5.5.0
+	github.com/godbus/dbus/v5 v5.1.0
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/pressly/goose/v3 v3.26.0
 	golang.org/x/time v0.15.0

@@ -64,7 +64,7 @@ func TestSetup(t *testing.T) {
 		body        string
 		want        int
 	}{
-		"form post (cross-site)": {&fakeSetup{}, "application/x-www-form-urlencoded", "steam_api_key=" + goodKey, http.StatusUnsupportedMediaType},
+		"form post (cross-site)":  {&fakeSetup{}, "application/x-www-form-urlencoded", "steam_api_key=" + goodKey, http.StatusUnsupportedMediaType},
 		"text/plain (cross-site)": {&fakeSetup{}, "text/plain", `{"steam_api_key": "` + goodKey + `"}`, http.StatusUnsupportedMediaType},
 		"not a key":               {&fakeSetup{}, "application/json", `{"steam_api_key": "hello"}`, http.StatusBadRequest},
 		"bad json":                {&fakeSetup{}, "application/json", `{`, http.StatusBadRequest},

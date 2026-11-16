@@ -77,6 +77,12 @@ SQLite runs in WAL mode, so the explorer can read while a sync writes. Back up t
 
 Started with no `.env` at all, the backend uses the SQLite file in your data folder and shows a one-time setup page asking for your Steam Web API key. It checks the key with Steam and saves it in `settings.json` next to the database (readable only by you). The page only works while no key is set, and only accepts JSON, so another website can't set a key for you; to change the key later, edit or delete `settings.json`, or set `STEAM_API_KEY`. `backend/bin/server -open` also opens the app in your default browser once it is listening.
 
+### Desktop app
+
+`make desktop` builds `backend/bin/steamlib-explorer`, the desktop version: one file that needs no Docker, Node or settings. Starting it runs the app on http://localhost:8080, opens it in your default browser and puts an icon in the system tray with **Open Steamlib Explorer** and **Quit**. It uses the SQLite file and `settings.json` in your data folder (see [SQLite](#sqlite)) and writes its log to `logs/steamlib-explorer.log` there; if it can't start, the reason is in `startup-error.txt` in the same folder. Starting it a second time just opens the browser on the one already running.
+
+`make desktop-windows` cross-builds `steamlib-explorer.exe` for Windows from Linux; it runs without a console window. On Linux the tray icon needs a desktop with a system tray (KDE, Xfce, Cinnamon, or GNOME with the AppIndicator extension, which Ubuntu ships); without a desktop session it runs without the icon and stops with Ctrl+C. Installers come next.
+
 ### Logs
 
 Every incoming request (`msg="api request"`) and every call to Steam (`msg="outgoing call"`, with status, duration and the first 300 characters of the response) is logged to the backend console and appended to `backend/logs/api-calls.txt`. The Steam API key is replaced with `REDACTED`. Sync progress lines (`refresh started`, `library saved`, `refresh finished`) carry the `run_id`.
