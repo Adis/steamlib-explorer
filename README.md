@@ -23,7 +23,7 @@ Get the latest version from the [Releases page](https://github.com/Adis/steamlib
 **Windows (64-bit)**
 
 1. Download `steamlib-explorer_<version>_windows_setup.exe` and run it. It installs for your user only, so it doesn't ask for administrator rights.
-2. Windows SmartScreen may warn the first time, because older versions aren't code signed and Windows needs a while to trust a newly signed one: press **More info**, then **Run anyway**. See the [code signing policy](#code-signing-policy).
+2. The download isn't code signed, so Windows SmartScreen may warn the first time: press **More info**, then **Run anyway**.
 3. Start **Steamlib Explorer** from the Start menu. It opens in your browser and puts an icon in the system tray (bottom right) with **Open Steamlib Explorer** and **Quit**.
 
 Uninstall it from Windows Settings, Apps. Your library and settings in `%AppData%\steamlib-explorer` are kept, so a reinstall picks up where you left off. If you'd rather not install anything, the `_windows_amd64.zip` holds just `steamlib-explorer.exe`, which you can run from any folder.
@@ -43,19 +43,6 @@ Then start **Steamlib Explorer** from your applications menu, or run `steamlib-e
 **First start**
 
 The first page asks for your [Steam Web API key](https://steamcommunity.com/dev/apikey); the app checks it with Steam and remembers it. Then sign in through Steam and press **Sync library**. Everything stays on your computer, in your data folder (see [SQLite](#sqlite)). The **Help** page in the app explains what to do if your Steam library is private.
-
-## Code signing policy
-
-Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
-
-Only the Windows downloads are signed: `steamlib-explorer.exe` and the `_windows_setup.exe` installer. They are built from this repository by the public [Release workflow](.github/workflows/release.yml) on GitHub-hosted runners, and each release is signed only after a person approves it in SignPath.
-
-- Committers and reviewers: [Adis](https://github.com/Adis)
-- Approvers: [Adis](https://github.com/Adis)
-
-Changes from anyone else are reviewed before they are merged.
-
-**Privacy:** this program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. It talks only to Steam: the sign-in through Steam, and the Steam Web API and Steam store when you press **Sync library**, using the API key you entered. Game images are loaded from Steam's servers by your browser. Your library and settings stay on your computer.
 
 ## Build it yourself
 
@@ -166,14 +153,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The workflow then makes a **draft** release with all the downloads; check it on GitHub and press **Publish release**. Pull requests that change the packaging, and a manual run from the Actions tab, build everything the same way as a test and keep the files as workflow artifacts instead of releasing them. To try it locally, `goreleaser release --snapshot --clean` writes the Linux and Windows files to `dist/` (the Windows installer needs Windows).
-
-On a tag, the Windows `.exe` and installer are signed through [SignPath](https://about.signpath.io) once these repository settings exist (Settings, Secrets and variables, Actions); without them the release is made unsigned as before:
-
-- Variables: `SIGNPATH_ORGANIZATION_ID`, `SIGNPATH_PROJECT_SLUG`, and optionally `SIGNPATH_SIGNING_POLICY_SLUG` (default `release-signing`; `test-signing` tries the setup with a test certificate).
-- Secret: `SIGNPATH_API_TOKEN`, a SignPath API token with submitter rights.
-
-The SignPath project needs two artifact configurations with the slugs `exe` and `installer`, copied from `packaging/windows/signpath/`. The workflow waits up to an hour for each of the two signing requests to be approved in SignPath.
+The workflow then makes a **draft** release with all the downloads; check it on GitHub and press **Publish release**. Pull requests that change the packaging, and a manual run from the Actions tab, build everything the same way as a test and keep the files as workflow artifacts instead of releasing them. To try it locally, `goreleaser release --snapshot --clean` writes the Linux and Windows files to `dist/` (the Windows installer needs Windows). The builds aren't code signed, so Windows SmartScreen warns on first start: **More info**, then **Run anyway**.
 
 ### Logs
 
