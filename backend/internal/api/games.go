@@ -134,6 +134,13 @@ func parseGameFilters(v url.Values) (store.ListGamesParams, error) {
 	if p.MinReviewScore, err = intParam(v, "min_review_score", 1, 9); err != nil {
 		return p, err
 	}
+	for _, s := range nonEmptyValues(v["review_score"]) {
+		n, err := strconv.Atoi(s)
+		if err != nil || n < 1 || n > 9 {
+			return p, fmt.Errorf("review_score must be a whole number from 1 to 9")
+		}
+		p.ReviewScores = append(p.ReviewScores, int32(n))
+	}
 	if p.MinReviews, err = intParam(v, "min_reviews", 0, math.MaxInt32); err != nil {
 		return p, err
 	}

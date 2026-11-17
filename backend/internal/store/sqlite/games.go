@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"strings"
 
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
@@ -58,6 +59,10 @@ func (s *Store) ListGames(ctx context.Context, arg store.ListGamesParams) ([]sto
 	}
 	if arg.MinReviewScore != nil { // Steam's 1..9 rating; 0 (no reviews) never matches.
 		add("a.review_score >= ?", *arg.MinReviewScore)
+	}
+	if arg.ReviewScores != nil { // any of these ratings
+		b, _ := json.Marshal(arg.ReviewScores) // an []int32 always marshals
+		add("a.review_score IN (SELECT value FROM json_each(?))", string(b))
 	}
 	if arg.MinReviews != nil { // games whose review count isn't known yet are kept
 		add("(a.reviews_total IS NULL OR a.reviews_total >= ?)", *arg.MinReviews)

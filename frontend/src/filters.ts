@@ -25,7 +25,8 @@ const PASS_THROUGH = [
   "min_hours",
   "max_hours",
   "min_review", // kept so older bookmarked links still filter
-  "min_review_score",
+  "min_review_score", // kept so older links still filter; the panel now sets review_score
+  "review_score",
   "min_metacritic",
   "platform",
   "sort",

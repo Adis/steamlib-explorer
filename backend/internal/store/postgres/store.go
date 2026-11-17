@@ -181,6 +181,7 @@ func (s *Store) ListGames(ctx context.Context, arg store.ListGamesParams) ([]sto
 		MaxMinutes:     arg.MaxMinutes,
 		MinReviewPct:   arg.MinReviewPct,
 		MinReviewScore: arg.MinReviewScore,
+		ReviewScores:   arg.ReviewScores,
 		MinReviews:     arg.MinReviews,
 		MinMetacritic:  arg.MinMetacritic,
 		ReleasedAfter:  arg.ReleasedAfter,

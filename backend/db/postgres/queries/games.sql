@@ -22,6 +22,8 @@ WHERE o.steam_id = sqlc.arg(steam_id)
   AND (sqlc.narg(min_review_pct)::numeric IS NULL OR a.review_pct >= sqlc.narg(min_review_pct)::numeric)
   -- Steam's 1..9 rating; 0 (no reviews) never matches.
   AND (sqlc.narg(min_review_score)::int IS NULL OR a.review_score >= sqlc.narg(min_review_score)::int)
+  -- Any of these Steam ratings.
+  AND (sqlc.narg(review_scores)::int[] IS NULL OR a.review_score = ANY(sqlc.narg(review_scores)::int[]))
   -- Games whose review count isn't known yet (NULL) are kept.
   AND (sqlc.narg(min_reviews)::int IS NULL OR a.reviews_total IS NULL OR a.reviews_total >= sqlc.narg(min_reviews)::int)
   AND (sqlc.narg(min_metacritic)::int IS NULL OR a.metacritic_score >= sqlc.narg(min_metacritic)::int)

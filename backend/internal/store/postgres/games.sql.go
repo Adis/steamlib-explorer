@@ -104,37 +104,39 @@ WHERE o.steam_id = $1
   AND ($8::numeric IS NULL OR a.review_pct >= $8::numeric)
   -- Steam's 1..9 rating; 0 (no reviews) never matches.
   AND ($9::int IS NULL OR a.review_score >= $9::int)
+  -- Any of these Steam ratings.
+  AND ($10::int[] IS NULL OR a.review_score = ANY($10::int[]))
   -- Games whose review count isn't known yet (NULL) are kept.
-  AND ($10::int IS NULL OR a.reviews_total IS NULL OR a.reviews_total >= $10::int)
-  AND ($11::int IS NULL OR a.metacritic_score >= $11::int)
-  AND ($12::date IS NULL OR a.release_date >= $12::date)
-  AND ($13::date IS NULL OR a.release_date <= $13::date)
-  AND (NOT $14::boolean OR a.platform_windows)
-  AND (NOT $15::boolean OR a.platform_mac)
-  AND (NOT $16::boolean OR a.platform_linux)
+  AND ($11::int IS NULL OR a.reviews_total IS NULL OR a.reviews_total >= $11::int)
+  AND ($12::int IS NULL OR a.metacritic_score >= $12::int)
+  AND ($13::date IS NULL OR a.release_date >= $13::date)
+  AND ($14::date IS NULL OR a.release_date <= $14::date)
+  AND (NOT $15::boolean OR a.platform_windows)
+  AND (NOT $16::boolean OR a.platform_mac)
+  AND (NOT $17::boolean OR a.platform_linux)
 ORDER BY
     -- Only the CASE matching sort/descending yields a value; the others are NULL for every row.
-    CASE WHEN $17::text = 'name'        AND NOT $18::boolean THEN lower(a.name) END ASC,
-    CASE WHEN $17::text = 'name'        AND $18::boolean     THEN lower(a.name) END DESC,
-    CASE WHEN $17::text = 'playtime'    AND NOT $18::boolean THEN o.playtime_forever END ASC,
-    CASE WHEN $17::text = 'playtime'    AND $18::boolean     THEN o.playtime_forever END DESC,
-    CASE WHEN $17::text = 'recent'      AND NOT $18::boolean THEN o.playtime_2weeks END ASC,
-    CASE WHEN $17::text = 'recent'      AND $18::boolean     THEN o.playtime_2weeks END DESC,
-    CASE WHEN $17::text = 'last_played' AND NOT $18::boolean THEN o.last_played_at END ASC NULLS LAST,
-    CASE WHEN $17::text = 'last_played' AND $18::boolean     THEN o.last_played_at END DESC NULLS LAST,
+    CASE WHEN $18::text = 'name'        AND NOT $19::boolean THEN lower(a.name) END ASC,
+    CASE WHEN $18::text = 'name'        AND $19::boolean     THEN lower(a.name) END DESC,
+    CASE WHEN $18::text = 'playtime'    AND NOT $19::boolean THEN o.playtime_forever END ASC,
+    CASE WHEN $18::text = 'playtime'    AND $19::boolean     THEN o.playtime_forever END DESC,
+    CASE WHEN $18::text = 'recent'      AND NOT $19::boolean THEN o.playtime_2weeks END ASC,
+    CASE WHEN $18::text = 'recent'      AND $19::boolean     THEN o.playtime_2weeks END DESC,
+    CASE WHEN $18::text = 'last_played' AND NOT $19::boolean THEN o.last_played_at END ASC NULLS LAST,
+    CASE WHEN $18::text = 'last_played' AND $19::boolean     THEN o.last_played_at END DESC NULLS LAST,
     -- Review sort: Steam's rating (Overwhelmingly Positive, Very Positive, ...) first,
     -- then the least played, then the percentage.
-    CASE WHEN $17::text = 'review'      AND NOT $18::boolean THEN a.review_score END ASC NULLS LAST,
-    CASE WHEN $17::text = 'review'      AND $18::boolean     THEN a.review_score END DESC NULLS LAST,
-    CASE WHEN $17::text = 'review' THEN o.playtime_forever END ASC,
-    CASE WHEN $17::text = 'review'      AND NOT $18::boolean THEN a.review_pct END ASC NULLS LAST,
-    CASE WHEN $17::text = 'review'      AND $18::boolean     THEN a.review_pct END DESC NULLS LAST,
-    CASE WHEN $17::text = 'metacritic'  AND NOT $18::boolean THEN a.metacritic_score END ASC NULLS LAST,
-    CASE WHEN $17::text = 'metacritic'  AND $18::boolean     THEN a.metacritic_score END DESC NULLS LAST,
-    CASE WHEN $17::text = 'release'     AND NOT $18::boolean THEN a.release_date END ASC NULLS LAST,
-    CASE WHEN $17::text = 'release'     AND $18::boolean     THEN a.release_date END DESC NULLS LAST,
+    CASE WHEN $18::text = 'review'      AND NOT $19::boolean THEN a.review_score END ASC NULLS LAST,
+    CASE WHEN $18::text = 'review'      AND $19::boolean     THEN a.review_score END DESC NULLS LAST,
+    CASE WHEN $18::text = 'review' THEN o.playtime_forever END ASC,
+    CASE WHEN $18::text = 'review'      AND NOT $19::boolean THEN a.review_pct END ASC NULLS LAST,
+    CASE WHEN $18::text = 'review'      AND $19::boolean     THEN a.review_pct END DESC NULLS LAST,
+    CASE WHEN $18::text = 'metacritic'  AND NOT $19::boolean THEN a.metacritic_score END ASC NULLS LAST,
+    CASE WHEN $18::text = 'metacritic'  AND $19::boolean     THEN a.metacritic_score END DESC NULLS LAST,
+    CASE WHEN $18::text = 'release'     AND NOT $19::boolean THEN a.release_date END ASC NULLS LAST,
+    CASE WHEN $18::text = 'release'     AND $19::boolean     THEN a.release_date END DESC NULLS LAST,
     lower(a.name), a.appid
-LIMIT $20 OFFSET $19
+LIMIT $21 OFFSET $20
 `
 
 type ListGamesParams struct {
@@ -147,6 +149,7 @@ type ListGamesParams struct {
 	MaxMinutes     *int32
 	MinReviewPct   *float64
 	MinReviewScore *int32
+	ReviewScores   []int32
 	MinReviews     *int32
 	MinMetacritic  *int32
 	ReleasedAfter  *time.Time
@@ -202,6 +205,7 @@ func (q *Queries) ListGames(ctx context.Context, arg ListGamesParams) ([]ListGam
 		arg.MaxMinutes,
 		arg.MinReviewPct,
 		arg.MinReviewScore,
+		arg.ReviewScores,
 		arg.MinReviews,
 		arg.MinMetacritic,
 		arg.ReleasedAfter,
