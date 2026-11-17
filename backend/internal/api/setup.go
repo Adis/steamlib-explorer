@@ -34,7 +34,7 @@ func setupStatus(s KeySetup) http.HandlerFunc {
 
 // saveAPIKey stores the key typed on the setup page. It needs no sign-in, so
 // it only works while no key is set: once there is one, it can only be
-// changed in settings.json or with STEAM_API_KEY.
+// changed in the OS keychain (or settings.json) or with STEAM_API_KEY.
 func saveAPIKey(s KeySetup) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// JSON only: another website can't send a cross-origin JSON request

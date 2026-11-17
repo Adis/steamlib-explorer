@@ -81,7 +81,9 @@ export default function Help({ signedIn }: { signedIn: boolean }) {
           </li>
           <li>
             The first time the app starts without a key, it asks for one and saves
-            it in <code>settings.json</code> in the app's data folder. Running from
+            it in your computer's keychain (Windows Credential Manager, or GNOME
+            Keyring or KWallet on Linux). Without a keychain it goes in{" "}
+            <code>settings.json</code> in the app's data folder instead. Running from
             source, you can instead put <code>STEAM_API_KEY=…</code> in the{" "}
             <code>.env</code> file, which wins over the saved key, and restart the
             app (<code>make dev</code>).
