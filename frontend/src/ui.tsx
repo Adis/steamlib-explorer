@@ -31,6 +31,26 @@ export function formatDateTime(iso: string) {
   return `${formatDate(iso)}, ${hh}:${mm}`;
 }
 
+/**
+ * How long ago a moment was, in the largest unit that fits: "just now",
+ * "5 minutes ago", "3 hours ago", "yesterday", "4 days ago", "2 months ago",
+ * "1 year ago". Units are rounded down, so "1 hour ago" means 60 to 119 minutes.
+ */
+export function formatTimeAgo(iso: string, now = new Date()) {
+  const seconds = Math.max(0, (now.getTime() - new Date(iso).getTime()) / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const ago = (n: number, unit: string) => `${n} ${unit}${n === 1 ? "" : "s"} ago`;
+  if (minutes < 1) return "just now";
+  if (hours < 1) return ago(minutes, "minute");
+  if (days < 1) return ago(hours, "hour");
+  if (days === 1) return "yesterday";
+  if (days < 30) return ago(days, "day");
+  if (days < 365) return ago(Math.floor(days / 30), "month");
+  return ago(Math.floor(days / 365), "year");
+}
+
 /** How long after its release a game counts as new. */
 export const NEW_RELEASE_MONTHS = 6;
 
