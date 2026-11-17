@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, fetchSyncStatus, startSync, type SyncRun, type SyncStatus } from "./api.ts";
-import { ErrorBox, formatDateTime } from "./ui.tsx";
+import { ErrorBox, formatDateTime, formatTimeAgo } from "./ui.tsx";
 
 /** Library status, the Sync button, and progress while a sync runs. */
 export default function SyncPanel() {
@@ -38,7 +38,12 @@ export default function SyncPanel() {
                 {stats.games.toLocaleString()} games
               </span>
             )}
-            {run && !running && ` · ${runLabel(run)} ${formatTime(run.finished_at ?? run.started_at)}`}
+            {run && !running && (
+              <>
+                {" · "}
+                <LastSync run={run} />
+              </>
+            )}
             {!run && status.data && " · never synced"}
           </p>
         </div>
@@ -76,8 +81,26 @@ export default function SyncPanel() {
   );
 }
 
-function runLabel(run: SyncRun) {
-  return run.status === "error" ? "last sync stopped" : "synced";
+/**
+ * "last sync 3 hours ago", with the exact date and time on hover. Re-renders
+ * every minute so the text stays current while the page is open.
+ */
+function LastSync({ run }: { run: SyncRun }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const when = run.finished_at ?? run.started_at;
+  const label = run.status === "error" ? "last sync stopped" : "last sync";
+  return (
+    <span>
+      {label}{" "}
+      <time dateTime={when} title={formatDateTime(when)} className="cursor-help">
+        {formatTimeAgo(when, now)}
+      </time>
+    </span>
+  );
 }
 
 function Progress({ run }: { run: SyncRun }) {
@@ -166,10 +189,6 @@ function Stats({ stats }: { stats: SyncStatus["stats"] }) {
       ))}
     </dl>
   );
-}
-
-function formatTime(iso: string) {
-  return formatDateTime(iso);
 }
 
 function SyncIcon({ spinning }: { spinning: boolean }) {
