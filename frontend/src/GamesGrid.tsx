@@ -1,6 +1,6 @@
 import type { Game } from "./api.ts";
 import { formatHours, ReviewLabel, reviewDetail } from "./GamesTable.tsx";
-import { formatDate } from "./ui.tsx";
+import { formatDate, isNewRelease, NewBadge } from "./ui.tsx";
 
 /** The filtered games as cover-art cards. */
 export default function GamesGrid({ games }: { games: Game[] }) {
@@ -38,6 +38,7 @@ function GameCard({ game }: { game: Game }) {
             Recently played
           </span>
         )}
+        {isNewRelease(game) && <NewBadge game={game} className="absolute right-2 top-2" />}
       </div>
 
       <div className="flex flex-1 flex-col p-3">
