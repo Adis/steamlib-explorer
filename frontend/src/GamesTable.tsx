@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 import { Minus, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { Game } from "./api.ts";
 import { useTableColumns } from "./tableColumns.ts";
-import { formatDate } from "./ui.tsx";
+import { formatDate, isNewRelease, NewBadge } from "./ui.tsx";
 
 /** Sort keys accepted by GET /api/games, by column id. */
 const SORT_KEYS: Record<string, string> = {
@@ -193,6 +193,7 @@ function NameCell({ game }: { game: Game }) {
           {game.name}
           <span className="sr-only"> (opens in a new tab)</span>
         </a>
+        {isNewRelease(game) && <NewBadge game={game} className="ml-2 align-[0.1em] leading-none" />}
         {/* Long genre lists are cut off with an ellipsis instead of widening
             the column: contain-inline-size keeps this line out of the
             table's width calculation, so the table fits its box. */}
