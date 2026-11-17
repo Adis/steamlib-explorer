@@ -1,5 +1,7 @@
 # steamlib-explorer
-Personal, self-hosted repository of Steam games allowing you to browse and filter your Steam library looking for a new game to play.
+Personal, self-hosted browser of Steam games allowing you to search and filter your Steam library looking for a new game to play.
+
+If you have a larger Steam library like me, you might sometimes have a hard time filtering through it or finding a new game to play. I made this so I can effectively filter through my library looking for critically acclaimed games I haven't played, but it's a useful tool to review your library in any case.
 
 There are two ways to run it: [download the app](#download-the-app) from GitHub Releases, or [build it yourself](#build-it-yourself) from this repository. Either way it runs on your own computer, opens in your browser, and needs a free [Steam Web API key](https://steamcommunity.com/dev/apikey).
 
@@ -42,7 +44,7 @@ Then start **Steamlib Explorer** from your applications menu, or run `steamlib-e
 
 **First start**
 
-The first page asks for your [Steam Web API key](https://steamcommunity.com/dev/apikey); the app checks it with Steam and remembers it. Then sign in through Steam and press **Sync library**. Everything stays on your computer, in your data folder (see [SQLite](#sqlite)). The **Help** page in the app explains what to do if your Steam library is private.
+The first page asks for your [Steam Web API key](https://steamcommunity.com/dev/apikey); the app checks it with Steam and stores it in your OS keychain. Then sign in through Steam and press **Sync library**. Everything stays on your computer, in your data folder (see [SQLite](#sqlite)). The **Help** page in the app explains what to do if your Steam library is private.
 
 ## Build it yourself
 
