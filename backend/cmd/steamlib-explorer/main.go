@@ -49,12 +49,6 @@ func main() {
 }
 
 func run() error {
-	// Logs go to the data folder: a desktop app has no terminal to read.
-	if os.Getenv("LOG_FILE") == "" {
-		if dir, err := paths.DataDir(); err == nil {
-			os.Setenv("LOG_FILE", filepath.Join(dir, "logs", "steamlib-explorer.log"))
-		}
-	}
 	cfg, err := config.Load()
 	if err != nil {
 		return err
