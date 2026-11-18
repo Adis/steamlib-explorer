@@ -41,6 +41,12 @@ type App struct {
 	UpdatedAt        time.Time
 }
 
+type DeveloperGame struct {
+	Developer string
+	Games     []byte
+	FetchedAt time.Time
+}
+
 type OwnedGame struct {
 	SteamID         int64
 	Appid           int64

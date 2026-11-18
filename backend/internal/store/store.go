@@ -57,6 +57,13 @@ type Store interface {
 	CategoryFacets(ctx context.Context, steamID int64) ([]CategoryFacetsRow, error)
 	// OwnedAmong returns which of appids the user owns, in ascending order.
 	OwnedAmong(ctx context.Context, steamID int64, appids []int64) ([]int64, error)
+
+	// Cache of the store's per-developer game lists ("More from").
+	// GetDeveloperGames returns ErrNotFound when the developer isn't cached.
+	GetDeveloperGames(ctx context.Context, developer string) (DeveloperGames, error)
+	SaveDeveloperGames(ctx context.Context, arg DeveloperGames) error
+	// DeleteDeveloperGamesBefore drops lists fetched before the given time.
+	DeleteDeveloperGamesBefore(ctx context.Context, before time.Time) error
 }
 
 type User struct {
@@ -248,4 +255,11 @@ type GenreFacetsRow struct {
 type CategoryFacetsRow struct {
 	Value string
 	Games int64
+}
+
+// DeveloperGames is one developer's cached store list.
+type DeveloperGames struct {
+	Developer string // lowercased
+	Games     []byte // JSON
+	FetchedAt time.Time
 }

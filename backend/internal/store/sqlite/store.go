@@ -365,3 +365,21 @@ func (s *Store) UpdateAppReviews(ctx context.Context, arg store.UpdateAppReviews
 		ReviewsTotal:    nullInt(arg.ReviewsTotal),
 	}))
 }
+
+func (s *Store) GetDeveloperGames(ctx context.Context, developer string) (store.DeveloperGames, error) {
+	r, err := s.q.GetDeveloperGames(ctx, developer)
+	if err != nil {
+		return store.DeveloperGames{}, mapErr(err)
+	}
+	return store.DeveloperGames{Developer: developer, Games: []byte(r.Games), FetchedAt: parseTime(r.FetchedAt)}, nil
+}
+
+func (s *Store) SaveDeveloperGames(ctx context.Context, arg store.DeveloperGames) error {
+	return mapErr(s.q.SaveDeveloperGames(ctx, SaveDeveloperGamesParams{
+		Developer: arg.Developer, Games: string(arg.Games), FetchedAt: fmtTime(arg.FetchedAt),
+	}))
+}
+
+func (s *Store) DeleteDeveloperGamesBefore(ctx context.Context, before time.Time) error {
+	return mapErr(s.q.DeleteDeveloperGamesBefore(ctx, fmtTime(before)))
+}

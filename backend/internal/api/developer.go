@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/Adis/steamlib-explorer/backend/internal/auth"
 	"github.com/Adis/steamlib-explorer/backend/internal/steam"
+	"github.com/Adis/steamlib-explorer/backend/internal/store"
 )
 
 // DeveloperSearch lists a developer's games on the Steam store.
@@ -36,11 +39,21 @@ const developerFetchTimeout = 4 * time.Minute
 // developerCacheMax caps how many developers' lists are kept in memory.
 const developerCacheMax = 500
 
-// DeveloperCache remembers each developer's store list in memory, for every
-// user, so opening game pages doesn't keep asking the store. Pages opened at
-// the same time for one developer share one store request.
+// SavedDeveloperGames keeps developers' store lists in the database, so the
+// cache survives restarts.
+type SavedDeveloperGames interface {
+	GetDeveloperGames(ctx context.Context, developer string) (store.DeveloperGames, error)
+	SaveDeveloperGames(ctx context.Context, arg store.DeveloperGames) error
+	DeleteDeveloperGamesBefore(ctx context.Context, before time.Time) error
+}
+
+// DeveloperCache remembers each developer's store list, for every user, so
+// opening game pages doesn't keep asking the store: in memory, and in the
+// database when Saved is set. Pages opened at the same time for one developer
+// share one store request.
 type DeveloperCache struct {
 	Search DeveloperSearch
+	Saved  SavedDeveloperGames // optional
 	now    func() time.Time
 
 	mu       sync.Mutex
@@ -97,15 +110,66 @@ func (c *DeveloperCache) Games(ctx context.Context, developer string) ([]steam.S
 func (c *DeveloperCache) fetch(key, developer string, f *developerFetch, now func() time.Time) {
 	ctx, cancel := context.WithTimeout(context.Background(), developerFetchTimeout)
 	defer cancel()
-	f.games, f.err = c.Search.DeveloperGames(ctx, developer)
+
+	fetched := now()
+	if games, at, ok := c.loadSaved(ctx, key, fetched); ok {
+		f.games, fetched = games, at
+	} else {
+		f.games, f.err = c.Search.DeveloperGames(ctx, developer)
+		if f.err == nil {
+			c.save(ctx, key, f.games, fetched)
+		}
+	}
 
 	c.mu.Lock()
 	delete(c.inFlight, key)
 	if f.err == nil {
-		c.store(key, developerEntry{games: f.games, fetched: now()}, now())
+		c.store(key, developerEntry{games: f.games, fetched: fetched}, now())
 	}
 	c.mu.Unlock()
 	close(f.done)
+}
+
+// loadSaved returns the list saved in the database, if there is one younger
+// than the TTL.
+func (c *DeveloperCache) loadSaved(ctx context.Context, key string, now time.Time) ([]steam.StoreGame, time.Time, bool) {
+	if c.Saved == nil {
+		return nil, time.Time{}, false
+	}
+	saved, err := c.Saved.GetDeveloperGames(ctx, key)
+	if err != nil {
+		if !errors.Is(err, store.ErrNotFound) {
+			slog.Warn("read saved developer games", "developer", key, "error", err)
+		}
+		return nil, time.Time{}, false
+	}
+	if now.Sub(saved.FetchedAt) >= developerCacheTTL {
+		return nil, time.Time{}, false
+	}
+	var games []steam.StoreGame
+	if err := json.Unmarshal(saved.Games, &games); err != nil {
+		slog.Warn("saved developer games unreadable", "developer", key, "error", err)
+		return nil, time.Time{}, false
+	}
+	return games, saved.FetchedAt, true
+}
+
+// save keeps a fresh list in the database and drops expired ones. Failing
+// only costs a store request later, so it is logged, not returned.
+func (c *DeveloperCache) save(ctx context.Context, key string, games []steam.StoreGame, fetched time.Time) {
+	if c.Saved == nil {
+		return
+	}
+	b, err := json.Marshal(games)
+	if err == nil {
+		err = c.Saved.SaveDeveloperGames(ctx, store.DeveloperGames{Developer: key, Games: b, FetchedAt: fetched})
+	}
+	if err == nil {
+		err = c.Saved.DeleteDeveloperGamesBefore(ctx, fetched.Add(-developerCacheTTL))
+	}
+	if err != nil {
+		slog.Warn("save developer games", "developer", key, "error", err)
+	}
 }
 
 // store saves an entry, first making room: expired entries go, then the

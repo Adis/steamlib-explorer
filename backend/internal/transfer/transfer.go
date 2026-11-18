@@ -54,6 +54,7 @@ var tables = []struct {
 		plain("id"), plain("steam_id"), ts("started_at"), ts("finished_at"), plain("status"),
 		plain("games_seen"), plain("details_fetched"), plain("error"), plain("details_total"), ts("details_started_at"),
 	}},
+	{"developer_games", []column{plain("developer"), {"games", `games::text`}, ts("fetched_at")}},
 }
 
 // Counts is the number of rows copied per table.

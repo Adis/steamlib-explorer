@@ -22,7 +22,7 @@ func TestStore(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(s.Close)
-		if _, err := s.Pool().Exec(context.Background(), "TRUNCATE users, apps CASCADE"); err != nil {
+		if _, err := s.Pool().Exec(context.Background(), "TRUNCATE users, apps, developer_games CASCADE"); err != nil {
 			t.Fatal(err)
 		}
 		return s

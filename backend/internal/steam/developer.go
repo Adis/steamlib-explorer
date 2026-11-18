@@ -14,13 +14,13 @@ const MaxDeveloperGames = 50
 
 // StoreGame is one row of a store search: what the store's search page shows.
 type StoreGame struct {
-	AppID        int64
-	Name         string
-	CapsuleImage string // 231x87 search capsule
-	ReleasedText string // as the store shows it, e.g. "21 Aug, 2012"
-	ReviewDesc   string // e.g. "Very Positive"; empty without reviews
-	ReviewPct    *int   // positive share, 0..100
-	ReviewsTotal *int
+	AppID        int64  `json:"appid"`
+	Name         string `json:"name"`
+	CapsuleImage string `json:"capsule_image,omitempty"` // 231x87 search capsule
+	ReleasedText string `json:"released_text,omitempty"` // as the store shows it, e.g. "21 Aug, 2012"
+	ReviewDesc   string `json:"review_desc,omitempty"`   // e.g. "Very Positive"; empty without reviews
+	ReviewPct    *int   `json:"review_pct,omitempty"`    // positive share, 0..100
+	ReviewsTotal *int   `json:"reviews_total,omitempty"`
 }
 
 // DeveloperGames lists the games (not DLC or soundtracks) the store files

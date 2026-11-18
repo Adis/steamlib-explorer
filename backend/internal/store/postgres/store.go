@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -249,4 +250,20 @@ func (s *Store) CategoryFacets(ctx context.Context, steamID int64) ([]store.Cate
 		out[i] = store.CategoryFacetsRow(r)
 	}
 	return out, nil
+}
+
+func (s *Store) GetDeveloperGames(ctx context.Context, developer string) (store.DeveloperGames, error) {
+	r, err := s.q.GetDeveloperGames(ctx, developer)
+	if err != nil {
+		return store.DeveloperGames{}, mapErr(err)
+	}
+	return store.DeveloperGames{Developer: developer, Games: r.Games, FetchedAt: r.FetchedAt}, nil
+}
+
+func (s *Store) SaveDeveloperGames(ctx context.Context, arg store.DeveloperGames) error {
+	return mapErr(s.q.SaveDeveloperGames(ctx, SaveDeveloperGamesParams(arg)))
+}
+
+func (s *Store) DeleteDeveloperGamesBefore(ctx context.Context, before time.Time) error {
+	return mapErr(s.q.DeleteDeveloperGamesBefore(ctx, before))
 }

@@ -87,7 +87,7 @@ func Run(ctx context.Context, cfg config.Config, ready func()) error {
 		Handler: api.CheckHost(cfg.PublicURL)(api.NewRouter(api.Deps{
 			DB: queries, Auth: authService, Refresher: refresher, SyncQ: queries, Games: queries,
 			Setup:      &keySetup{client: steamClient, keys: keys},
-			Developers: &api.DeveloperCache{Search: steamClient}, Owned: queries,
+			Developers: &api.DeveloperCache{Search: steamClient, Saved: queries}, Owned: queries,
 			UI: webui.Handler(),
 		})),
 		ReadHeaderTimeout: 10 * time.Second,

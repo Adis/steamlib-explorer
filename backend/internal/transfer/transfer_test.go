@@ -34,7 +34,7 @@ func openPostgres(t *testing.T) *postgres.Store {
 	pg, err := postgres.Open(context.Background(), url)
 	must(t, err)
 	t.Cleanup(pg.Close)
-	_, err = pg.Pool().Exec(context.Background(), "TRUNCATE users, apps CASCADE")
+	_, err = pg.Pool().Exec(context.Background(), "TRUNCATE users, apps, developer_games CASCADE")
 	must(t, err)
 	return pg
 }
@@ -85,10 +85,13 @@ func TestPostgresToSQLite(t *testing.T) {
 	must(t, pg.UpdateSyncProgress(ctx, store.UpdateSyncProgressParams{ID: run, GamesSeen: 3, DetailsTotal: 2, DetailsFetched: 2}))
 	must(t, pg.FinishSyncRun(ctx, store.FinishSyncRunParams{ID: run, Status: "ok"}))
 
+	fetched := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
+	must(t, pg.SaveDeveloperGames(ctx, store.DeveloperGames{Developer: "valve", Games: []byte(`[{"appid": 620}]`), FetchedAt: fetched}))
+
 	lite := openSQLite(t)
 	counts, err := PostgresToSQLite(ctx, pg.Pool(), lite.DB())
 	must(t, err)
-	want := Counts{"users": 2, "sessions": 1, "apps": 3, "owned_games": 4, "sync_runs": 1}
+	want := Counts{"users": 2, "sessions": 1, "apps": 3, "owned_games": 4, "sync_runs": 1, "developer_games": 1}
 	if !reflect.DeepEqual(counts, want) {
 		t.Errorf("counts = %v, want %v", counts, want)
 	}
@@ -150,6 +153,12 @@ func TestPostgresToSQLite(t *testing.T) {
 	must(t, err)
 	if !slices.Equal(ids, []int64{30}) {
 		t.Errorf("apps needing details after the copy = %v, want [30]", ids)
+	}
+
+	dev, err := lite.GetDeveloperGames(ctx, "valve")
+	must(t, err)
+	if string(dev.Games) != `[{"appid": 620}]` || !dev.FetchedAt.Equal(fetched) {
+		t.Errorf("developer games = %s at %v", dev.Games, dev.FetchedAt)
 	}
 
 	// A second import into the same file is refused and changes nothing.
