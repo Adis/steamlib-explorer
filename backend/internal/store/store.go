@@ -170,6 +170,8 @@ type UpdateAppReviewsParams struct {
 // fields turn their filter off.
 type ListGamesParams struct {
 	SteamID int64
+	// AppID keeps only this one game.
+	AppID *int64
 	// NameContains matches names containing this text, ignoring case.
 	NameContains   *string
 	Genres         []string // has all of these

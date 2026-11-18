@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchMe, fetchSetup, logout, type User } from "./api.ts";
 import Explorer from "./Explorer.tsx";
+import GameDetails, { gameIdOf } from "./GameDetails.tsx";
 import Help from "./Help.tsx";
 import Settings from "./Settings.tsx";
 import Setup from "./Setup.tsx";
@@ -15,20 +16,47 @@ export default function App() {
   const page = useHashPage();
   // Until a Steam API key is set, the home page is the setup form.
   const needsKey = setup.data?.needs_api_key === true;
-  const subpage = page === "help" || page === "settings";
+  const gameId = gameIdOf(page);
+  const subpage = page === "help" || page === "settings" || gameId !== null;
   const home = !subpage && !needsKey;
   const mainRef = useRef<HTMLElement>(null);
   const firstPage = useRef(true);
+  const prevPage = useRef(page);
+  // Where the explorer was scrolled to, so coming back from a game's page
+  // lands where the user left off.
+  const homeScroll = useRef(0);
+  // Whether the game page was opened from the explorer in this tab: then
+  // "Back" is the browser's back, which keeps the filters and the page.
+  const cameFromHome = useRef(false);
+
+  useEffect(() => {
+    if (page !== "") return;
+    const onScroll = () => (homeScroll.current = window.scrollY);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [page]);
 
   // A page change happens without a reload, so tell assistive technology:
   // a new tab title, and focus moves to the top of the new page's content.
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const prev = prevPage.current;
+    prevPage.current = page;
     document.title =
       page === "help" ? "Help · Steamlib Explorer" : page === "settings" ? "Settings · Steamlib Explorer" : "Steamlib Explorer";
     if (firstPage.current) {
       firstPage.current = false;
       return;
     }
+    const prevGame = gameIdOf(prev);
+    if (page === "" && prevGame !== null) {
+      // Back from a game: same scroll position, focus on that game's link.
+      window.scrollTo(0, homeScroll.current);
+      const link = document.querySelector<HTMLElement>(`#games a[href="#game/${prevGame}"]`);
+      (link ?? mainRef.current)?.focus({ preventScroll: true });
+      return;
+    }
+    cameFromHome.current = prev === "" && gameIdOf(page) !== null;
+    window.scrollTo(0, 0);
     mainRef.current?.focus({ preventScroll: true });
   }, [page]);
 
@@ -69,6 +97,17 @@ export default function App() {
       <main id="main" ref={mainRef} tabIndex={-1} className="mx-auto max-w-[1536px] px-4 py-8 outline-none">
         {page === "help" && <Help signedIn={!!me.data} />}
         {page === "settings" && <Settings signedIn={!!me.data} />}
+        {gameId !== null && me.data && (
+          <GameDetails
+            key={gameId}
+            appid={gameId}
+            onBack={() => {
+              if (cameFromHome.current) window.history.back();
+              else window.location.hash = "";
+            }}
+          />
+        )}
+        {gameId !== null && me.data === null && <SignIn />}
         {!subpage && needsKey && <Setup />}
         {home && me.isPending && <p className="text-muted">Loading…</p>}
         {home && me.isError && (
@@ -92,10 +131,7 @@ function useHashPage() {
   const read = () => window.location.hash.replace(/^#/, "");
   const [page, setPage] = useState(read);
   useEffect(() => {
-    const onChange = () => {
-      setPage(read());
-      window.scrollTo(0, 0);
-    };
+    const onChange = () => setPage(read());
     window.addEventListener("hashchange", onChange);
     return () => window.removeEventListener("hashchange", onChange);
   }, []);
@@ -192,7 +228,7 @@ function NavLink({
 function FunctionKeyBar({ page }: { page: string }) {
   const keys = [
     { n: 1, label: "Help", href: "#help", current: page === "help" },
-    { n: 2, label: "Library", href: "#", current: page !== "help" && page !== "settings" },
+    { n: 2, label: "Library", href: "#", current: page === "" },
     { n: 3, label: "Settings", href: "#settings", current: page === "settings" },
   ];
   return (

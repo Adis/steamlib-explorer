@@ -13,6 +13,7 @@ SELECT
 FROM owned_games o
 JOIN apps a ON a.appid = o.appid
 WHERE o.steam_id = sqlc.arg(steam_id)
+  AND (sqlc.narg(appid)::bigint IS NULL OR a.appid = sqlc.narg(appid)::bigint)
   AND (sqlc.narg(name_pattern)::text IS NULL OR a.name ILIKE sqlc.narg(name_pattern)::text)
   AND (sqlc.narg(genres)::text[] IS NULL OR a.genres @> sqlc.narg(genres)::text[])
   AND (sqlc.narg(categories)::text[] IS NULL OR a.categories @> sqlc.narg(categories)::text[])

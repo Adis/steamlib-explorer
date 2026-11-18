@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
 )
 
@@ -165,5 +167,40 @@ func TestListFacets(t *testing.T) {
 	want := `{"genres":[{"value":"Action","games":2}],"categories":[]}` + "\n"
 	if rec.Code != http.StatusOK || rec.Body.String() != want {
 		t.Errorf("status %d body %s", rec.Code, rec.Body)
+	}
+}
+
+func TestGetGame(t *testing.T) {
+	serve := func(f *fakeGameQ, appid string) *httptest.ResponseRecorder {
+		r := chi.NewRouter()
+		r.Get("/api/games/{appid}", getGame(f))
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, asUser(httptest.NewRequest(http.MethodGet, "/api/games/"+appid, nil)))
+		return rec
+	}
+
+	f := &fakeGameQ{rows: []store.ListGamesRow{{Appid: 620, Name: "Portal 2", DetailsStatus: "ok", TotalCount: 1}}}
+	rec := serve(f, "620")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status %d: %s", rec.Code, rec.Body)
+	}
+	if f.got.AppID == nil || *f.got.AppID != 620 || f.got.SteamID == 0 || f.got.PageLimit != 1 {
+		t.Errorf("params = %+v", f.got)
+	}
+	var g gameJSON
+	if err := json.Unmarshal(rec.Body.Bytes(), &g); err != nil {
+		t.Fatal(err)
+	}
+	if g.AppID != 620 || g.Name != "Portal 2" || g.StoreURL != "https://store.steampowered.com/app/620" {
+		t.Errorf("game = %+v", g)
+	}
+
+	if rec := serve(&fakeGameQ{}, "620"); rec.Code != http.StatusNotFound {
+		t.Errorf("not owned: status %d, want 404", rec.Code)
+	}
+	for _, bad := range []string{"abc", "0", "-5"} {
+		if rec := serve(&fakeGameQ{}, bad); rec.Code != http.StatusBadRequest {
+			t.Errorf("%s: status %d, want 400", bad, rec.Code)
+		}
 	}
 }

@@ -95,54 +95,56 @@ SELECT
 FROM owned_games o
 JOIN apps a ON a.appid = o.appid
 WHERE o.steam_id = $1
-  AND ($2::text IS NULL OR a.name ILIKE $2::text)
-  AND ($3::text[] IS NULL OR a.genres @> $3::text[])
-  AND ($4::text[] IS NULL OR a.categories @> $4::text[])
-  AND ($5::boolean IS NULL OR (o.playtime_forever > 0) = $5::boolean)
-  AND ($6::int IS NULL OR o.playtime_forever >= $6::int)
-  AND ($7::int IS NULL OR o.playtime_forever <= $7::int)
-  AND ($8::numeric IS NULL OR a.review_pct >= $8::numeric)
+  AND ($2::bigint IS NULL OR a.appid = $2::bigint)
+  AND ($3::text IS NULL OR a.name ILIKE $3::text)
+  AND ($4::text[] IS NULL OR a.genres @> $4::text[])
+  AND ($5::text[] IS NULL OR a.categories @> $5::text[])
+  AND ($6::boolean IS NULL OR (o.playtime_forever > 0) = $6::boolean)
+  AND ($7::int IS NULL OR o.playtime_forever >= $7::int)
+  AND ($8::int IS NULL OR o.playtime_forever <= $8::int)
+  AND ($9::numeric IS NULL OR a.review_pct >= $9::numeric)
   -- Steam's 1..9 rating; 0 (no reviews) never matches.
-  AND ($9::int IS NULL OR a.review_score >= $9::int)
+  AND ($10::int IS NULL OR a.review_score >= $10::int)
   -- Any of these Steam ratings.
-  AND ($10::int[] IS NULL OR a.review_score = ANY($10::int[]))
+  AND ($11::int[] IS NULL OR a.review_score = ANY($11::int[]))
   -- Games whose review count isn't known yet (NULL) are kept.
-  AND ($11::int IS NULL OR a.reviews_total IS NULL OR a.reviews_total >= $11::int)
-  AND ($12::int IS NULL OR a.metacritic_score >= $12::int)
-  AND ($13::text IS NULL OR a.details_status = $13::text)
-  AND ($14::boolean IS NULL OR (a.reviews_fetched_at IS NOT NULL) = $14::boolean)
-  AND ($15::date IS NULL OR a.release_date >= $15::date)
-  AND ($16::date IS NULL OR a.release_date <= $16::date)
-  AND (NOT $17::boolean OR a.platform_windows)
-  AND (NOT $18::boolean OR a.platform_mac)
-  AND (NOT $19::boolean OR a.platform_linux)
+  AND ($12::int IS NULL OR a.reviews_total IS NULL OR a.reviews_total >= $12::int)
+  AND ($13::int IS NULL OR a.metacritic_score >= $13::int)
+  AND ($14::text IS NULL OR a.details_status = $14::text)
+  AND ($15::boolean IS NULL OR (a.reviews_fetched_at IS NOT NULL) = $15::boolean)
+  AND ($16::date IS NULL OR a.release_date >= $16::date)
+  AND ($17::date IS NULL OR a.release_date <= $17::date)
+  AND (NOT $18::boolean OR a.platform_windows)
+  AND (NOT $19::boolean OR a.platform_mac)
+  AND (NOT $20::boolean OR a.platform_linux)
 ORDER BY
     -- Only the CASE matching sort/descending yields a value; the others are NULL for every row.
-    CASE WHEN $20::text = 'name'        AND NOT $21::boolean THEN lower(a.name) END ASC,
-    CASE WHEN $20::text = 'name'        AND $21::boolean     THEN lower(a.name) END DESC,
-    CASE WHEN $20::text = 'playtime'    AND NOT $21::boolean THEN o.playtime_forever END ASC,
-    CASE WHEN $20::text = 'playtime'    AND $21::boolean     THEN o.playtime_forever END DESC,
-    CASE WHEN $20::text = 'recent'      AND NOT $21::boolean THEN o.playtime_2weeks END ASC,
-    CASE WHEN $20::text = 'recent'      AND $21::boolean     THEN o.playtime_2weeks END DESC,
-    CASE WHEN $20::text = 'last_played' AND NOT $21::boolean THEN o.last_played_at END ASC NULLS LAST,
-    CASE WHEN $20::text = 'last_played' AND $21::boolean     THEN o.last_played_at END DESC NULLS LAST,
+    CASE WHEN $21::text = 'name'        AND NOT $22::boolean THEN lower(a.name) END ASC,
+    CASE WHEN $21::text = 'name'        AND $22::boolean     THEN lower(a.name) END DESC,
+    CASE WHEN $21::text = 'playtime'    AND NOT $22::boolean THEN o.playtime_forever END ASC,
+    CASE WHEN $21::text = 'playtime'    AND $22::boolean     THEN o.playtime_forever END DESC,
+    CASE WHEN $21::text = 'recent'      AND NOT $22::boolean THEN o.playtime_2weeks END ASC,
+    CASE WHEN $21::text = 'recent'      AND $22::boolean     THEN o.playtime_2weeks END DESC,
+    CASE WHEN $21::text = 'last_played' AND NOT $22::boolean THEN o.last_played_at END ASC NULLS LAST,
+    CASE WHEN $21::text = 'last_played' AND $22::boolean     THEN o.last_played_at END DESC NULLS LAST,
     -- Review sort: Steam's rating (Overwhelmingly Positive, Very Positive, ...) first,
     -- then the least played, then the percentage.
-    CASE WHEN $20::text = 'review'      AND NOT $21::boolean THEN a.review_score END ASC NULLS LAST,
-    CASE WHEN $20::text = 'review'      AND $21::boolean     THEN a.review_score END DESC NULLS LAST,
-    CASE WHEN $20::text = 'review' THEN o.playtime_forever END ASC,
-    CASE WHEN $20::text = 'review'      AND NOT $21::boolean THEN a.review_pct END ASC NULLS LAST,
-    CASE WHEN $20::text = 'review'      AND $21::boolean     THEN a.review_pct END DESC NULLS LAST,
-    CASE WHEN $20::text = 'metacritic'  AND NOT $21::boolean THEN a.metacritic_score END ASC NULLS LAST,
-    CASE WHEN $20::text = 'metacritic'  AND $21::boolean     THEN a.metacritic_score END DESC NULLS LAST,
-    CASE WHEN $20::text = 'release'     AND NOT $21::boolean THEN a.release_date END ASC NULLS LAST,
-    CASE WHEN $20::text = 'release'     AND $21::boolean     THEN a.release_date END DESC NULLS LAST,
+    CASE WHEN $21::text = 'review'      AND NOT $22::boolean THEN a.review_score END ASC NULLS LAST,
+    CASE WHEN $21::text = 'review'      AND $22::boolean     THEN a.review_score END DESC NULLS LAST,
+    CASE WHEN $21::text = 'review' THEN o.playtime_forever END ASC,
+    CASE WHEN $21::text = 'review'      AND NOT $22::boolean THEN a.review_pct END ASC NULLS LAST,
+    CASE WHEN $21::text = 'review'      AND $22::boolean     THEN a.review_pct END DESC NULLS LAST,
+    CASE WHEN $21::text = 'metacritic'  AND NOT $22::boolean THEN a.metacritic_score END ASC NULLS LAST,
+    CASE WHEN $21::text = 'metacritic'  AND $22::boolean     THEN a.metacritic_score END DESC NULLS LAST,
+    CASE WHEN $21::text = 'release'     AND NOT $22::boolean THEN a.release_date END ASC NULLS LAST,
+    CASE WHEN $21::text = 'release'     AND $22::boolean     THEN a.release_date END DESC NULLS LAST,
     lower(a.name), a.appid
-LIMIT $23 OFFSET $22
+LIMIT $24 OFFSET $23
 `
 
 type ListGamesParams struct {
 	SteamID        int64
+	Appid          *int64
 	NamePattern    *string
 	Genres         []string
 	Categories     []string
@@ -201,6 +203,7 @@ type ListGamesRow struct {
 func (q *Queries) ListGames(ctx context.Context, arg ListGamesParams) ([]ListGamesRow, error) {
 	rows, err := q.db.Query(ctx, listGames,
 		arg.SteamID,
+		arg.Appid,
 		arg.NamePattern,
 		arg.Genres,
 		arg.Categories,

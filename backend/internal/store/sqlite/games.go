@@ -43,6 +43,9 @@ func (s *Store) ListGames(ctx context.Context, arg store.ListGamesParams) ([]sto
 			     WHERE w.value NOT IN (SELECT h.value FROM json_each(`+column+`) h))`, jsonList(want))
 		}
 	}
+	if arg.AppID != nil {
+		add("a.appid = ?", *arg.AppID)
+	}
 	hasAll("a.genres", arg.Genres)
 	hasAll("a.categories", arg.Categories)
 	if arg.Played != nil {

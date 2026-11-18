@@ -174,6 +174,7 @@ func (s *Store) UpdateAppReviews(ctx context.Context, arg store.UpdateAppReviews
 func (s *Store) ListGames(ctx context.Context, arg store.ListGamesParams) ([]store.ListGamesRow, error) {
 	p := ListGamesParams{
 		SteamID:        arg.SteamID,
+		Appid:          arg.AppID,
 		Genres:         arg.Genres,
 		Categories:     arg.Categories,
 		Played:         arg.Played,

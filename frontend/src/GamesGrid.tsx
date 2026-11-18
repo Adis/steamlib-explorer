@@ -1,5 +1,6 @@
 import type { Game } from "./api.ts";
 import { formatHours, ReviewLabel, reviewDetail } from "./GamesTable.tsx";
+import { gameHref } from "./GameDetails.tsx";
 import { formatDate, isNewRelease, NewBadge } from "./ui.tsx";
 
 /** The filtered games as cover-art cards. */
@@ -19,9 +20,7 @@ function GameCard({ game }: { game: Game }) {
   const played = game.playtime_minutes > 0;
   return (
     <a
-      href={game.store_url}
-      target="_blank"
-      rel="noreferrer"
+      href={gameHref(game.appid)}
       className="group flex h-full flex-col overflow-hidden panel rounded-xl border border-line bg-surface shadow-lg shadow-black/10 transition duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:shadow-black/30"
     >
       <div className="relative aspect-[460/215] overflow-hidden bg-raised">
@@ -44,7 +43,6 @@ function GameCard({ game }: { game: Game }) {
       <div className="flex flex-1 flex-col p-3">
         <h3 className="truncate font-medium tracking-tight group-hover:text-link" title={game.name}>
           {game.name}
-          <span className="sr-only"> (opens in a new tab)</span>
         </h3>
         <Rating game={game} />
 
