@@ -120,12 +120,11 @@ func trayAvailable() bool {
 	return err == nil
 }
 
-func openBrowser(url string) error {
+// openBrowser opens url, or logs where to go when it can't.
+func openBrowser(url string) {
 	if err := browser.Open(url); err != nil {
 		slog.Warn("could not open the browser; open the address yourself", "url", url, "error", err)
-		return err
 	}
-	return nil
 }
 
 // alreadyRunning reports whether this app already answers on the configured

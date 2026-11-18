@@ -40,7 +40,7 @@ func TestDeveloperGames(t *testing.T) {
 
 func TestDeveloperGamesEmpty(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"success":1,"results_html":"\n<!-- List Items -->\n","total_count":0,"start":0}`))
+		_, _ = w.Write([]byte(`{"success":1,"results_html":"\n<!-- List Items -->\n","total_count":0,"start":0}`))
 	})
 	games, err := c.DeveloperGames(context.Background(), "Nobody")
 	if err != nil || len(games) != 0 {

@@ -112,6 +112,7 @@ func (s *Store) ListGames(ctx context.Context, arg store.ListGamesParams) ([]sto
 	}
 	order = append(order, "casefold(a.name)", "a.appid")
 
+	//nolint:gosec // G202: only fixed SQL is joined in; every value is a ? parameter.
 	query := `SELECT
 	    a.appid, a.name, a.header_image, a.short_description,
 	    a.release_date, a.release_date_text, a.coming_soon,
@@ -171,6 +172,7 @@ func (s *Store) ListGames(ctx context.Context, arg store.ListGamesParams) ([]sto
 
 // facets counts the user's games per value of a list column, most common first.
 func (s *Store) facets(ctx context.Context, column string, steamID int64) ([]store.GenreFacetsRow, error) {
+	//nolint:gosec // G202: column is one of this file's constants, never user input.
 	rows, err := s.db.QueryContext(ctx, `SELECT v.value, count(*) AS games
 		FROM owned_games o
 		JOIN apps a ON a.appid = o.appid, json_each(`+column+`) v

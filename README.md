@@ -187,7 +187,7 @@ Every incoming request (`msg="api request"`) and every call to Steam (`msg="outg
 
 Steam shares a user's owned games and playtime only when their profile's Game details are public, or when the request uses that user's own API key. So the owner of `STEAM_API_KEY` can keep their profile private (even Friends only or Private); everyone else who signs in needs public game details. The in-app **Help** page explains both options.
 
-`make test` runs the backend tests (the database ones on SQLite), `make test-db` also runs them on Postgres, `make generate` rebuilds the sqlc code after you edit `backend/db/postgres/queries` or `backend/db/sqlite/queries`, and `make build` puts the one-binary app in `backend/bin/server` (see [One binary](#one-binary)). The `migrate-*` targets (Postgres only) are still there for rolling back or checking status by hand.
+`make test` runs the backend tests (the database ones on SQLite), `make test-db` also runs them on Postgres, `make lint` checks the Go code with golangci-lint (rules in `backend/.golangci.yml`; CI runs it and the tests on every pull request), `make generate` rebuilds the sqlc code after you edit `backend/db/postgres/queries` or `backend/db/sqlite/queries`, and `make build` puts the one-binary app in `backend/bin/server` (see [One binary](#one-binary)). The `migrate-*` targets (Postgres only) are still there for rolling back or checking status by hand.
 
 `make migrate-down` rolls back the last migration and `make db-down` stops Postgres (data stays in the `pgdata` volume).
 

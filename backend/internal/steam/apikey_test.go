@@ -12,7 +12,7 @@ func TestCheckAPIKey(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Query().Get("key") {
 		case "good":
-			w.Write([]byte(`{"response":{"players":[{"steamid":"76561197960287930"}]}}`))
+			_, _ = w.Write([]byte(`{"response":{"players":[{"steamid":"76561197960287930"}]}}`))
 		case "bad":
 			w.WriteHeader(http.StatusForbidden)
 		default:

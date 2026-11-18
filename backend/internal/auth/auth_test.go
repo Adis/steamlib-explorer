@@ -75,7 +75,7 @@ func fakeSteam(t *testing.T, valid bool, gotMode *string) *httptest.Server {
 		if gotMode != nil {
 			*gotMode = r.PostForm.Get("openid.mode")
 		}
-		w.Write([]byte("ns:http://specs.openid.net/auth/2.0\nis_valid:" + map[bool]string{true: "true", false: "false"}[valid] + "\n"))
+		_, _ = w.Write([]byte("ns:http://specs.openid.net/auth/2.0\nis_valid:" + map[bool]string{true: "true", false: "false"}[valid] + "\n"))
 	}))
 	t.Cleanup(srv.Close)
 	return srv

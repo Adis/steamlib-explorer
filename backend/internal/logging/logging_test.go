@@ -12,7 +12,7 @@ import (
 
 func TestTransportLogsAndKeepsBody(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"response":{"game_count":2}}`))
+		_, _ = w.Write([]byte(`{"response":{"game_count":2}}`))
 	}))
 	defer srv.Close()
 

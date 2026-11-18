@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -80,7 +81,7 @@ func PostgresToSQLite(ctx context.Context, pg *pgxpool.Pool, dst *sql.DB) (Count
 	if err != nil {
 		return nil, err
 	}
-	defer src.Rollback(ctx)
+	defer func() { _ = src.Rollback(ctx) }() // read-only: nothing to keep
 	if _, err := src.Exec(ctx, "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"); err != nil {
 		return nil, err
 	}
@@ -89,42 +90,15 @@ func PostgresToSQLite(ctx context.Context, pg *pgxpool.Pool, dst *sql.DB) (Count
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }() // no-op after Commit
 
 	counts := Counts{}
 	for _, t := range tables {
-		names := make([]string, len(t.columns))
-		exprs := make([]string, len(t.columns))
-		for i, c := range t.columns {
-			names[i], exprs[i] = c.name, c.pg
-		}
-		rows, err := src.Query(ctx, "SELECT "+strings.Join(exprs, ", ")+" FROM "+t.name)
+		n, err := copyTable(ctx, src, tx, t.name, t.columns)
 		if err != nil {
-			return nil, fmt.Errorf("read %s: %w", t.name, err)
-		}
-		insert, err := tx.PrepareContext(ctx, "INSERT INTO "+t.name+" ("+strings.Join(names, ", ")+
-			") VALUES (?"+strings.Repeat(", ?", len(names)-1)+")")
-		if err != nil {
-			rows.Close()
 			return nil, err
 		}
-		for rows.Next() {
-			values, err := rows.Values()
-			if err != nil {
-				rows.Close()
-				return nil, fmt.Errorf("read %s: %w", t.name, err)
-			}
-			if _, err := insert.ExecContext(ctx, values...); err != nil {
-				rows.Close()
-				return nil, fmt.Errorf("write %s: %w", t.name, err)
-			}
-			counts[t.name]++
-		}
-		rows.Close()
-		insert.Close()
-		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("read %s: %w", t.name, err)
-		}
+		counts[t.name] = n
 
 		var want, got int64
 		if err := src.QueryRow(ctx, "SELECT count(*) FROM "+t.name).Scan(&want); err != nil {
@@ -141,4 +115,42 @@ func PostgresToSQLite(ctx context.Context, pg *pgxpool.Pool, dst *sql.DB) (Count
 		return nil, err
 	}
 	return counts, nil
+}
+
+// copyTable copies every row of one table from src to dst and returns how
+// many it copied.
+func copyTable(ctx context.Context, src pgx.Tx, dst *sql.Tx, table string, columns []column) (int64, error) {
+	names := make([]string, len(columns))
+	exprs := make([]string, len(columns))
+	for i, c := range columns {
+		names[i], exprs[i] = c.name, c.pg
+	}
+	rows, err := src.Query(ctx, "SELECT "+strings.Join(exprs, ", ")+" FROM "+table)
+	if err != nil {
+		return 0, fmt.Errorf("read %s: %w", table, err)
+	}
+	defer rows.Close()
+	//nolint:gosec // G202: table and column names come from the fixed tables list.
+	insert, err := dst.PrepareContext(ctx, "INSERT INTO "+table+" ("+strings.Join(names, ", ")+
+		") VALUES (?"+strings.Repeat(", ?", len(names)-1)+")")
+	if err != nil {
+		return 0, err
+	}
+	defer insert.Close()
+
+	var n int64
+	for rows.Next() {
+		values, err := rows.Values()
+		if err != nil {
+			return 0, fmt.Errorf("read %s: %w", table, err)
+		}
+		if _, err := insert.ExecContext(ctx, values...); err != nil {
+			return 0, fmt.Errorf("write %s: %w", table, err)
+		}
+		n++
+	}
+	if err := rows.Err(); err != nil {
+		return 0, fmt.Errorf("read %s: %w", table, err)
+	}
+	return n, nil
 }

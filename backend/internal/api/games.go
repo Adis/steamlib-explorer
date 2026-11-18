@@ -167,7 +167,7 @@ func parseGameFilters(v url.Values) (store.ListGamesParams, error) {
 		return p, err
 	}
 	for _, s := range nonEmptyValues(v["review_score"]) {
-		n, err := strconv.Atoi(s)
+		n, err := strconv.ParseInt(s, 10, 32)
 		if err != nil || n < 1 || n > 9 {
 			return p, fmt.Errorf("review_score must be a whole number from 1 to 9")
 		}
@@ -245,8 +245,8 @@ func intParam(v url.Values, name string, lo, hi int) (*int32, error) {
 	if s == "" {
 		return nil, nil
 	}
-	n, err := strconv.Atoi(s)
-	if err != nil || n < lo || n > hi {
+	n, err := strconv.ParseInt(s, 10, 32)
+	if err != nil || n < int64(lo) || n > int64(hi) {
 		return nil, fmt.Errorf("%s must be a whole number from %d to %d", name, lo, hi)
 	}
 	i := int32(n)

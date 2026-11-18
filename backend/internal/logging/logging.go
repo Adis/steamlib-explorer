@@ -17,10 +17,10 @@ func Setup(path string, level slog.Level) (*slog.Logger, func() error, error) {
 	var w io.Writer = os.Stdout
 	closeFn := func() error { return nil }
 	if path != "" {
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 			return nil, nil, fmt.Errorf("create log directory: %w", err)
 		}
-		f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 		if err != nil {
 			return nil, nil, fmt.Errorf("open log file: %w", err)
 		}

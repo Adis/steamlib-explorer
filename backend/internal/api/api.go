@@ -40,7 +40,6 @@ func NewRouter(d Deps) http.Handler {
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RequestID)
-		r.Use(middleware.RealIP)
 		r.Use(logging.Requests)
 
 		r.Get("/healthz", health(d.DB))
