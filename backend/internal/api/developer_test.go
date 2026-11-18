@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -83,5 +86,70 @@ func TestListDeveloperGames(t *testing.T) {
 	now = now.Add(developerCacheTTL + time.Minute)
 	if rec := get("developer=Valve"); rec.Code != http.StatusBadGateway {
 		t.Errorf("store down: status %d, want 502", rec.Code)
+	}
+}
+
+// blockingSearch answers once release is closed, counting the requests.
+type blockingSearch struct {
+	release chan struct{}
+	calls   atomic.Int32
+}
+
+func (b *blockingSearch) DeveloperGames(_ context.Context, developer string) ([]steam.StoreGame, error) {
+	b.calls.Add(1)
+	<-b.release
+	return []steam.StoreGame{{AppID: 1, Name: developer}}, nil
+}
+
+// Pages opened together for one developer share one store request, and a
+// page that gives up doesn't cancel it for the others.
+func TestDeveloperCacheSharesOneRequest(t *testing.T) {
+	search := &blockingSearch{release: make(chan struct{})}
+	cache := &DeveloperCache{Search: search}
+
+	gaveUp, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := cache.Games(gaveUp, "Valve"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled page: err = %v", err)
+	}
+
+	var wg sync.WaitGroup
+	for range 5 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			games, err := cache.Games(context.Background(), "valve")
+			if err != nil || len(games) != 1 {
+				t.Errorf("games = %v, err = %v", games, err)
+			}
+		}()
+	}
+	close(search.release)
+	wg.Wait()
+	if n := search.calls.Load(); n != 1 {
+		t.Errorf("store asked %d times, want 1", n)
+	}
+}
+
+func TestDeveloperCacheIsBounded(t *testing.T) {
+	now := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
+	search := &fakeSearch{}
+	cache := &DeveloperCache{Search: search, now: func() time.Time { return now }}
+	for i := range developerCacheMax + 10 {
+		now = now.Add(time.Second)
+		if _, err := cache.Games(context.Background(), fmt.Sprint("dev", i)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n := len(cache.entries); n != developerCacheMax {
+		t.Errorf("cache holds %d developers, want %d", n, developerCacheMax)
+	}
+	// The oldest went first; the newest is still cached.
+	if _, ok := cache.entries["dev0"]; ok {
+		t.Error("oldest developer still cached")
+	}
+	calls := search.calls
+	if _, err := cache.Games(context.Background(), fmt.Sprint("dev", developerCacheMax+9)); err != nil || search.calls != calls {
+		t.Errorf("newest developer not cached: err %v, calls %d → %d", err, calls, search.calls)
 	}
 }

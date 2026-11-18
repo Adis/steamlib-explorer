@@ -23,24 +23,41 @@ type OwnedQueries interface {
 	OwnedAmong(ctx context.Context, steamID int64, appids []int64) ([]int64, error)
 }
 
-// developerCacheTTL is how long a developer's store list is reused. A
-// developer's catalogue changes rarely, and the store is slow to ask
-// (requests are spaced 1.5 s apart, shared with sync).
-const developerCacheTTL = 6 * time.Hour
+// developerCacheTTL is how long a developer's store list is reused. The list
+// is only asked for when a game's details page opens, a developer's catalogue
+// changes rarely, and the store is slow to ask (requests are spaced 1.5 s
+// apart, shared with sync), so each developer is asked at most once a day.
+const developerCacheTTL = 24 * time.Hour
+
+// developerFetchTimeout bounds one store request, through the store's
+// rate-limit backoffs.
+const developerFetchTimeout = 4 * time.Minute
+
+// developerCacheMax caps how many developers' lists are kept in memory.
+const developerCacheMax = 500
 
 // DeveloperCache remembers each developer's store list in memory, for every
-// user, so opening game pages doesn't keep asking the store.
+// user, so opening game pages doesn't keep asking the store. Pages opened at
+// the same time for one developer share one store request.
 type DeveloperCache struct {
 	Search DeveloperSearch
 	now    func() time.Time
 
-	mu      sync.Mutex
-	entries map[string]developerEntry
+	mu       sync.Mutex
+	entries  map[string]developerEntry
+	inFlight map[string]*developerFetch
 }
 
 type developerEntry struct {
 	games   []steam.StoreGame
 	fetched time.Time
+}
+
+// developerFetch is a store request in progress; done closes when it ends.
+type developerFetch struct {
+	done  chan struct{}
+	games []steam.StoreGame
+	err   error
 }
 
 func (c *DeveloperCache) Games(ctx context.Context, developer string) ([]steam.StoreGame, error) {
@@ -49,23 +66,68 @@ func (c *DeveloperCache) Games(ctx context.Context, developer string) ([]steam.S
 		now = c.now
 	}
 	key := strings.ToLower(developer)
+
 	c.mu.Lock()
-	e, ok := c.entries[key]
-	c.mu.Unlock()
-	if ok && now().Sub(e.fetched) < developerCacheTTL {
+	if e, ok := c.entries[key]; ok && now().Sub(e.fetched) < developerCacheTTL {
+		c.mu.Unlock()
 		return e.games, nil
 	}
-	games, err := c.Search.DeveloperGames(ctx, developer)
-	if err != nil {
-		return nil, err
+	f, ok := c.inFlight[key]
+	if !ok {
+		f = &developerFetch{done: make(chan struct{})}
+		if c.inFlight == nil {
+			c.inFlight = map[string]*developerFetch{}
+		}
+		c.inFlight[key] = f
+		go c.fetch(key, developer, f, now)
 	}
+	c.mu.Unlock()
+
+	select {
+	case <-f.done:
+		return f.games, f.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+// fetch asks the store for one developer's games and caches the answer. It
+// isn't tied to the page that started it: other pages may be waiting on it,
+// and an answer that arrives after the page gave up is still worth keeping.
+func (c *DeveloperCache) fetch(key, developer string, f *developerFetch, now func() time.Time) {
+	ctx, cancel := context.WithTimeout(context.Background(), developerFetchTimeout)
+	defer cancel()
+	f.games, f.err = c.Search.DeveloperGames(ctx, developer)
+
 	c.mu.Lock()
+	delete(c.inFlight, key)
+	if f.err == nil {
+		c.store(key, developerEntry{games: f.games, fetched: now()}, now())
+	}
+	c.mu.Unlock()
+	close(f.done)
+}
+
+// store saves an entry, first making room: expired entries go, then the
+// oldest while the cache is full. c.mu must be held.
+func (c *DeveloperCache) store(key string, e developerEntry, now time.Time) {
 	if c.entries == nil {
 		c.entries = map[string]developerEntry{}
 	}
-	c.entries[key] = developerEntry{games: games, fetched: now()}
-	c.mu.Unlock()
-	return games, nil
+	if _, ok := c.entries[key]; !ok && len(c.entries) >= developerCacheMax {
+		oldestKey, oldest := "", now
+		for k, v := range c.entries {
+			if now.Sub(v.fetched) >= developerCacheTTL {
+				delete(c.entries, k)
+			} else if v.fetched.Before(oldest) {
+				oldestKey, oldest = k, v.fetched
+			}
+		}
+		if len(c.entries) >= developerCacheMax {
+			delete(c.entries, oldestKey)
+		}
+	}
+	c.entries[key] = e
 }
 
 type developerGameJSON struct {

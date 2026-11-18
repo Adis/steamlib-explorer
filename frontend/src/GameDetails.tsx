@@ -310,7 +310,7 @@ function MoreFromDeveloper({ developer, appid }: { developer: string; appid: num
   const more = useQuery({
     queryKey: ["developer-games", developer],
     queryFn: () => fetchDeveloperGames(developer),
-    staleTime: 60 * 60 * 1000, // the backend caches the store's answer too
+    staleTime: 24 * 60 * 60 * 1000, // the backend caches the store's answer for a day too
     retry: false,
   });
   // Games in the library first, each group in the store's order.
