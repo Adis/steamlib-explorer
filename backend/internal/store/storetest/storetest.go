@@ -406,6 +406,19 @@ func testAppsNeeding(t *testing.T, s store.Store) {
 	if len(rows) != 1 || rows[0].Appid != 1 || rows[0].Name != "Store name" || rows[0].TotalCount != 1 {
 		t.Errorf("appid 1 = %+v", rows)
 	}
+	if rows[0].MetacriticURL != "" {
+		t.Errorf("metacritic url without store data = %q, want empty", rows[0].MetacriticURL)
+	}
+	// The Metacritic link comes from the store details Steam sent.
+	must(t, s.UpdateAppDetails(ctx, store.UpdateAppDetailsParams{
+		Appid: 1, Name: "Store name", Genres: []string{}, Categories: []string{}, Developers: []string{}, Publishers: []string{},
+		DetailsRaw: []byte(`{"metacritic":{"score":88,"url":"https://www.metacritic.com/game/pc/x"}}`),
+	}))
+	rows, err = s.ListGames(ctx, store.ListGamesParams{SteamID: 1, AppID: ptr[int64](1), Sort: "name", PageLimit: 1})
+	must(t, err)
+	if len(rows) != 1 || rows[0].MetacriticURL != "https://www.metacritic.com/game/pc/x" {
+		t.Errorf("metacritic url = %+v", rows)
+	}
 	rows, err = s.ListGames(ctx, store.ListGamesParams{SteamID: 1, AppID: ptr[int64](99), Sort: "name", PageLimit: 1})
 	must(t, err)
 	if len(rows) != 0 {

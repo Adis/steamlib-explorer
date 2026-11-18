@@ -52,6 +52,7 @@ type gameJSON struct {
 	Publishers       []string   `json:"publishers"`
 	Platforms        platforms  `json:"platforms"`
 	MetacriticScore  *int32     `json:"metacritic_score"`
+	MetacriticURL    *string    `json:"metacritic_url"`
 	PriceCents       *int32     `json:"price_cents"`
 	PriceCurrency    *string    `json:"price_currency"`
 	IsFree           bool       `json:"is_free"`
@@ -315,6 +316,9 @@ func toGameJSON(g store.ListGamesRow) gameJSON {
 		PlaytimeMinutes:  g.PlaytimeForever,
 		Playtime2Weeks:   g.Playtime2weeks,
 		LastPlayedAt:     g.LastPlayedAt,
+	}
+	if g.MetacriticURL != "" {
+		j.MetacriticURL = &g.MetacriticURL
 	}
 	if g.ReleaseDate != nil {
 		d := g.ReleaseDate.Format(time.DateOnly)

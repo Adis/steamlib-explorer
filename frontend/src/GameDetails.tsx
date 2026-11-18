@@ -84,8 +84,10 @@ function Overview({ game }: { game: Game }) {
             {game.name}
             {isNewRelease(game) && <NewBadge game={game} className="ml-2 align-[0.2em] leading-none" />}
           </h2>
+          <Credits game={game} />
           <StatusNote game={game} />
         </div>
+        <Tags values={game.genres} label="Genres" />
         {game.short_description && (
           <p className="text-[0.9375rem] leading-relaxed text-muted">{decodeEntities(game.short_description)}</p>
         )}
@@ -149,7 +151,9 @@ function Facts({ game }: { game: Game }) {
             <Faint>No user reviews</Faint>
           )}
         </Fact>
-        <Fact label="Metacritic">{game.metacritic_score ?? <Faint>–</Faint>}</Fact>
+        <Fact label="Metacritic">
+          <Metacritic game={game} />
+        </Fact>
         <Fact label="Released">
           {game.coming_soon ? (
             <>Coming soon{game.release_date_text && <Faint> · {game.release_date_text}</Faint>}</>
@@ -167,19 +171,6 @@ function Facts({ game }: { game: Game }) {
         </Fact>
       </FactPanel>
 
-      <FactPanel title="Made by">
-        <Fact label="Developer">{game.developers.join(", ") || <Faint>–</Faint>}</Fact>
-        <Fact label="Publisher">{game.publishers.join(", ") || <Faint>–</Faint>}</Fact>
-      </FactPanel>
-
-      <FactPanel title="Store tags">
-        <Fact label="Genres">
-          <Tags values={game.genres} />
-        </Fact>
-        <Fact label="Features">
-          <Tags values={game.categories} />
-        </Fact>
-      </FactPanel>
     </div>
   );
 }
@@ -202,10 +193,45 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function Tags({ values }: { values: string[] }) {
-  if (values.length === 0) return <Faint>–</Faint>;
+/** "By Developer · Published by Publisher", or just "By Studio" when they're the same. */
+function Credits({ game }: { game: Game }) {
+  const dev = game.developers.join(", ");
+  const pub = game.publishers.join(", ");
+  if (!dev && !pub) return null;
   return (
-    <ul className="flex flex-wrap gap-1">
+    <p className="mt-1 text-sm text-muted">
+      {dev && <>By <span className="text-fg">{dev}</span></>}
+      {pub && pub !== dev && (
+        <>
+          {dev && " · "}Published by <span className="text-fg">{pub}</span>
+        </>
+      )}
+    </p>
+  );
+}
+
+/** The score, linked to its Metacritic page when Steam gives one. */
+function Metacritic({ game }: { game: Game }) {
+  if (game.metacritic_score === null) return <Faint>–</Faint>;
+  if (!game.metacritic_url) return <>{game.metacritic_score}</>;
+  return (
+    <a
+      href={game.metacritic_url}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-1 text-link underline hover:text-link-hover"
+    >
+      {game.metacritic_score}
+      <ExternalLink aria-hidden className="h-3.5 w-3.5" />
+      <span className="sr-only"> on Metacritic (opens in a new tab)</span>
+    </a>
+  );
+}
+
+function Tags({ values, label }: { values: string[]; label: string }) {
+  if (values.length === 0) return null;
+  return (
+    <ul aria-label={label} className="flex flex-wrap gap-1">
       {values.map((v) => (
         <li key={v} className="rounded-full bg-raised px-2 py-0.5 text-xs text-muted">
           {v}

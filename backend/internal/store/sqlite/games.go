@@ -117,7 +117,7 @@ func (s *Store) ListGames(ctx context.Context, arg store.ListGamesParams) ([]sto
 	    a.release_date, a.release_date_text, a.coming_soon,
 	    a.genres, a.categories, a.developers, a.publishers,
 	    a.platform_windows, a.platform_mac, a.platform_linux,
-	    a.metacritic_score, a.price_cents, a.price_currency, a.is_free,
+	    a.metacritic_score, json_extract(a.details_raw, '$.metacritic.url'), a.price_cents, a.price_currency, a.is_free,
 	    a.review_score_desc, a.review_pct, a.reviews_total, a.details_status,
 	    o.playtime_forever, o.playtime_2weeks, o.last_played_at,
 	    count(*) OVER () AS total_count
@@ -138,6 +138,7 @@ func (s *Store) ListGames(ctx context.Context, arg store.ListGamesParams) ([]sto
 		var (
 			r                                               store.ListGamesRow
 			header, desc, releaseText, currency, reviewDesc sql.NullString
+			metacriticURL                                   sql.NullString
 			released, lastPlayed                            sql.NullString
 			genres, categories, developers, publishers      string
 			metacritic, price, reviewsTotal                 sql.NullInt64
@@ -148,7 +149,7 @@ func (s *Store) ListGames(ctx context.Context, arg store.ListGamesParams) ([]sto
 			&released, &releaseText, &r.ComingSoon,
 			&genres, &categories, &developers, &publishers,
 			&r.PlatformWindows, &r.PlatformMac, &r.PlatformLinux,
-			&metacritic, &price, &currency, &r.IsFree,
+			&metacritic, &metacriticURL, &price, &currency, &r.IsFree,
 			&reviewDesc, &reviewPct, &reviewsTotal, &r.DetailsStatus,
 			&r.PlaytimeForever, &r.Playtime2weeks, &lastPlayed,
 			&r.TotalCount,
@@ -161,6 +162,7 @@ func (s *Store) ListGames(ctx context.Context, arg store.ListGamesParams) ([]sto
 		r.Developers, r.Publishers = parseList(developers), parseList(publishers)
 		r.MetacriticScore, r.PriceCents, r.PriceCurrency = intPtr(metacritic), intPtr(price), stringPtr(currency)
 		r.ReviewScoreDesc, r.ReviewPct, r.ReviewsTotal = stringPtr(reviewDesc), floatPtr(reviewPct), intPtr(reviewsTotal)
+		r.MetacriticURL = metacriticURL.String
 		r.LastPlayedAt = timePtr(lastPlayed)
 		out = append(out, r)
 	}
