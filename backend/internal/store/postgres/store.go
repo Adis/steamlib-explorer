@@ -139,6 +139,11 @@ func (s *Store) EnsureApp(ctx context.Context, arg store.EnsureAppParams) error 
 	return mapErr(s.q.EnsureApp(ctx, EnsureAppParams(arg)))
 }
 
+func (s *Store) RemoveOwnedGamesExcept(ctx context.Context, steamID int64, keep []int64) (int64, error) {
+	n, err := s.q.RemoveOwnedGamesExcept(ctx, RemoveOwnedGamesExceptParams{SteamID: steamID, Keep: keep})
+	return n, mapErr(err)
+}
+
 func (s *Store) UpsertOwnedGame(ctx context.Context, arg store.UpsertOwnedGameParams) error {
 	return mapErr(s.q.UpsertOwnedGame(ctx, UpsertOwnedGameParams(arg)))
 }

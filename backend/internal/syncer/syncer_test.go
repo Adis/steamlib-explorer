@@ -195,6 +195,35 @@ func TestRefresh(t *testing.T) {
 	})
 }
 
+// A game Steam stops listing (refunded, removed) leaves the library on the
+// next Refresh; its store data stays for anyone else who owns it.
+func TestRefreshRemovesGamesNoLongerOwned(t *testing.T) {
+	eachStore(t, func(t *testing.T, q store.Store, _ func(string)) {
+		f := &fakeSteam{games: []steam.OwnedGame{{AppID: 10, Name: "Kept"}, {AppID: 20, Name: "Refunded"}}}
+		s := New(context.Background(), f, q)
+		runToEnd(t, s)
+		if got := games(t, q, store.ListGamesParams{}); len(got) != 2 {
+			t.Fatalf("after first Refresh = %d games, want 2", len(got))
+		}
+
+		f.games = f.games[:1]
+		if run := runToEnd(t, s); run.Status != "ok" {
+			t.Fatalf("second run = %+v", run)
+		}
+		got := games(t, q, store.ListGamesParams{})
+		if _, ok := got[10]; !ok || len(got) != 1 {
+			t.Errorf("after second Refresh = %v, want only app 10", got)
+		}
+
+		// A Refresh that can't read the library removes nothing.
+		f.ownedErr = steam.ErrPrivateProfile
+		runToEnd(t, s)
+		if got := games(t, q, store.ListGamesParams{}); len(got) != 1 {
+			t.Errorf("after a failed Refresh = %d games, want 1", len(got))
+		}
+	})
+}
+
 // Apps whose details came from an earlier Refresh but whose reviews never
 // arrived get them on the next Refresh, without refetching details.
 func TestRefreshBackfillsMissingReviews(t *testing.T) {

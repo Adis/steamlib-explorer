@@ -199,6 +199,25 @@ func (q *Queries) MarkAppDetailsStatus(ctx context.Context, arg MarkAppDetailsSt
 	return err
 }
 
+const removeOwnedGamesExcept = `-- name: RemoveOwnedGamesExcept :execrows
+DELETE FROM owned_games
+WHERE steam_id = $1 AND NOT (appid = ANY($2::bigint[]))
+`
+
+type RemoveOwnedGamesExceptParams struct {
+	SteamID int64
+	Keep    []int64
+}
+
+// Deletes the user's owned games that the latest library read didn't list.
+func (q *Queries) RemoveOwnedGamesExcept(ctx context.Context, arg RemoveOwnedGamesExceptParams) (int64, error) {
+	result, err := q.db.Exec(ctx, removeOwnedGamesExcept, arg.SteamID, arg.Keep)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const startSyncRun = `-- name: StartSyncRun :one
 INSERT INTO sync_runs (steam_id) VALUES ($1) RETURNING id
 `
