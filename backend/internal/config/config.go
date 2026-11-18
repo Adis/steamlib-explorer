@@ -29,9 +29,10 @@ type Config struct {
 	// PublicURL is the address browsers use for the app (PUBLIC_URL, default
 	// http://localhost:8080). Steam sends users back here after sign-in.
 	PublicURL string
-	// LogFile also receives every log line (LOG_FILE, default logs/api-calls.txt;
-	// set to "-" to log to the console only).
-	LogFile string
+	// LogDir, when set (LOG_DIR), also receives every log line, in one file
+	// per day: <LogDir>/YYYY-MM-DD.log. Unset logs to the console only;
+	// `make dev LOG=1` sets it to backend/logs.
+	LogDir string
 }
 
 func Load() (Config, error) {
@@ -41,13 +42,7 @@ func Load() (Config, error) {
 		ListenHost:  os.Getenv("LISTEN_HOST"),
 		SteamAPIKey: os.Getenv("STEAM_API_KEY"),
 		PublicURL:   strings.TrimRight(os.Getenv("PUBLIC_URL"), "/"),
-		LogFile:     os.Getenv("LOG_FILE"),
-	}
-	switch cfg.LogFile {
-	case "":
-		cfg.LogFile = "logs/api-calls.txt"
-	case "-":
-		cfg.LogFile = ""
+		LogDir:      os.Getenv("LOG_DIR"),
 	}
 	if cfg.ListenHost == "" {
 		cfg.ListenHost = "127.0.0.1"

@@ -149,7 +149,7 @@ To change the key later, delete the `steamlib-explorer` entry (in Credential Man
 
 ### Desktop app
 
-`make desktop` builds `backend/bin/steamlib-explorer`, the desktop version: one file that needs no Docker, Node or settings. Starting it runs the app on http://localhost:8080, opens it in your default browser and puts an icon in the system tray with **Open Steamlib Explorer** and **Quit**. It uses the SQLite file in your data folder (see [SQLite](#sqlite)) and keeps the API key in your OS keychain (see [Where the API key is kept](#where-the-api-key-is-kept)) and writes its log to `logs/steamlib-explorer.log` there; if it can't start, the reason is in `startup-error.txt` in the same folder. Starting it a second time just opens the browser on the one already running.
+`make desktop` builds `backend/bin/steamlib-explorer`, the desktop version: one file that needs no Docker, Node or settings. Starting it runs the app on http://localhost:8080, opens it in your default browser and puts an icon in the system tray with **Open Steamlib Explorer** and **Quit**. It uses the SQLite file in your data folder (see [SQLite](#sqlite)) and keeps the API key in your OS keychain (see [Where the API key is kept](#where-the-api-key-is-kept)) and keeps no log file; if it can't start, the reason is in `startup-error.txt` in the data folder. Starting it a second time just opens the browser on the one already running.
 
 `make desktop-windows` cross-builds `steamlib-explorer.exe` for Windows from Linux; it runs without a console window. On Linux the tray icon needs a desktop with a system tray (KDE, Xfce, Cinnamon, or GNOME with the AppIndicator extension, which Ubuntu ships); without a desktop session it runs without the icon and stops with Ctrl+C.
 
@@ -171,7 +171,7 @@ The workflow then makes a **draft** release with all the downloads; check it on 
 
 ### Logs
 
-Every incoming request (`msg="api request"`) and every call to Steam (`msg="outgoing call"`, with status, duration and the first 300 characters of the response) is logged to the backend console and appended to `backend/logs/api-calls.txt`. The Steam API key is replaced with `REDACTED`. Sync progress lines (`refresh started`, `library saved`, `refresh finished`) carry the `run_id`.
+Every incoming request (`msg="api request"`) and every call to Steam (`msg="outgoing call"`, with status, duration and the first 300 characters of the response) is logged to the backend console. To keep them in files too, start with `make dev LOG=1` (or `make run LOG=1`): every line also goes to `backend/logs/YYYY-MM-DD.log`, a new file each day. The Steam API key is replaced with `REDACTED`. Sync progress lines (`refresh started`, `library saved`, `refresh finished`) carry the `run_id`.
 
 ### Settings
 
@@ -183,7 +183,7 @@ Every incoming request (`msg="api request"`) and every call to Steam (`msg="outg
 | `PUBLIC_URL` | no | `http://localhost:$PORT` | Address the browser uses for the app; Steam redirects back here |
 | `PORT` | no | `8080` | Port the backend listens on |
 | `LISTEN_HOST` | no | `127.0.0.1` (backend), `localhost` (frontend) | Interface the backend and the Vite frontend listen on; `0.0.0.0` allows other devices (see [Remote access](#remote-access)) |
-| `LOG_FILE` | no | `logs/api-calls.txt` | File that also receives every log line, relative to `backend/`; `-` logs to the console only |
+| `LOG_DIR` | no | unset (console only) | Folder that also receives every log line, one `YYYY-MM-DD.log` file per day; `make dev LOG=1` sets it to `logs` (in `backend/`) |
 
 Steam shares a user's owned games and playtime only when their profile's Game details are public, or when the request uses that user's own API key. So the owner of `STEAM_API_KEY` can keep their profile private (even Friends only or Private); everyone else who signs in needs public game details. The in-app **Help** page explains both options.
 

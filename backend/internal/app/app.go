@@ -27,13 +27,13 @@ import (
 // Run serves the app until ctx is cancelled, then shuts down cleanly and
 // returns nil. ready, if not nil, is called once the port is listening.
 func Run(ctx context.Context, cfg config.Config, ready func()) error {
-	_, closeLog, err := logging.Setup(cfg.LogFile, slog.LevelInfo)
+	_, closeLog, err := logging.Setup(cfg.LogDir, slog.LevelInfo)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = closeLog() }()
-	if cfg.LogFile != "" {
-		slog.Info("logging to console and file", "file", cfg.LogFile)
+	if cfg.LogDir != "" {
+		slog.Info("logging to the console and a file per day", "dir", cfg.LogDir)
 	}
 
 	queries, err := database.Open(ctx, cfg.DatabaseURL)

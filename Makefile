@@ -17,7 +17,7 @@ FAIL = fail() { printf '\n\033[1;31m✗ %s\033[0m\n  %s\n\n' "$$1" "$$2" >&2; ex
 # backend uses a SQLite file.
 USES_POSTGRES := $(filter postgres://% postgresql://%,$(DATABASE_URL))
 
-dev:            ## Start everything, e.g. after a git pull: Postgres (if used), new npm packages, backend and frontend (Ctrl+C stops both)
+dev:            ## Start everything, e.g. after a git pull: Postgres (if used), new npm packages, backend and frontend (Ctrl+C stops both); LOG=1 also writes backend/logs/YYYY-MM-DD.log
 	@$(MAKE) --no-print-directory check-tools
 	@$(if $(USES_POSTGRES),$(MAKE) --no-print-directory db-up,echo "→ Using SQLite, so Docker is not needed")
 	@$(MAKE) --no-print-directory frontend/node_modules/.package-lock.json
@@ -51,8 +51,8 @@ db-up:          ## Start Postgres in Docker
 db-down:        ## Stop Postgres (data is kept in the pgdata volume)
 	docker compose down
 
-run:            ## Run the backend (applies migrations on startup)
-	cd backend && go run ./cmd/server
+run:            ## Run the backend (applies migrations on startup); LOG=1 also writes backend/logs/YYYY-MM-DD.log
+	cd backend && $(if $(LOG),LOG_DIR=logs )go run ./cmd/server
 
 web-install:    ## Install the frontend's npm packages
 	cd frontend && npm install
