@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -21,6 +22,7 @@ func Run(t *testing.T, open func(t *testing.T) store.Store) {
 	t.Run("AppsNeedingRefresh", func(t *testing.T) { testAppsNeeding(t, open(t)) })
 	t.Run("NameSearchBeyondASCII", func(t *testing.T) { testNameSearchUnicode(t, open(t)) })
 	t.Run("ReviewSortByRatingFirst", func(t *testing.T) { testReviewSortByRating(t, open(t)) })
+	t.Run("DeveloperGames", func(t *testing.T) { testDeveloperGames(t, open(t)) })
 }
 
 func testNameSearchUnicode(t *testing.T, s store.Store) {
@@ -439,5 +441,31 @@ func testAppsNeeding(t *testing.T, s store.Store) {
 	must(t, err)
 	if len(rows) != 3 || rows[0].Name != "Game" || rows[2].Name != "Store name" || rows[2].ReviewPct == nil || *rows[2].ReviewPct != 50 {
 		t.Errorf("rows = %+v", rows)
+	}
+}
+
+func testDeveloperGames(t *testing.T, s store.Store) {
+	ctx := context.Background()
+	if _, err := s.GetDeveloperGames(ctx, "valve"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("unknown developer: err = %v, want ErrNotFound", err)
+	}
+	at := time.Date(2026, 11, 18, 12, 0, 0, 123e6, time.UTC)
+	must(t, s.SaveDeveloperGames(ctx, store.DeveloperGames{Developer: "valve", Games: []byte(`[{"appid":620}]`), FetchedAt: at}))
+	must(t, s.SaveDeveloperGames(ctx, store.DeveloperGames{Developer: "old", Games: []byte(`[]`), FetchedAt: at.Add(-48 * time.Hour)}))
+	// Saving again replaces the list.
+	must(t, s.SaveDeveloperGames(ctx, store.DeveloperGames{Developer: "valve", Games: []byte(`[{"appid":400}]`), FetchedAt: at}))
+
+	got, err := s.GetDeveloperGames(ctx, "valve")
+	must(t, err)
+	if !got.FetchedAt.Equal(at) || !strings.Contains(string(got.Games), "400") {
+		t.Errorf("valve = %s at %v", got.Games, got.FetchedAt)
+	}
+
+	must(t, s.DeleteDeveloperGamesBefore(ctx, at.Add(-24*time.Hour)))
+	if _, err := s.GetDeveloperGames(ctx, "old"); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("expired list: err = %v, want ErrNotFound", err)
+	}
+	if _, err := s.GetDeveloperGames(ctx, "valve"); err != nil {
+		t.Errorf("fresh list deleted: %v", err)
 	}
 }

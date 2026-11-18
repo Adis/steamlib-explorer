@@ -41,6 +41,12 @@ type App struct {
 	UpdatedAt        string
 }
 
+type DeveloperGame struct {
+	Developer string
+	Games     string
+	FetchedAt string
+}
+
 type OwnedGame struct {
 	SteamID         int64
 	Appid           int64

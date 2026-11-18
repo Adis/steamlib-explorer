@@ -102,7 +102,7 @@ func eachStore(t *testing.T, test func(t *testing.T, q store.Store, exec func(sq
 			t.Fatal(err)
 		}
 		t.Cleanup(st.Close)
-		if _, err := st.Pool().Exec(ctx, "TRUNCATE users, apps CASCADE"); err != nil {
+		if _, err := st.Pool().Exec(ctx, "TRUNCATE users, apps, developer_games CASCADE"); err != nil {
 			t.Fatal(err)
 		}
 		prepare(t, st)

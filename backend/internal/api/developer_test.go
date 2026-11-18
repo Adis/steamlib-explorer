@@ -4,12 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/Adis/steamlib-explorer/backend/internal/steam"
+	"github.com/Adis/steamlib-explorer/backend/internal/store"
 )
 
 type fakeSearch struct {
@@ -83,5 +87,143 @@ func TestListDeveloperGames(t *testing.T) {
 	now = now.Add(developerCacheTTL + time.Minute)
 	if rec := get("developer=Valve"); rec.Code != http.StatusBadGateway {
 		t.Errorf("store down: status %d, want 502", rec.Code)
+	}
+}
+
+// blockingSearch answers once release is closed, counting the requests.
+type blockingSearch struct {
+	release chan struct{}
+	calls   atomic.Int32
+}
+
+func (b *blockingSearch) DeveloperGames(_ context.Context, developer string) ([]steam.StoreGame, error) {
+	b.calls.Add(1)
+	<-b.release
+	return []steam.StoreGame{{AppID: 1, Name: developer}}, nil
+}
+
+// Pages opened together for one developer share one store request, and a
+// page that gives up doesn't cancel it for the others.
+func TestDeveloperCacheSharesOneRequest(t *testing.T) {
+	search := &blockingSearch{release: make(chan struct{})}
+	cache := &DeveloperCache{Search: search}
+
+	gaveUp, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := cache.Games(gaveUp, "Valve"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled page: err = %v", err)
+	}
+
+	var wg sync.WaitGroup
+	for range 5 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			games, err := cache.Games(context.Background(), "valve")
+			if err != nil || len(games) != 1 {
+				t.Errorf("games = %v, err = %v", games, err)
+			}
+		}()
+	}
+	close(search.release)
+	wg.Wait()
+	if n := search.calls.Load(); n != 1 {
+		t.Errorf("store asked %d times, want 1", n)
+	}
+}
+
+func TestDeveloperCacheIsBounded(t *testing.T) {
+	now := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
+	search := &fakeSearch{}
+	cache := &DeveloperCache{Search: search, now: func() time.Time { return now }}
+	for i := range developerCacheMax + 10 {
+		now = now.Add(time.Second)
+		if _, err := cache.Games(context.Background(), fmt.Sprint("dev", i)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n := len(cache.entries); n != developerCacheMax {
+		t.Errorf("cache holds %d developers, want %d", n, developerCacheMax)
+	}
+	// The oldest went first; the newest is still cached.
+	if _, ok := cache.entries["dev0"]; ok {
+		t.Error("oldest developer still cached")
+	}
+	calls := search.calls
+	if _, err := cache.Games(context.Background(), fmt.Sprint("dev", developerCacheMax+9)); err != nil || search.calls != calls {
+		t.Errorf("newest developer not cached: err %v, calls %d → %d", err, calls, search.calls)
+	}
+}
+
+// memSaved is SavedDeveloperGames in memory.
+type memSaved struct {
+	mu   sync.Mutex
+	rows map[string]store.DeveloperGames
+}
+
+func (m *memSaved) GetDeveloperGames(_ context.Context, developer string) (store.DeveloperGames, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	r, ok := m.rows[developer]
+	if !ok {
+		return store.DeveloperGames{}, store.ErrNotFound
+	}
+	return r, nil
+}
+
+func (m *memSaved) SaveDeveloperGames(_ context.Context, arg store.DeveloperGames) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.rows[arg.Developer] = arg
+	return nil
+}
+
+func (m *memSaved) DeleteDeveloperGamesBefore(_ context.Context, before time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for k, r := range m.rows {
+		if r.FetchedAt.Before(before) {
+			delete(m.rows, k)
+		}
+	}
+	return nil
+}
+
+// A restart keeps the lists saved in the database for the rest of the day.
+func TestDeveloperCacheSurvivesRestart(t *testing.T) {
+	now := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
+	clock := func() time.Time { return now }
+	pct := 90
+	search := &fakeSearch{games: []steam.StoreGame{{AppID: 620, Name: "Portal 2", ReviewPct: &pct}}}
+	saved := &memSaved{rows: map[string]store.DeveloperGames{
+		"old dev": {Developer: "old dev", Games: []byte(`[]`), FetchedAt: now.Add(-2 * developerCacheTTL)},
+	}}
+
+	first := &DeveloperCache{Search: search, Saved: saved, now: clock}
+	if _, err := first.Games(context.Background(), "Valve"); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := saved.rows["old dev"]; ok {
+		t.Error("expired list still saved")
+	}
+
+	now = now.Add(time.Hour)
+	restarted := &DeveloperCache{Search: search, Saved: saved, now: clock}
+	games, err := restarted.Games(context.Background(), "VALVE")
+	if err != nil || len(games) != 1 || games[0].Name != "Portal 2" || *games[0].ReviewPct != 90 {
+		t.Fatalf("after restart: games %+v, err %v", games, err)
+	}
+	if search.calls != 1 {
+		t.Errorf("store asked %d times, want 1 (saved list reused)", search.calls)
+	}
+
+	// A day later the saved list is too old and the store is asked again.
+	now = now.Add(developerCacheTTL)
+	again := &DeveloperCache{Search: search, Saved: saved, now: clock}
+	if _, err := again.Games(context.Background(), "Valve"); err != nil {
+		t.Fatal(err)
+	}
+	if search.calls != 2 {
+		t.Errorf("store asked %d times after a day, want 2", search.calls)
 	}
 }
