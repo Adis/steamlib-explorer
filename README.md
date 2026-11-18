@@ -103,7 +103,7 @@ In development the browser only talks to Vite on port 5173, which forwards `/api
 By default the app works only on the computer that runs it: Postgres, the backend and the frontend all listen on localhost, so other devices on your network can't reach them, whatever your firewall says. To open the app to your phone or another computer on your network:
 
 1. In `.env`, set `LISTEN_HOST=0.0.0.0` (the backend and the Vite frontend both use it).
-2. Set `PUBLIC_URL` to the address the other device will type, for example `http://192.168.1.20:5173` or `http://my-pc.lan:5173`. Steam sends you back there after sign-in, so you must open the app at exactly that address (also on this computer).
+2. Set `PUBLIC_URL` to the address the other device will type, for example `http://192.168.1.20:5173` or `http://my-pc.lan:5173`. Steam sends you back there after sign-in, so you must open the app at exactly that address (also on this computer). The app answers only requests addressed to localhost, an IP address or the host name in `PUBLIC_URL` (others get "This address isn't allowed"), so another website can't reach it by pointing its own domain name at your computer (DNS rebinding).
 3. Allow port 5173 in your firewall, for example `sudo ufw allow from 192.168.1.0/24 to any port 5173 proto tcp`.
 4. Run `make dev` again.
 
