@@ -70,6 +70,12 @@ func (s *Store) ListGames(ctx context.Context, arg store.ListGamesParams) ([]sto
 	if arg.MinMetacritic != nil {
 		add("a.metacritic_score >= ?", *arg.MinMetacritic)
 	}
+	if arg.DetailsStatus != nil {
+		add("a.details_status = ?", *arg.DetailsStatus)
+	}
+	if arg.HasReviews != nil {
+		add("(a.reviews_fetched_at IS NOT NULL) = ?", *arg.HasReviews)
+	}
 	if arg.ReleasedAfter != nil {
 		add("a.release_date >= ?", nullDate(arg.ReleasedAfter))
 	}

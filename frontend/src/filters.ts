@@ -29,6 +29,8 @@ const PASS_THROUGH = [
   "review_score",
   "min_metacritic",
   "platform",
+  "details", // store details state; set by the library panel's counts
+  "has_reviews", // set by the library panel's counts
   "sort",
   "order",
   "limit",
@@ -67,6 +69,38 @@ export function activeFilterCount(p: UrlParams) {
   const ignore = ["sort", "order", "limit", "page"];
   return [...p.entries()].filter(([k, v]) => !ignore.includes(k) && v !== "")
     .length;
+}
+
+/** Parameters kept when a library panel count replaces the filters. */
+const VIEW_KEEP = ["sort", "order", "limit"];
+
+/**
+ * The explorer link for a library panel count: only these filters, plus
+ * games with few reviews, so the list matches the count. Sorting and page
+ * size stay as they are.
+ */
+export function libraryCountHref(filters: Record<string, string>) {
+  const current = new URLSearchParams(window.location.search);
+  const next = new URLSearchParams();
+  for (const k of VIEW_KEEP) {
+    const v = current.get(k);
+    if (v) next.set(k, v);
+  }
+  next.set("few_reviews", "1");
+  for (const [k, v] of Object.entries(filters)) next.set(k, v);
+  return `?${next}`;
+}
+
+/**
+ * Opens an explorer link without reloading the page: a new history entry
+ * (so Back returns to the previous filters), and the explorer picks it up
+ * like a Back press.
+ */
+export function openExplorerLink(href: string) {
+  const qs = href.replace(/^\?/, "");
+  window.history.pushState(null, "", `${window.location.pathname}?${qs}`);
+  saveLastView(qs);
+  window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
 /** localStorage key holding the explorer's last query string. */
@@ -172,7 +206,7 @@ export function useUrlParams() {
   /** Clears every filter but keeps sorting and page size. */
   const clearFilters = useCallback(() => {
     const next = new URLSearchParams();
-    for (const k of ["sort", "order", "limit"]) {
+    for (const k of VIEW_KEEP) {
       const v = current.current.get(k);
       if (v) next.set(k, v);
     }

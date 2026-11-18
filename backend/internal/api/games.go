@@ -32,6 +32,9 @@ var sortKeys = map[string]bool{
 	"review": true, "metacritic": true, "release": true,
 }
 
+// detailsStatuses are the values of apps.details_status.
+var detailsStatuses = map[string]bool{"pending": true, "ok": true, "unavailable": true, "error": true}
+
 type gameJSON struct {
 	AppID            int64      `json:"appid"`
 	Name             string     `json:"name"`
@@ -146,6 +149,19 @@ func parseGameFilters(v url.Values) (store.ListGamesParams, error) {
 	}
 	if p.MinMetacritic, err = intParam(v, "min_metacritic", 0, 100); err != nil {
 		return p, err
+	}
+	if s := v.Get("details"); s != "" {
+		if !detailsStatuses[s] {
+			return p, fmt.Errorf("details must be pending, ok, unavailable or error")
+		}
+		p.DetailsStatus = &s
+	}
+	if s := v.Get("has_reviews"); s != "" {
+		b, err := strconv.ParseBool(s)
+		if err != nil {
+			return p, fmt.Errorf("has_reviews must be true or false")
+		}
+		p.HasReviews = &b
 	}
 	if p.ReleasedAfter, err = dateParam(v, "released_after"); err != nil {
 		return p, err

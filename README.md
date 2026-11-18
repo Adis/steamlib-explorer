@@ -232,6 +232,8 @@ In Postgres, genres and categories are `text[]` columns with GIN indexes, so fil
 | `review_score` | Steam review rating, 1 to 9; repeat for any of several (`review_score=9&review_score=8`). The explorer's rating checkboxes use this |
 | `min_reviews` | Minimum number of Steam reviews; games whose reviews were never fetched are kept. The explorer sends 10 unless "Fewer than 10 reviews" is ticked |
 | `min_metacritic` | Minimum Metacritic score, 0 to 100 |
+| `details` | Store details state: `ok`, `unavailable` (no store page), `error` (fetch failed) or `pending`. The library panel's counts link here |
+| `has_reviews` | `true` for games whose Steam reviews were fetched, `false` for the rest |
 | `released_after`, `released_before` | Release date range, `YYYY-MM-DD` (games without a parseable date are left out) |
 | `platform` | `windows`, `mac` or `linux`; repeat to require several |
 | `sort` | `name`, `playtime`, `recent` (last two weeks), `last_played`, `review` (default; by Steam rating, Overwhelmingly Positive first; within a rating the least played come first, then percent positive), `metacritic`, `release` |

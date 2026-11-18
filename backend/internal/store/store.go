@@ -182,8 +182,14 @@ type ListGamesParams struct {
 	ReviewScores   []int32 // has any of these Steam ratings (1..9)
 	// MinReviews keeps games with at least this many reviews, and games
 	// whose review count isn't known yet.
-	MinReviews     *int32
-	MinMetacritic  *int32
+	MinReviews    *int32
+	MinMetacritic *int32
+	// DetailsStatus keeps games whose store details are in this state:
+	// pending, ok, unavailable (no store page) or error (fetch failed).
+	DetailsStatus *string
+	// HasReviews keeps games whose reviews were (true) or weren't (false)
+	// fetched yet.
+	HasReviews     *bool
 	ReleasedAfter  *time.Time
 	ReleasedBefore *time.Time
 	WindowsOnly    bool

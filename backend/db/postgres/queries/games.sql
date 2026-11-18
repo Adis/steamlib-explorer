@@ -27,6 +27,8 @@ WHERE o.steam_id = sqlc.arg(steam_id)
   -- Games whose review count isn't known yet (NULL) are kept.
   AND (sqlc.narg(min_reviews)::int IS NULL OR a.reviews_total IS NULL OR a.reviews_total >= sqlc.narg(min_reviews)::int)
   AND (sqlc.narg(min_metacritic)::int IS NULL OR a.metacritic_score >= sqlc.narg(min_metacritic)::int)
+  AND (sqlc.narg(details_status)::text IS NULL OR a.details_status = sqlc.narg(details_status)::text)
+  AND (sqlc.narg(has_reviews)::boolean IS NULL OR (a.reviews_fetched_at IS NOT NULL) = sqlc.narg(has_reviews)::boolean)
   AND (sqlc.narg(released_after)::date IS NULL OR a.release_date >= sqlc.narg(released_after)::date)
   AND (sqlc.narg(released_before)::date IS NULL OR a.release_date <= sqlc.narg(released_before)::date)
   AND (NOT sqlc.arg(windows_only)::boolean OR a.platform_windows)
