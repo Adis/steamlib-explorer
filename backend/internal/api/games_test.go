@@ -38,7 +38,7 @@ func TestParseGameFiltersDefaults(t *testing.T) {
 	if p.Sort != "review" || !p.Descending || p.PageLimit != 50 || p.PageOffset != 0 {
 		t.Errorf("defaults = %+v", p)
 	}
-	if p.NameContains != nil || p.Genres != nil || p.Played != nil || p.MinReviews != nil || p.ReviewScores != nil || p.MinMinutes != nil || p.WindowsOnly {
+	if p.NameContains != nil || p.Genres != nil || p.Played != nil || p.MinReviews != nil || p.ReviewScores != nil || p.DetailsStatus != nil || p.HasReviews != nil || p.MinMinutes != nil || p.WindowsOnly {
 		t.Errorf("filters should be off by default: %+v", p)
 	}
 }
@@ -46,6 +46,7 @@ func TestParseGameFiltersDefaults(t *testing.T) {
 func TestParseGameFilters(t *testing.T) {
 	v, err := url.ParseQuery("q=50%25_off&genre=Action&genre=&genre=RPG&category=Co-op&played=true" +
 		"&min_hours=1.5&max_hours=10&min_review=80&min_review_score=6&review_score=9&review_score=&review_score=5&min_reviews=10&min_metacritic=75" +
+		"&details=unavailable&has_reviews=false" +
 		"&released_after=2015-01-01&released_before=2020-12-31&platform=linux&platform=mac" +
 		"&sort=playtime&limit=20&offset=40")
 	if err != nil {
@@ -72,6 +73,9 @@ func TestParseGameFilters(t *testing.T) {
 	}
 	if *p.MinReviews != 10 {
 		t.Errorf("min reviews = %d", *p.MinReviews)
+	}
+	if *p.DetailsStatus != "unavailable" || *p.HasReviews {
+		t.Errorf("details/has reviews = %q %v", *p.DetailsStatus, *p.HasReviews)
 	}
 	if p.ReleasedAfter.Format(time.DateOnly) != "2015-01-01" || p.ReleasedBefore.Format(time.DateOnly) != "2020-12-31" {
 		t.Errorf("dates = %v %v", p.ReleasedAfter, p.ReleasedBefore)
@@ -104,7 +108,7 @@ func TestParseGameFiltersOrder(t *testing.T) {
 func TestListGamesRejectsBadParams(t *testing.T) {
 	for _, query := range []string{
 		"played=maybe", "min_hours=-1", "max_hours=x", "min_review=101", "min_review_score=0", "min_review_score=10", "review_score=0", "review_score=great", "min_metacritic=7.5",
-		"min_reviews=-1", "min_reviews=few",
+		"min_reviews=-1", "min_reviews=few", "details=broken", "has_reviews=maybe",
 		"released_after=2020", "platform=amiga", "sort=price", "order=up",
 		"limit=0", "limit=201", "offset=-1",
 	} {

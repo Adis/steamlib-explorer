@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, fetchSyncStatus, startSync, type SyncRun, type SyncStatus } from "./api.ts";
+import { libraryCountHref, openExplorerLink } from "./filters.ts";
 import { ErrorBox, formatDateTime, formatTimeAgo } from "./ui.tsx";
 
 /** Library status, the Sync button, and progress while a sync runs. */
@@ -34,9 +35,9 @@ export default function SyncPanel() {
           <h2 className="font-semibold tracking-tight">Your library</h2>
           <p className="mt-0.5 text-sm text-muted">
             {stats && (
-              <span className="font-medium text-fg tabular-nums">
+              <CountLink filters={{}} title="Show all your games, including those with few reviews" className="font-medium text-fg tabular-nums">
                 {stats.games.toLocaleString()} games
-              </span>
+              </CountLink>
             )}
             {run && !running && (
               <>
@@ -165,29 +166,62 @@ function formatTimeLeft(seconds: number) {
 }
 
 /**
- * What the last sync saved, on one line. "No store page" and "Failed" only
- * stand out when they are above zero.
+ * What the last sync saved, on one line. Each count links to the explorer
+ * showing exactly those games. "No store page" and "Failed" only stand out
+ * when they are above zero.
  */
 function Stats({ stats }: { stats: SyncStatus["stats"] }) {
-  const items = [
-    { label: "with store details", value: stats.with_details, problem: false },
-    { label: "with reviews", value: stats.with_reviews, problem: false },
-    { label: "no store page", value: stats.unavailable, problem: true },
-    { label: "failed", value: stats.failed, problem: true },
+  const items: { label: string; value: number; problem: boolean; filters: Record<string, string> }[] = [
+    { label: "with store details", value: stats.with_details, problem: false, filters: { details: "ok" } },
+    { label: "with reviews", value: stats.with_reviews, problem: false, filters: { has_reviews: "true" } },
+    { label: "no store page", value: stats.unavailable, problem: true, filters: { details: "unavailable" } },
+    { label: "failed", value: stats.failed, problem: true, filters: { details: "error" } },
   ];
   return (
-    <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1 border-t border-line pt-3 text-sm text-muted">
-      {items.map(({ label, value, problem }) => (
-        <div key={label} className="flex items-baseline gap-1.5">
-          <dt>{label}</dt>
-          <dd
-            className={`order-first font-semibold tabular-nums ${problem && value > 0 ? "text-warn" : "text-fg"}`}
-          >
-            {value.toLocaleString()}
-          </dd>
-        </div>
+    <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 border-t border-line pt-3 text-sm text-muted">
+      {items.map(({ label, value, problem, filters }) => (
+        <li key={label}>
+          <CountLink filters={filters} title={`Show the games ${label}`} className="hover:text-fg">
+            <span className={`font-semibold tabular-nums ${problem && value > 0 ? "text-warn" : "text-fg"}`}>
+              {value.toLocaleString()}
+            </span>{" "}
+            {label}
+          </CountLink>
+        </li>
       ))}
-    </dl>
+    </ul>
+  );
+}
+
+/**
+ * A library count as a link to the explorer filtered to those games. It
+ * opens in place without a reload; a middle click opens a new tab.
+ */
+function CountLink({
+  filters,
+  title,
+  className,
+  children,
+}: {
+  filters: Record<string, string>;
+  title: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <a
+      href={libraryCountHref(filters)}
+      title={title}
+      onClick={(e) => {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        // Read the sort at click time: this panel doesn't re-render when it changes.
+        openExplorerLink(libraryCountHref(filters));
+      }}
+      className={`decoration-line-strong hover:decoration-current ${className ?? ""}`}
+    >
+      {children}
+    </a>
   );
 }
 

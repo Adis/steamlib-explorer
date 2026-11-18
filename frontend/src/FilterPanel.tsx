@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchFacets, type Facet } from "./api.ts";
 import { activeFilterCount, MIN_REVIEWS, type SetParam, type UrlParams } from "./filters.ts";
 import { useSidebarFilters } from "./sidebarFilters.ts";
+import { X } from "lucide-react";
 
 type Props = {
   params: UrlParams;
@@ -29,6 +30,8 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
           </button>
         )}
       </div>
+
+      <SyncDataFilters params={params} setParam={setParam} />
 
       {isShown("search") && (
         <SearchBox value={params.get("q") ?? ""} onChange={(v) => setParam("q", v)} />
@@ -152,6 +155,45 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
         Choose which filters to show
       </a>
     </aside>
+  );
+}
+
+const DETAILS_LABELS: Record<string, string> = {
+  ok: "With store details",
+  unavailable: "No store page",
+  error: "Store details failed",
+  pending: "Store details not fetched yet",
+};
+
+/**
+ * Filters set by the counts in the library panel, which have no controls of
+ * their own: shown only while active, each with a button to remove it.
+ */
+function SyncDataFilters({ params, setParam }: { params: UrlParams; setParam: SetParam }) {
+  const details = params.get("details");
+  const reviews = params.get("has_reviews");
+  const active: [string, string][] = [];
+  if (details) active.push(["details", DETAILS_LABELS[details] ?? details]);
+  if (reviews) active.push(["has_reviews", reviews === "true" ? "With reviews" : "Without reviews"]);
+  if (active.length === 0) return null;
+  return (
+    <Group title="Sync data">
+      <ul className="space-y-1">
+        {active.map(([key, label]) => (
+          <li key={key} className="flex items-center justify-between gap-2 rounded-md border border-line-strong bg-raised px-2.5 py-1 text-fg">
+            {label}
+            <button
+              onClick={() => setParam(key, null)}
+              aria-label={`Remove filter: ${label}`}
+              title="Remove filter"
+              className="-mr-1 rounded p-0.5 text-muted hover:bg-surface hover:text-fg"
+            >
+              <X aria-hidden className="h-3.5 w-3.5" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Group>
   );
 }
 

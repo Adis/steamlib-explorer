@@ -370,7 +370,37 @@ func testAppsNeeding(t *testing.T, s store.Store) {
 	if stats != (store.LibraryStatsRow{Games: 3, WithDetails: 1, Unavailable: 1, Failed: 0, WithReviews: 1}) {
 		t.Errorf("stats = %+v", stats)
 	}
-	rows, err := s.ListGames(ctx, store.ListGamesParams{SteamID: 1, Sort: "name", PageLimit: 10})
+	// Each count in the library panel links to a filter showing exactly
+	// those games.
+	must(t, s.MarkAppDetailsStatus(ctx, store.MarkAppDetailsStatusParams{Appid: 3, DetailsStatus: "error"}))
+	stats, err = s.LibraryStats(ctx, 1)
+	must(t, err)
+	yes := true
+	for _, c := range []struct {
+		name  string
+		count int64
+		p     store.ListGamesParams
+	}{
+		{"with details", stats.WithDetails, store.ListGamesParams{DetailsStatus: ptr("ok")}},
+		{"no store page", stats.Unavailable, store.ListGamesParams{DetailsStatus: ptr("unavailable")}},
+		{"failed", stats.Failed, store.ListGamesParams{DetailsStatus: ptr("error")}},
+		{"with reviews", stats.WithReviews, store.ListGamesParams{HasReviews: &yes}},
+	} {
+		c.p.SteamID, c.p.Sort, c.p.PageLimit = 1, "name", 10
+		rows, err := s.ListGames(ctx, c.p)
+		must(t, err)
+		if c.count != 1 || len(rows) != 1 {
+			t.Errorf("%s: stats count %d, filter matches %d, want 1 each", c.name, c.count, len(rows))
+		}
+	}
+	no := false
+	rows, err := s.ListGames(ctx, store.ListGamesParams{SteamID: 1, HasReviews: &no, Sort: "name", PageLimit: 10})
+	must(t, err)
+	if len(rows) != 2 {
+		t.Errorf("without reviews = %d games, want 2", len(rows))
+	}
+
+	rows, err = s.ListGames(ctx, store.ListGamesParams{SteamID: 1, Sort: "name", PageLimit: 10})
 	must(t, err)
 	if len(rows) != 3 || rows[0].Name != "Game" || rows[2].Name != "Store name" || rows[2].ReviewPct == nil || *rows[2].ReviewPct != 50 {
 		t.Errorf("rows = %+v", rows)
