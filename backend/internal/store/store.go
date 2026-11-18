@@ -220,6 +220,7 @@ type ListGamesRow struct {
 	PlatformMac      bool
 	PlatformLinux    bool
 	MetacriticScore  *int32
+	MetacriticURL    string // Metacritic's review page as Steam's store details link it, or ""
 	PriceCents       *int32
 	PriceCurrency    *string
 	IsFree           bool

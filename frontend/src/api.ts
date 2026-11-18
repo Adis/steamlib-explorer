@@ -98,6 +98,7 @@ export type Game = {
   publishers: string[];
   platforms: { windows: boolean; mac: boolean; linux: boolean };
   metacritic_score: number | null;
+  metacritic_url: string | null; // Metacritic's review page, when Steam links one
   price_cents: number | null;
   price_currency: string | null;
   is_free: boolean;

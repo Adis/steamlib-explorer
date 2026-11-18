@@ -9,6 +9,8 @@ sql:
         out: internal/store/postgres
         sql_package: pgx/v5
         emit_empty_slices: true
+        rename:
+          metacritic_url: MetacriticURL
         overrides:
           - db_type: timestamptz
             go_type: time.Time

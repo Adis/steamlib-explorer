@@ -6,7 +6,10 @@ SELECT
     a.release_date, a.release_date_text, a.coming_soon,
     a.genres, a.categories, a.developers, a.publishers,
     a.platform_windows, a.platform_mac, a.platform_linux,
-    a.metacritic_score, a.price_cents, a.price_currency, a.is_free,
+    a.metacritic_score,
+    -- The review page Steam links to, from the store details as fetched.
+    COALESCE(a.details_raw->'metacritic'->>'url', '')::text AS metacritic_url,
+    a.price_cents, a.price_currency, a.is_free,
     a.review_score_desc, a.review_pct, a.reviews_total, a.details_status,
     o.playtime_forever, o.playtime_2weeks, o.last_played_at,
     count(*) OVER () AS total_count
