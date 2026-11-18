@@ -18,7 +18,16 @@ export function gameIdOf(page: string): number | null {
  * One game from the library: what the app knows about it, and buttons to
  * open it in the Steam client or on the store.
  */
-export default function GameDetails({ appid, onBack }: { appid: number; onBack: () => void }) {
+export default function GameDetails({
+  appid,
+  fromGame,
+  onBack,
+}: {
+  appid: number;
+  /** The game page this one was opened from, if any: "Back" returns there first. */
+  fromGame: number | null;
+  onBack: () => void;
+}) {
   const queryClient = useQueryClient();
   const game = useQuery({
     queryKey: ["game", appid],
@@ -38,17 +47,36 @@ export default function GameDetails({ appid, onBack }: { appid: number; onBack: 
     if (game.data) document.title = `${game.data.name} · Steamlib Explorer`;
   }, [game.data]);
 
+  const fromName = fromGame !== null ? queryClient.getQueryData<Game>(["game", fromGame])?.name : undefined;
+  // A block, not inline: the article's space-y margin doesn't apply to inline links.
   const back = (
-    <a
-      href="#"
-      onClick={(e) => {
-        e.preventDefault();
-        onBack();
-      }}
-      className="text-sm text-link hover:text-link-hover"
-    >
-      ← Back to your library
-    </a>
+    <nav aria-label="Back" className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
+      {fromGame !== null && (
+        <>
+          <a
+            href={gameHref(fromGame)}
+            onClick={(e) => {
+              e.preventDefault();
+              window.history.back();
+            }}
+            className="text-link hover:text-link-hover"
+          >
+            ← Back to {fromName ?? "the previous game"}
+          </a>
+          <span aria-hidden className="text-faint">·</span>
+        </>
+      )}
+      <a
+        href="#"
+        onClick={(e) => {
+          e.preventDefault();
+          onBack();
+        }}
+        className="text-link hover:text-link-hover"
+      >
+        {fromGame !== null ? "Your library" : "← Back to your library"}
+      </a>
+    </nav>
   );
 
   if (game.isPending) return <article className="mx-auto max-w-4xl">{back}<p className="mt-4 text-muted">Loading…</p></article>;
@@ -77,8 +105,10 @@ export default function GameDetails({ appid, onBack }: { appid: number; onBack: 
 
 function Overview({ game }: { game: Game }) {
   return (
-    <section className="panel overflow-hidden rounded-xl border border-line bg-surface shadow-lg shadow-black/10 md:flex">
-      <div className="aspect-[460/215] shrink-0 bg-raised md:w-[460px]">
+    <section className="panel overflow-hidden rounded-xl border border-line bg-surface shadow-lg shadow-black/10 lg:flex lg:items-start">
+      {/* Steam's header art at its own 460×215 shape, never cropped: the text
+          beside it may be taller, so the art stays at the top. */}
+      <div className="aspect-[460/215] shrink-0 bg-raised lg:w-[460px]">
         {game.header_image && <img src={game.header_image} alt="" className="h-full w-full object-cover" />}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-3 p-5">
@@ -98,6 +128,7 @@ function Overview({ game }: { game: Game }) {
           {/* steam:// links are handled by the Steam client when it's installed. */}
           <a
             href={`steam://nav/games/details/${game.appid}`}
+            title="Opens this game in the Steam app. Needs Steam installed on this computer."
             className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover"
           >
             <LibraryBig aria-hidden className="h-4 w-4" />
@@ -134,7 +165,7 @@ function StatusNote({ game }: { game: Game }) {
 function Facts({ game }: { game: Game }) {
   const played = game.playtime_minutes > 0;
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid items-start gap-6 md:grid-cols-2">
       <FactPanel title="Your play">
         <Fact label="Playtime">{played ? formatHours(game.playtime_minutes) : <Faint>Never played</Faint>}</Fact>
         <Fact label="Last 2 weeks">
@@ -148,7 +179,10 @@ function Facts({ game }: { game: Game }) {
           {game.review_pct !== null && game.review_score_desc ? (
             <>
               <ReviewLabel pct={game.review_pct}>{game.review_score_desc}</ReviewLabel>
-              <span className="text-faint"> · {reviewDetail(game)}</span>
+              <span className="text-faint">
+                {" · "}
+                <span className="whitespace-nowrap">{reviewDetail(game)}</span>
+              </span>
             </>
           ) : (
             <Faint>No user reviews</Faint>
@@ -279,8 +313,14 @@ function MoreFromDeveloper({ developer, appid }: { developer: string; appid: num
     staleTime: 60 * 60 * 1000, // the backend caches the store's answer too
     retry: false,
   });
-  const games = more.data?.games.filter((g) => g.appid !== appid) ?? [];
+  // Games in the library first, each group in the store's order.
+  const games = (more.data?.games.filter((g) => g.appid !== appid) ?? []).sort(
+    (a, b) => Number(b.owned) - Number(a.owned),
+  );
   const owned = games.filter((g) => g.owned).length;
+
+  // Nothing else from this developer: no section at all.
+  if (more.data && games.length === 0) return null;
 
   return (
     <section aria-labelledby="more-heading" className="space-y-3">
@@ -296,9 +336,6 @@ function MoreFromDeveloper({ developer, appid }: { developer: string; appid: num
       </div>
       {more.isPending && <p className="text-sm text-muted">Asking the Steam store…</p>}
       {more.isError && <p className="text-sm text-faint">Could not load them: {more.error.message}</p>}
-      {more.data && games.length === 0 && (
-        <p className="text-sm text-faint">No other games from {developer} on the Steam store.</p>
-      )}
       {games.length > 0 && (
         <ul className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
           {games.map((g) => (
@@ -321,7 +358,7 @@ function DeveloperGameCard({ game }: { game: DeveloperGame }) {
     <a
       {...link}
       className={`group flex h-full flex-col overflow-hidden panel rounded-lg border bg-surface transition hover:border-line-strong ${
-        game.owned ? "border-accent" : "border-line"
+        game.owned ? "owned-card border-accent" : "border-line"
       }`}
     >
       <div className="relative aspect-[231/87] bg-raised">
@@ -335,8 +372,8 @@ function DeveloperGameCard({ game }: { game: DeveloperGame }) {
           />
         )}
         {game.owned && (
-          <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-md bg-accent px-1.5 py-0.5 text-[0.6875rem] font-semibold text-on-accent">
-            <Check aria-hidden className="h-3 w-3" strokeWidth={3} />
+          <span className="in-library-badge absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-md border border-accent bg-surface px-1.5 py-0.5 text-[0.6875rem] font-semibold text-fg shadow-sm shadow-black/30">
+            <Check aria-hidden className="h-3 w-3 text-accent" strokeWidth={3} />
             In library
           </span>
         )}

@@ -28,6 +28,9 @@ export default function App() {
   // Whether the game page was opened from the explorer in this tab: then
   // "Back" is the browser's back, which keeps the filters and the page.
   const cameFromHome = useRef(false);
+  // The game pages opened one from another ("More from" links), so a game
+  // page can offer "Back to <previous game>".
+  const gameTrail = useGameTrail(page, gameId);
 
   useEffect(() => {
     if (page !== "") return;
@@ -55,7 +58,10 @@ export default function App() {
       (link ?? mainRef.current)?.focus({ preventScroll: true });
       return;
     }
-    cameFromHome.current = prev === "" && gameIdOf(page) !== null;
+    // Moving between game pages keeps how the first one was reached.
+    if (gameIdOf(page) === null || gameIdOf(prev) === null) {
+      cameFromHome.current = prev === "" && gameIdOf(page) !== null;
+    }
     window.scrollTo(0, 0);
     mainRef.current?.focus({ preventScroll: true });
   }, [page]);
@@ -101,8 +107,10 @@ export default function App() {
           <GameDetails
             key={gameId}
             appid={gameId}
+            fromGame={gameTrail.at(-2) ?? null}
             onBack={() => {
-              if (cameFromHome.current) window.history.back();
+              // Step back past every game page opened since the explorer.
+              if (cameFromHome.current) window.history.go(-gameTrail.length);
               else window.location.hash = "";
             }}
           />
@@ -124,6 +132,30 @@ export default function App() {
       <FunctionKeyBar page={page} />
     </div>
   );
+}
+
+/**
+ * The game pages visited in a row, oldest first: opening a game from another
+ * adds it, going back removes the last one, any other page clears the trail.
+ */
+function useGameTrail(page: string, gameId: number | null) {
+  const [trail, setTrail] = useState<{ page: string; ids: number[] }>({
+    page,
+    ids: gameId === null ? [] : [gameId],
+  });
+  if (trail.page === page) return trail.ids;
+  const ids = trail.ids;
+  const next =
+    gameId === null
+      ? []
+      : ids.at(-1) === gameId
+        ? ids
+        : ids.at(-2) === gameId
+          ? ids.slice(0, -1)
+          : [...ids, gameId];
+  // Adjusting state while rendering: React re-renders before painting.
+  setTrail({ page, ids: next });
+  return next;
 }
 
 /** The page named in the address bar's #fragment: "help", "settings" or "" (the library). */

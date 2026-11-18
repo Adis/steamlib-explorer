@@ -386,6 +386,12 @@
     color: #fff;
   }
 
+  /* Games you own under "More from": a cyan frame would look like every
+     other frame here, so they get the yellow one. */
+  .owned-card {
+    border-color: var(--color-link);
+  }
+
   /* The chosen theme: a cyan frame would look like every other frame here. */
   .theme-option[aria-pressed="true"] {
     border-color: var(--color-link);
@@ -468,6 +474,11 @@
     border-width: 2px;
     border-color: var(--color-line-strong);
     box-shadow: none;
+  }
+  /* Owned games under "More from" keep a thicker accent frame. */
+  .panel.owned-card {
+    border-color: var(--color-accent);
+    border-width: 3px;
   }
 
   /* A focus ring that can't be missed. */

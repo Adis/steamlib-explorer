@@ -218,7 +218,7 @@ function CountLink({
         // Read the sort at click time: this panel doesn't re-render when it changes.
         openExplorerLink(libraryCountHref(filters));
       }}
-      className={`decoration-line-strong hover:decoration-current ${className ?? ""}`}
+      className={`decoration-muted hover:decoration-current ${className ?? ""}`}
     >
       {children}
     </a>
