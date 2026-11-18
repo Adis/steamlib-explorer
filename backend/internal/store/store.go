@@ -179,6 +179,7 @@ type ListGamesParams struct {
 	MaxMinutes     *int32
 	MinReviewPct   *float64
 	MinReviewScore *int32
+	ReviewScores   []int32 // has any of these Steam ratings (1..9)
 	// MinReviews keeps games with at least this many reviews, and games
 	// whose review count isn't known yet.
 	MinReviews     *int32

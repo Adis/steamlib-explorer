@@ -14,6 +14,7 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
   const facets = useQuery({ queryKey: ["facets"], queryFn: fetchFacets });
   const active = activeFilterCount(params);
   const { isShown } = useSidebarFilters();
+  const ratings = selectedRatings(params);
 
   return (
     <aside className="space-y-6 text-sm">
@@ -62,12 +63,19 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
 
       {isShown("reviews") && (
         <Group title="Steam reviews">
-          <Select
-            value={params.get("min_review_score") ?? ""}
-            onChange={(v) => setParam("min_review_score", v || null)}
-            options={REVIEW_RATINGS}
-            label="Steam reviews"
-          />
+          {REVIEW_RATINGS.map(([value, label]) => (
+            <Check
+              key={value}
+              label={label}
+              checked={ratings.includes(value)}
+              onChange={() => {
+                // Links from before the checkboxes used min_review_score; the
+                // first click turns it into the equivalent ticked ratings.
+                setParam("min_review_score", null);
+                setParam("review_score", toggle(ratings, value));
+              }}
+            />
+          ))}
           <div className="mt-2">
             <Check
               label={`Include games with fewer than ${MIN_REVIEWS} reviews`}
@@ -147,15 +155,27 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
   );
 }
 
-// Steam's own review ratings (review_score 9..5), each meaning "this or better".
+// Steam's own review ratings, review_score 9 down to 1.
 const REVIEW_RATINGS: (readonly [string, string])[] = [
-  ["", "Any"],
   ["9", "Overwhelmingly Positive"],
-  ["8", "Very Positive or better"],
-  ["7", "Positive or better"],
-  ["6", "Mostly Positive or better"],
-  ["5", "Mixed or better"],
+  ["8", "Very Positive"],
+  ["7", "Positive"],
+  ["6", "Mostly Positive"],
+  ["5", "Mixed"],
+  ["4", "Mostly Negative"],
+  ["3", "Negative"],
+  ["2", "Very Negative"],
+  ["1", "Overwhelmingly Negative"],
 ];
+
+/** Ticked ratings; an older min_review_score=N link ticks N and every better one. */
+function selectedRatings(params: UrlParams): string[] {
+  const ticked = params.getAll("review_score");
+  if (ticked.length > 0) return ticked;
+  const min = Number(params.get("min_review_score"));
+  if (!min) return [];
+  return REVIEW_RATINGS.map(([v]) => v).filter((v) => Number(v) >= min);
+}
 
 function toggle(list: string[], value: string) {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];

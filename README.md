@@ -229,6 +229,7 @@ In Postgres, genres and categories are `text[]` columns with GIN indexes, so fil
 | `min_hours`, `max_hours` | Total playtime range in hours (decimals allowed) |
 | `min_review` | Minimum positive review percentage, 0 to 100 |
 | `min_review_score` | Minimum Steam review rating, 1 (Overwhelmingly Negative) to 9 (Overwhelmingly Positive) |
+| `review_score` | Steam review rating, 1 to 9; repeat for any of several (`review_score=9&review_score=8`). The explorer's rating checkboxes use this |
 | `min_reviews` | Minimum number of Steam reviews; games whose reviews were never fetched are kept. The explorer sends 10 unless "Fewer than 10 reviews" is ticked |
 | `min_metacritic` | Minimum Metacritic score, 0 to 100 |
 | `released_after`, `released_before` | Release date range, `YYYY-MM-DD` (games without a parseable date are left out) |
