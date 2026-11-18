@@ -83,12 +83,13 @@ func Run(ctx context.Context, cfg config.Config, ready func()) error {
 
 	srv := &http.Server{
 		Addr: net.JoinHostPort(cfg.ListenHost, strconv.Itoa(cfg.Port)),
-		Handler: api.NewRouter(api.Deps{
+		// Only requests addressed to this app, against DNS rebinding.
+		Handler: api.CheckHost(cfg.PublicURL)(api.NewRouter(api.Deps{
 			DB: queries, Auth: authService, Refresher: refresher, SyncQ: queries, Games: queries,
 			Setup:      &keySetup{client: steamClient, keys: keys},
 			Developers: &api.DeveloperCache{Search: steamClient}, Owned: queries,
 			UI: webui.Handler(),
-		}),
+		})),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
