@@ -32,7 +32,7 @@ func serveFile(t *testing.T, name string) http.HandlerFunc {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return func(w http.ResponseWriter, r *http.Request) { w.Write(body) }
+	return func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write(body) }
 }
 
 func TestOwnedGames(t *testing.T) {
@@ -68,7 +68,7 @@ func TestOwnedGames(t *testing.T) {
 
 func TestOwnedGamesPrivate(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"response":{}}`))
+		_, _ = w.Write([]byte(`{"response":{}}`))
 	})
 	_, err := c.OwnedGames(context.Background(), 1)
 	if !errors.Is(err, ErrPrivateProfile) {
@@ -141,7 +141,7 @@ func TestAppDetailsFreeAndUpcoming(t *testing.T) {
 
 func TestAppDetailsUnavailable(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"12345":{"success":false}}`))
+		_, _ = w.Write([]byte(`{"12345":{"success":false}}`))
 	})
 	_, err := c.AppDetails(context.Background(), 12345)
 	if !errors.Is(err, ErrAppUnavailable) {
@@ -197,7 +197,7 @@ func TestStoreRetriesOnThrottle(t *testing.T) {
 			w.WriteHeader(http.StatusTooManyRequests)
 			return
 		}
-		w.Write(body)
+		_, _ = w.Write(body)
 	})
 	if _, err := c.AppReviews(context.Background(), []int64{620}); err != nil {
 		t.Fatalf("err = %v, want success after 2 retries", err)
@@ -266,7 +266,7 @@ func TestPlayerSummary(t *testing.T) {
 	var gotPath string
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
-		w.Write([]byte(`{"response":{"players":[{"steamid":"76561197960287930","personaname":"Rabscuttle","avatarfull":"https://avatars.steamstatic.com/abc_full.jpg"}]}}`))
+		_, _ = w.Write([]byte(`{"response":{"players":[{"steamid":"76561197960287930","personaname":"Rabscuttle","avatarfull":"https://avatars.steamstatic.com/abc_full.jpg"}]}}`))
 	})
 	p, err := c.PlayerSummary(context.Background(), 76561197960287930)
 	if err != nil {
@@ -282,7 +282,7 @@ func TestPlayerSummary(t *testing.T) {
 
 func TestPlayerSummaryNotFound(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"response":{"players":[]}}`))
+		_, _ = w.Write([]byte(`{"response":{"players":[]}}`))
 	})
 	if _, err := c.PlayerSummary(context.Background(), 1); !errors.Is(err, ErrPlayerNotFound) {
 		t.Fatalf("err = %v, want ErrPlayerNotFound", err)

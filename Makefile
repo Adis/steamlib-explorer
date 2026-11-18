@@ -1,11 +1,12 @@
 GOOSE   := go run github.com/pressly/goose/v3/cmd/goose@v3.26.0
 SQLC    := go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.29.0
+GOLANGCI_LINT := go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.5.0
 MIGRATIONS := backend/db/postgres/migrations
 
 -include .env
 export
 
-.PHONY: dev check-tools db-up db-down run web web-install web-build build desktop desktop-windows serve pg-to-sqlite test test-db generate migrate-up migrate-down migrate-status
+.PHONY: dev check-tools db-up db-down run web web-install web-build build desktop desktop-windows serve pg-to-sqlite test test-db lint generate migrate-up migrate-down migrate-status
 
 # Put $(FAIL) at the start of a recipe line to get a shell function that
 # prints what went wrong and how to fix it, then stops make:
@@ -84,6 +85,11 @@ test:           ## Run the backend tests
 test-db:        ## Run the backend tests, including the ones that need Postgres
 	psql "$(DATABASE_URL)" -qc "DROP DATABASE IF EXISTS steamlib_test" -c "CREATE DATABASE steamlib_test"
 	cd backend && TEST_DATABASE_URL="$(subst /steamlib?,/steamlib_test?,$(DATABASE_URL))" go test -p 1 ./...
+
+# golangci-lint must be built with at least the Go version in backend/go.mod,
+# so it is built with the toolchain the backend itself uses.
+lint:           ## Check the backend with golangci-lint (rules in backend/.golangci.yml)
+	cd backend && GOTOOLCHAIN=$$(go env GOVERSION) $(GOLANGCI_LINT) run ./...
 
 generate:       ## Regenerate Go code from backend/db/postgres/queries with sqlc
 	cd backend && $(SQLC) generate

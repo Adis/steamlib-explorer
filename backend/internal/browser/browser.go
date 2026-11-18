@@ -20,6 +20,6 @@ func Open(url string) error {
 	if err := cmd.Start(); err != nil {
 		return err
 	}
-	go cmd.Wait() // reap it
+	go func() { _ = cmd.Wait() }() // reap it
 	return nil
 }

@@ -1,0 +1,32 @@
+version: "2"
+
+linters:
+  # "standard" = errcheck, govet, ineffassign, staticcheck, unused.
+  default: standard
+  enable:
+    - bodyclose     # HTTP response bodies are closed
+    - errorlint     # errors compared with errors.Is/As, wrapped with %w
+    - gosec         # common security mistakes
+    - misspell
+    - nolintlint    # //nolint comments name a linter and say why
+    - rowserrcheck  # rows.Err() is checked after a loop
+    - sqlclosecheck # sql.Rows and statements are closed
+    - unconvert     # needless type conversions
+  settings:
+    gosec:
+      excludes:
+        - G104 # unchecked errors: errcheck covers these
+        - G115 # int conversions: SteamIDs and int32 columns, checked where it matters
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - std-error-handling # unchecked Close, os.Remove, fmt.Fprint...
+    rules:
+      - path: _test\.go
+        linters: [gosec, bodyclose]
+
+formatters:
+  enable:
+    - gofmt

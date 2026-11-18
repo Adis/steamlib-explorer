@@ -31,7 +31,7 @@ func Run(ctx context.Context, cfg config.Config, ready func()) error {
 	if err != nil {
 		return err
 	}
-	defer closeLog()
+	defer func() { _ = closeLog() }()
 	if cfg.LogFile != "" {
 		slog.Info("logging to console and file", "file", cfg.LogFile)
 	}
