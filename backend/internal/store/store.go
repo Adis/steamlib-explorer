@@ -51,6 +51,8 @@ type Store interface {
 	ListGames(ctx context.Context, arg ListGamesParams) ([]ListGamesRow, error)
 	GenreFacets(ctx context.Context, steamID int64) ([]GenreFacetsRow, error)
 	CategoryFacets(ctx context.Context, steamID int64) ([]CategoryFacetsRow, error)
+	// OwnedAmong returns which of appids the user owns, in ascending order.
+	OwnedAmong(ctx context.Context, steamID int64, appids []int64) ([]int64, error)
 }
 
 type User struct {

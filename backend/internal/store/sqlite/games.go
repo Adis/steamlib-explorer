@@ -192,6 +192,26 @@ func (s *Store) facets(ctx context.Context, column string, steamID int64) ([]sto
 	return out, rows.Err()
 }
 
+func (s *Store) OwnedAmong(ctx context.Context, steamID int64, appids []int64) ([]int64, error) {
+	b, _ := json.Marshal(appids) // an []int64 always marshals
+	rows, err := s.db.QueryContext(ctx, `SELECT appid FROM owned_games
+	    WHERE steam_id = ? AND appid IN (SELECT value FROM json_each(?))
+	    ORDER BY appid`, steamID, string(b))
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	defer rows.Close()
+	out := []int64{}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
+}
+
 func (s *Store) GenreFacets(ctx context.Context, steamID int64) ([]store.GenreFacetsRow, error) {
 	return s.facets(ctx, "a.genres", steamID)
 }

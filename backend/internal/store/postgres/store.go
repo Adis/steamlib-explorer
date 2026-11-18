@@ -217,6 +217,11 @@ func escapeLike(s string) string {
 	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
 }
 
+func (s *Store) OwnedAmong(ctx context.Context, steamID int64, appids []int64) ([]int64, error) {
+	ids, err := s.q.OwnedAmong(ctx, OwnedAmongParams{SteamID: steamID, Appids: appids})
+	return ids, mapErr(err)
+}
+
 func (s *Store) GenreFacets(ctx context.Context, steamID int64) ([]store.GenreFacetsRow, error) {
 	rows, err := s.q.GenreFacets(ctx, steamID)
 	if err != nil {

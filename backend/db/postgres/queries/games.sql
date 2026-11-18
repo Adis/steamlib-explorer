@@ -81,3 +81,9 @@ CROSS JOIN LATERAL unnest(a.categories) AS c
 WHERE o.steam_id = $1
 GROUP BY c
 ORDER BY games DESC, c;
+
+-- name: OwnedAmong :many
+-- Which of these apps the user owns.
+SELECT appid FROM owned_games
+WHERE steam_id = sqlc.arg(steam_id) AND appid = ANY(sqlc.arg(appids)::bigint[])
+ORDER BY appid;

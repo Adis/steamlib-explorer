@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, LibraryBig } from "lucide-react";
-import { ApiError, fetchGame, type Game, type GamesPage } from "./api.ts";
+import { Check, ExternalLink, LibraryBig } from "lucide-react";
+import { ApiError, fetchDeveloperGames, fetchGame, type DeveloperGame, type Game, type GamesPage } from "./api.ts";
 import { formatHours, ReviewLabel, reviewDetail } from "./GamesTable.tsx";
 import { ErrorBox, formatDate, isNewRelease, NewBadge } from "./ui.tsx";
 
@@ -68,6 +68,9 @@ export default function GameDetails({ appid, onBack }: { appid: number; onBack: 
       {back}
       <Overview game={game.data} />
       <Facts game={game.data} />
+      {game.data.developers.length > 0 && (
+        <MoreFromDeveloper developer={game.data.developers[0]} appid={game.data.appid} />
+      )}
     </article>
   );
 }
@@ -263,4 +266,98 @@ function decodeEntities(s: string) {
   if (!s.includes("&")) return s;
   const doc = new DOMParser().parseFromString(s, "text/html");
   return doc.documentElement.textContent ?? s;
+}
+
+/**
+ * The developer's other games on the Steam store. Games in the library are
+ * marked and open their own details page; the rest open the store.
+ */
+function MoreFromDeveloper({ developer, appid }: { developer: string; appid: number }) {
+  const more = useQuery({
+    queryKey: ["developer-games", developer],
+    queryFn: () => fetchDeveloperGames(developer),
+    staleTime: 60 * 60 * 1000, // the backend caches the store's answer too
+    retry: false,
+  });
+  const games = more.data?.games.filter((g) => g.appid !== appid) ?? [];
+  const owned = games.filter((g) => g.owned).length;
+
+  return (
+    <section aria-labelledby="more-heading" className="space-y-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 id="more-heading" className="text-lg font-semibold tracking-tight">
+          More from {developer}
+        </h3>
+        {more.data && games.length > 0 && (
+          <p className="text-sm text-muted tabular-nums">
+            {games.length} {games.length === 1 ? "game" : "games"} · {owned} in your library
+          </p>
+        )}
+      </div>
+      {more.isPending && <p className="text-sm text-muted">Asking the Steam store…</p>}
+      {more.isError && <p className="text-sm text-faint">Could not load them: {more.error.message}</p>}
+      {more.data && games.length === 0 && (
+        <p className="text-sm text-faint">No other games from {developer} on the Steam store.</p>
+      )}
+      {games.length > 0 && (
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
+          {games.map((g) => (
+            <li key={g.appid}>
+              <DeveloperGameCard game={g} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function DeveloperGameCard({ game }: { game: DeveloperGame }) {
+  // Owned games open their page here; the others open the store.
+  const link = game.owned
+    ? { href: gameHref(game.appid) }
+    : { href: game.store_url, target: "_blank", rel: "noreferrer" };
+  return (
+    <a
+      {...link}
+      className={`group flex h-full flex-col overflow-hidden panel rounded-lg border bg-surface transition hover:border-line-strong ${
+        game.owned ? "border-accent" : "border-line"
+      }`}
+    >
+      <div className="relative aspect-[231/87] bg-raised">
+        {game.capsule_image && (
+          <img
+            src={game.capsule_image}
+            alt=""
+            loading="lazy"
+            onError={(e) => (e.currentTarget.style.visibility = "hidden")}
+            className="h-full w-full object-cover"
+          />
+        )}
+        {game.owned && (
+          <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-md bg-accent px-1.5 py-0.5 text-[0.6875rem] font-semibold text-on-accent">
+            <Check aria-hidden className="h-3 w-3" strokeWidth={3} />
+            In library
+          </span>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col gap-0.5 p-2.5">
+        <span className="truncate text-sm font-medium tracking-tight group-hover:text-link" title={game.name}>
+          {game.name}
+          {!game.owned && <span className="sr-only"> (not in your library, opens the store in a new tab)</span>}
+        </span>
+        <span className="truncate text-xs">
+          {game.review_pct !== null && game.review_score_desc ? (
+            <ReviewLabel pct={game.review_pct}>{game.review_score_desc}</ReviewLabel>
+          ) : (
+            <Faint>No user reviews</Faint>
+          )}
+        </span>
+        <span className="mt-auto flex items-center justify-between gap-2 pt-1 text-xs text-faint">
+          <span className="truncate">{game.released_text}</span>
+          {!game.owned && <ExternalLink aria-hidden className="h-3 w-3 shrink-0" />}
+        </span>
+      </div>
+    </a>
+  );
 }
