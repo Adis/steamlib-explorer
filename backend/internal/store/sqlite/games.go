@@ -214,6 +214,18 @@ func (s *Store) OwnedAmong(ctx context.Context, steamID int64, appids []int64) (
 	return out, rows.Err()
 }
 
+// RemoveOwnedGamesExcept is written here rather than by sqlc, whose SQLite
+// parser can't handle json_each with a parameter.
+func (s *Store) RemoveOwnedGamesExcept(ctx context.Context, steamID int64, keep []int64) (int64, error) {
+	b, _ := json.Marshal(keep) // an []int64 always marshals
+	res, err := s.db.ExecContext(ctx, `DELETE FROM owned_games
+	    WHERE steam_id = ? AND appid NOT IN (SELECT value FROM json_each(?))`, steamID, string(b))
+	if err != nil {
+		return 0, mapErr(err)
+	}
+	return res.RowsAffected()
+}
+
 func (s *Store) GenreFacets(ctx context.Context, steamID int64) ([]store.GenreFacetsRow, error) {
 	return s.facets(ctx, "a.genres", steamID)
 }

@@ -32,6 +32,7 @@ type Queries interface {
 	FinishSyncRun(ctx context.Context, arg store.FinishSyncRunParams) error
 	EnsureApp(ctx context.Context, arg store.EnsureAppParams) error
 	UpsertOwnedGame(ctx context.Context, arg store.UpsertOwnedGameParams) error
+	RemoveOwnedGamesExcept(ctx context.Context, steamID int64, keep []int64) (int64, error)
 	AppsNeedingDetails(ctx context.Context, arg store.AppsNeedingDetailsParams) ([]int64, error)
 	AppsNeedingReviews(ctx context.Context, arg store.AppsNeedingReviewsParams) ([]int64, error)
 	UpdateAppDetails(ctx context.Context, arg store.UpdateAppDetailsParams) error
@@ -126,7 +127,9 @@ func (s *Syncer) refresh(ctx context.Context, log *slog.Logger, runID int64, ste
 	if err != nil {
 		return fmt.Errorf("fetch library: %w", err)
 	}
+	owned := make([]int64, 0, len(games))
 	for _, g := range games {
+		owned = append(owned, g.AppID)
 		if err := s.q.EnsureApp(ctx, store.EnsureAppParams{Appid: g.AppID, Name: g.Name}); err != nil {
 			return fmt.Errorf("save app %d: %w", g.AppID, err)
 		}
@@ -138,6 +141,19 @@ func (s *Syncer) refresh(ctx context.Context, log *slog.Logger, runID int64, ste
 			LastPlayedAt:    g.LastPlayed,
 		}); err != nil {
 			return fmt.Errorf("save owned game %d: %w", g.AppID, err)
+		}
+	}
+
+	// Games Steam no longer lists (refunded, removed from the account) leave
+	// the library. Steam never sends an empty library (that's
+	// ErrPrivateProfile), but don't empty it on a surprise either.
+	if len(owned) > 0 {
+		removed, err := s.q.RemoveOwnedGamesExcept(ctx, int64(steamID), owned)
+		if err != nil {
+			return fmt.Errorf("remove games no longer owned: %w", err)
+		}
+		if removed > 0 {
+			log.Info("removed games no longer in the library", "count", removed)
 		}
 	}
 

@@ -41,6 +41,10 @@ type Store interface {
 	LibraryStats(ctx context.Context, steamID int64) (LibraryStatsRow, error)
 	EnsureApp(ctx context.Context, arg EnsureAppParams) error
 	UpsertOwnedGame(ctx context.Context, arg UpsertOwnedGameParams) error
+	// RemoveOwnedGamesExcept deletes the user's owned games whose appid is not
+	// in keep (refunded, removed or no longer listed), and returns how many.
+	// The apps' store data stays.
+	RemoveOwnedGamesExcept(ctx context.Context, steamID int64, keep []int64) (int64, error)
 	AppsNeedingDetails(ctx context.Context, arg AppsNeedingDetailsParams) ([]int64, error)
 	AppsNeedingReviews(ctx context.Context, arg AppsNeedingReviewsParams) ([]int64, error)
 	UpdateAppDetails(ctx context.Context, arg UpdateAppDetailsParams) error

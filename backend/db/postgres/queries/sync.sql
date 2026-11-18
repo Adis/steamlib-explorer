@@ -13,6 +13,11 @@ ON CONFLICT (steam_id, appid) DO UPDATE SET
     last_played_at   = EXCLUDED.last_played_at,
     synced_at        = now();
 
+-- name: RemoveOwnedGamesExcept :execrows
+-- Deletes the user's owned games that the latest library read didn't list.
+DELETE FROM owned_games
+WHERE steam_id = @steam_id AND NOT (appid = ANY(@keep::bigint[]));
+
 -- name: AppsNeedingDetails :many
 -- The user's apps whose store data is missing or older than stale_before, oldest first.
 SELECT a.appid
