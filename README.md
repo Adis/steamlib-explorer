@@ -219,6 +219,7 @@ In Postgres, genres and categories are `text[]` columns with GIN indexes, so fil
 | `GET /api/games` | One page of the signed-in user's games with store data, plus `total` matches (filters below) |
 | `GET /api/games/{appid}` | One game from the signed-in user's library, same fields as in the list; 404 if they don't own it |
 | `GET /api/facets` | Genres and store categories in the user's library with game counts, most common first |
+| `GET /api/developer-games?developer=<name>` | The developer's games on the Steam store (from the store search, cached 6 hours), each with `owned` for the signed-in user; 502 if the store doesn't answer |
 
 `GET /api/games` takes these optional query parameters. Bad values get a 400 with an `error` message.
 

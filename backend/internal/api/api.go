@@ -26,6 +26,9 @@ type Deps struct {
 	SyncQ     SyncQueries
 	Games     GameQueries
 	Setup     KeySetup
+	// Developers lists a developer's store games; Owned marks the user's.
+	Developers *DeveloperCache
+	Owned      OwnedQueries
 	// UI serves the frontend for every path the routes above do not match.
 	// Nil leaves those paths as 404s.
 	UI http.Handler
@@ -60,6 +63,9 @@ func NewRouter(d Deps) http.Handler {
 			r.Get("/games", listGames(d.Games))
 			r.Get("/games/{appid}", getGame(d.Games))
 			r.Get("/facets", listFacets(d.Games))
+			if d.Developers != nil {
+				r.Get("/developer-games", listDeveloperGames(d.Developers, d.Owned))
+			}
 		})
 	})
 

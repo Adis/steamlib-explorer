@@ -128,4 +128,22 @@ export const fetchGames = (params: URLSearchParams) =>
 /** One game from the signed-in user's library; 404 when they don't own it. */
 export const fetchGame = (appid: number) => request<Game>(`/api/games/${appid}`);
 
+export type DeveloperGame = {
+  appid: number;
+  name: string;
+  store_url: string;
+  capsule_image: string | null;
+  released_text: string | null; // as the store shows it
+  review_score_desc: string | null;
+  review_pct: number | null;
+  reviews_total: number | null;
+  owned: boolean; // in the signed-in user's library
+};
+
+/** A developer's games on the Steam store, each marked owned or not. */
+export const fetchDeveloperGames = (developer: string) =>
+  request<{ developer: string; games: DeveloperGame[] }>(
+    `/api/developer-games?${new URLSearchParams({ developer })}`,
+  );
+
 export const fetchFacets = () => request<Facets>("/api/facets");

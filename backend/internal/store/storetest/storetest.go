@@ -419,6 +419,16 @@ func testAppsNeeding(t *testing.T, s store.Store) {
 	if len(rows) != 1 || rows[0].MetacriticURL != "https://www.metacritic.com/game/pc/x" {
 		t.Errorf("metacritic url = %+v", rows)
 	}
+	owned, err := s.OwnedAmong(ctx, 1, []int64{99, 3, 1})
+	must(t, err)
+	if !slices.Equal(owned, []int64{1, 3}) {
+		t.Errorf("owned among 99, 3, 1 = %v, want [1 3]", owned)
+	}
+	owned, err = s.OwnedAmong(ctx, 2, []int64{1})
+	must(t, err)
+	if len(owned) != 0 {
+		t.Errorf("another user's games = %v, want none", owned)
+	}
 	rows, err = s.ListGames(ctx, store.ListGamesParams{SteamID: 1, AppID: ptr[int64](99), Sort: "name", PageLimit: 1})
 	must(t, err)
 	if len(rows) != 0 {

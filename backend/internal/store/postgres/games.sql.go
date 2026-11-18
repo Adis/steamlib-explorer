@@ -276,3 +276,35 @@ func (q *Queries) ListGames(ctx context.Context, arg ListGamesParams) ([]ListGam
 	}
 	return items, nil
 }
+
+const ownedAmong = `-- name: OwnedAmong :many
+SELECT appid FROM owned_games
+WHERE steam_id = $1 AND appid = ANY($2::bigint[])
+ORDER BY appid
+`
+
+type OwnedAmongParams struct {
+	SteamID int64
+	Appids  []int64
+}
+
+// Which of these apps the user owns.
+func (q *Queries) OwnedAmong(ctx context.Context, arg OwnedAmongParams) ([]int64, error) {
+	rows, err := q.db.Query(ctx, ownedAmong, arg.SteamID, arg.Appids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int64{}
+	for rows.Next() {
+		var appid int64
+		if err := rows.Scan(&appid); err != nil {
+			return nil, err
+		}
+		items = append(items, appid)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
