@@ -124,4 +124,7 @@ export type Facets = { genres: Facet[]; categories: Facet[] };
 export const fetchGames = (params: URLSearchParams) =>
   request<GamesPage>(`/api/games?${params}`);
 
+/** One game from the signed-in user's library; 404 when they don't own it. */
+export const fetchGame = (appid: number) => request<Game>(`/api/games/${appid}`);
+
 export const fetchFacets = () => request<Facets>("/api/facets");

@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/Adis/steamlib-explorer/backend/internal/auth"
 	"github.com/Adis/steamlib-explorer/backend/internal/store"
 )
@@ -98,6 +100,32 @@ func listGames(q GameQueries) http.HandlerFunc {
 			out.Games = append(out.Games, toGameJSON(g))
 		}
 		writeJSON(w, http.StatusOK, out)
+	}
+}
+
+// getGame handles GET /api/games/{appid}: one game from the signed-in user's
+// library, or 404 when they don't own it.
+func getGame(q GameQueries) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		u, _ := auth.UserFrom(r.Context())
+		appid, err := strconv.ParseInt(chi.URLParam(r, "appid"), 10, 64)
+		if err != nil || appid <= 0 {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "appid must be a positive whole number"})
+			return
+		}
+		rows, err := q.ListGames(r.Context(), store.ListGamesParams{
+			SteamID: int64(u.SteamID), AppID: &appid, Sort: "name", PageLimit: 1,
+		})
+		if err != nil {
+			slog.Error("get game", "appid", appid, "error", err)
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+			return
+		}
+		if len(rows) == 0 {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "this game is not in your library"})
+			return
+		}
+		writeJSON(w, http.StatusOK, toGameJSON(rows[0]))
 	}
 }
 

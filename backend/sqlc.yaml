@@ -27,6 +27,11 @@ sql:
             go_type:
               type: int32
               pointer: true
+          - db_type: pg_catalog.int8
+            nullable: true
+            go_type:
+              type: int64
+              pointer: true
           - db_type: date
             nullable: true
             go_type:

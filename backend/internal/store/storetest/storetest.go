@@ -400,6 +400,18 @@ func testAppsNeeding(t *testing.T, s store.Store) {
 		t.Errorf("without reviews = %d games, want 2", len(rows))
 	}
 
+	// One game by appid (the details page), only from the user's own library.
+	rows, err = s.ListGames(ctx, store.ListGamesParams{SteamID: 1, AppID: ptr[int64](1), Sort: "name", PageLimit: 1})
+	must(t, err)
+	if len(rows) != 1 || rows[0].Appid != 1 || rows[0].Name != "Store name" || rows[0].TotalCount != 1 {
+		t.Errorf("appid 1 = %+v", rows)
+	}
+	rows, err = s.ListGames(ctx, store.ListGamesParams{SteamID: 1, AppID: ptr[int64](99), Sort: "name", PageLimit: 1})
+	must(t, err)
+	if len(rows) != 0 {
+		t.Errorf("appid not owned = %+v, want none", rows)
+	}
+
 	rows, err = s.ListGames(ctx, store.ListGamesParams{SteamID: 1, Sort: "name", PageLimit: 10})
 	must(t, err)
 	if len(rows) != 3 || rows[0].Name != "Game" || rows[2].Name != "Store name" || rows[2].ReviewPct == nil || *rows[2].ReviewPct != 50 {

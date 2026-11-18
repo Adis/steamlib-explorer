@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { Minus, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { Game } from "./api.ts";
 import { useTableColumns } from "./tableColumns.ts";
+import { gameHref } from "./GameDetails.tsx";
 import { formatDate, isNewRelease, NewBadge } from "./ui.tsx";
 
 /** Sort keys accepted by GET /api/games, by column id. */
@@ -184,14 +185,8 @@ function NameCell({ game }: { game: Game }) {
         <div className="h-[37px] w-[80px] shrink-0 rounded bg-raised" />
       )}
       <div className="min-w-0 flex-1">
-        <a
-          href={game.store_url}
-          target="_blank"
-          rel="noreferrer"
-          className="font-medium tracking-tight hover:text-link"
-        >
+        <a href={gameHref(game.appid)} className="font-medium tracking-tight hover:text-link">
           {game.name}
-          <span className="sr-only"> (opens in a new tab)</span>
         </a>
         {isNewRelease(game) && <NewBadge game={game} className="ml-2 align-[0.1em] leading-none" />}
         {/* Long genre lists are cut off with an ellipsis instead of widening
