@@ -2,9 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { createMcpToken, deleteMcpToken, fetchMcpToken } from "./api.ts";
+import { AI_HELP_HREF } from "./Help.tsx";
 import { ErrorBox, formatDateTime } from "./ui.tsx";
-
-const README_URL = "https://github.com/Adis/steamlib-explorer#ai-assistants-mcp";
 
 /**
  * Settings section for the MCP server: lets an AI assistant such as Claude
@@ -43,9 +42,8 @@ export default function McpAccess() {
         up a game, see library stats and other games by a developer. It can only read; it can't
         change anything or start a sync. The token is kept by the app for your account, not in
         this browser.{" "}
-        <a href={README_URL} target="_blank" rel="noreferrer" className="text-link hover:text-link-hover">
+        <a href={AI_HELP_HREF} className="text-link hover:text-link-hover">
           How to connect Claude
-          <span className="sr-only"> (opens in a new tab)</span>
         </a>
       </p>
 
