@@ -147,3 +147,22 @@ export const fetchDeveloperGames = (developer: string) =>
   );
 
 export const fetchFacets = () => request<Facets>("/api/facets");
+
+/** The signed-in user's token for the MCP server (/mcp), used by AI assistants. */
+export type McpToken = {
+  exists: boolean;
+  created_at: string | null;
+  token?: string; // only right after it is made: it can't be read again
+};
+
+export const fetchMcpToken = () => request<McpToken>("/api/mcp-token");
+
+/** Makes a new token, replacing the old one, and returns it this once. */
+export const createMcpToken = () =>
+  request<McpToken>("/api/mcp-token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+
+export const deleteMcpToken = () => request<void>("/api/mcp-token", { method: "DELETE" });

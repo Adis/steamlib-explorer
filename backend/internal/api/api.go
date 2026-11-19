@@ -29,6 +29,10 @@ type Deps struct {
 	// Developers lists a developer's store games; Owned marks the user's.
 	Developers *DeveloperCache
 	Owned      OwnedQueries
+	// MCP and MCPTokens turn on the MCP server at /mcp, for AI assistants,
+	// and the Settings calls that make its token. Nil leaves both off.
+	MCP       MCPQueries
+	MCPTokens MCPTokens
 	// UI serves the frontend for every path the routes above do not match.
 	// Nil leaves those paths as 404s.
 	UI http.Handler
@@ -54,6 +58,11 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/api/setup", saveAPIKey(d.Setup))
 		}
 
+		// For AI assistants: signed in with an MCP token, not the cookie.
+		if d.MCP != nil && d.MCPTokens != nil {
+			r.Handle("/mcp", newMCPHandler(d.MCP, d.Developers, verifyMCPToken(d.MCPTokens), time.Now))
+		}
+
 		r.Route("/api", func(r chi.Router) {
 			r.Use(d.Auth.RequireUser)
 			r.Get("/me", auth.Me)
@@ -64,6 +73,11 @@ func NewRouter(d Deps) http.Handler {
 			r.Get("/facets", listFacets(d.Games))
 			if d.Developers != nil {
 				r.Get("/developer-games", listDeveloperGames(d.Developers, d.Owned))
+			}
+			if d.MCPTokens != nil {
+				r.Get("/mcp-token", mcpTokenStatus(d.MCPTokens))
+				r.Post("/mcp-token", createMCPToken(d.MCPTokens))
+				r.Delete("/mcp-token", deleteMCPToken(d.MCPTokens))
 			}
 		})
 	})

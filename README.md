@@ -46,6 +46,43 @@ Then start **Steamlib Explorer** from your applications menu, or run `steamlib-e
 
 The first page asks for your [Steam Web API key](https://steamcommunity.com/dev/apikey); the app checks it with Steam and stores it in your OS keychain. Then sign in through Steam and press **Sync library**. Everything stays on your computer, in your data folder (see [SQLite](#sqlite)). The **Help** page in the app explains what to do if your Steam library is private.
 
+## AI assistants (MCP)
+
+The app has a built-in [MCP](https://modelcontextprotocol.io) server, so an AI assistant such as Claude can read your library and answer questions like "which highly rated strategy games haven't I played?" or "what else did the makers of Hades make?". It can only read: it can't change anything, start a sync or reach your Steam account.
+
+Its tools:
+
+| Tool | What it does |
+| --- | --- |
+| `search_games` | Finds games with the explorer's filters: name, genres, categories, played or not, playtime, Steam rating, review percentage, Metacritic, release dates, new releases (last 6 months), platforms, with sorting and paging |
+| `get_game` | Everything known about one game in your library |
+| `library_stats` | Totals, playtime, most common genres, most and recently played games, last sync |
+| `more_from_developer` | A developer's games on the Steam store, each marked owned or not |
+
+To connect an assistant, sign in, open **Settings**, and under **AI assistants (MCP)** press **Make token**. Copy the token right away: the app keeps only a hash of it, so it can't show it again (make a new one if you lose it, which also cuts off the old one). **Revoke token** cuts off every assistant using it. Each user has their own token, which reads only their library. Settings also shows the server address, normally `http://localhost:8080/mcp` (`http://localhost:5173/mcp` with `make dev`).
+
+**Claude Code**: Settings shows the command, ready to paste:
+
+```sh
+claude mcp add --transport http steamlib http://localhost:8080/mcp --header "Authorization: Bearer slx_..."
+```
+
+**Claude Desktop**: its **Connectors** settings reach servers from the internet, not ones on your computer, so connect through [mcp-remote](https://www.npmjs.com/package/mcp-remote), which needs [Node.js](https://nodejs.org). In Claude Desktop open **Settings**, **Developer**, **Edit Config**, add this to `claude_desktop_config.json` with your token, and restart Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "steamlib": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:8080/mcp", "--header", "Authorization:${STEAMLIB_AUTH}"],
+      "env": { "STEAMLIB_AUTH": "Bearer slx_..." }
+    }
+  }
+}
+```
+
+The app must be running for the assistant to reach it. The data is as fresh as your last **Sync library**. With the default settings the server is reachable only from this computer; see [Remote access](#remote-access) to open the app to your network, and use the address from `PUBLIC_URL`.
+
 ## Build it yourself
 
 You need [Go](https://go.dev/dl/) 1.25 or newer, [Node.js](https://nodejs.org/en/download) 20.19 or newer and [GNU Make](https://www.gnu.org/software/make/); no Docker. Clone the repository and build the desktop app:
@@ -219,6 +256,10 @@ In Postgres, genres and categories are `text[]` columns with GIN indexes, so fil
 | `GET /api/games` | One page of the signed-in user's games with store data, plus `total` matches (filters below) |
 | `GET /api/games/{appid}` | One game from the signed-in user's library, same fields as in the list; 404 if they don't own it |
 | `GET /api/facets` | Genres and store categories in the user's library with game counts, most common first |
+| `GET /api/mcp-token` | Whether the signed-in user has an MCP token (`exists`, `created_at`) |
+| `POST /api/mcp-token` | Makes a new MCP token, replacing the old one, and returns it in `token` this once (JSON body) |
+| `DELETE /api/mcp-token` | Revokes the MCP token |
+| `POST /mcp` | The MCP server (Streamable HTTP, stateless), with `Authorization: Bearer <token>`; see [AI assistants](#ai-assistants-mcp) |
 | `GET /api/developer-games?developer=<name>` | The developer's games on the Steam store (from the store search, cached 6 hours), each with `owned` for the signed-in user; 502 if the store doesn't answer |
 
 `GET /api/games` takes these optional query parameters. Bad values get a 400 with an `error` message.

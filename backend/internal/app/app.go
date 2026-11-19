@@ -88,6 +88,7 @@ func Run(ctx context.Context, cfg config.Config, ready func()) error {
 			DB: queries, Auth: authService, Refresher: refresher, SyncQ: queries, Games: queries,
 			Setup:      &keySetup{client: steamClient, keys: keys},
 			Developers: &api.DeveloperCache{Search: steamClient, Saved: queries}, Owned: queries,
+			MCP: queries, MCPTokens: queries,
 			UI: webui.Handler(),
 		})),
 		ReadHeaderTimeout: 10 * time.Second,

@@ -103,7 +103,10 @@ SELECT
     count(*) FILTER (WHERE a.details_status = 'ok')           AS with_details,
     count(*) FILTER (WHERE a.details_status = 'unavailable')  AS unavailable,
     count(*) FILTER (WHERE a.details_status = 'error')        AS failed,
-    count(*) FILTER (WHERE a.reviews_fetched_at IS NOT NULL)  AS with_reviews
+    count(*) FILTER (WHERE a.reviews_fetched_at IS NOT NULL)  AS with_reviews,
+    count(*) FILTER (WHERE o.playtime_forever > 0)            AS played,
+    CAST(coalesce(sum(o.playtime_forever), 0) AS INTEGER)     AS playtime_minutes,
+    CAST(coalesce(sum(o.playtime_2weeks), 0) AS INTEGER)      AS playtime_2weeks_minutes
 FROM owned_games o
 JOIN apps a ON a.appid = o.appid
 WHERE o.steam_id = ?;
