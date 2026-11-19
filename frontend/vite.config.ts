@@ -4,9 +4,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { writeFileSync } from "node:fs";
 
 // In development the browser talks only to Vite (localhost:5173), which
-// forwards /api and /auth to the Go backend. Cookies and the Steam callback
-// therefore all live on one origin; set PUBLIC_URL=http://localhost:5173 for
-// the backend.
+// forwards /api, /auth and /mcp (for AI assistants) to the Go backend.
+// Cookies and the Steam callback therefore all live on one origin; set
+// PUBLIC_URL=http://localhost:5173 for the backend.
 //
 // Both servers listen on this machine only unless LISTEN_HOST says otherwise
 // (see "Remote access" in the README). 127.0.0.1 rather than "localhost" so
@@ -49,6 +49,7 @@ export default defineConfig({
     proxy: {
       "/api": backend,
       "/auth": backend,
+      "/mcp": backend,
     },
   },
 });

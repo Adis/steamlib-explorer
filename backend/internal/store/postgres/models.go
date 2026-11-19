@@ -47,6 +47,12 @@ type DeveloperGame struct {
 	FetchedAt time.Time
 }
 
+type McpToken struct {
+	SteamID   int64
+	TokenHash []byte
+	CreatedAt time.Time
+}
+
 type OwnedGame struct {
 	SteamID         int64
 	Appid           int64

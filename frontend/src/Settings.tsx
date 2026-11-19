@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import McpAccess from "./McpAccess.tsx";
 import { SIDEBAR_FILTERS, useSidebarFilters } from "./sidebarFilters.ts";
 import { TABLE_COLUMNS, useTableColumns } from "./tableColumns.ts";
 import {
@@ -25,7 +26,7 @@ export default function Settings({ signedIn }: { signedIn: boolean }) {
           {signedIn ? "← Back to your library" : "← Back to sign in"}
         </a>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight">Settings</h2>
-        <p className="mt-1 text-sm text-muted">Saved in this browser.</p>
+        <p className="mt-1 text-sm text-muted">Saved in this browser, except the AI assistant token.</p>
       </header>
 
       <section className="panel rounded-xl border border-line bg-surface p-5">
@@ -58,6 +59,12 @@ export default function Settings({ signedIn }: { signedIn: boolean }) {
       <section className="panel rounded-xl border border-line bg-surface p-5">
         <TableColumnToggles />
       </section>
+
+      {signedIn && (
+        <section className="panel rounded-xl border border-line bg-surface p-5">
+          <McpAccess />
+        </section>
+      )}
     </article>
   );
 }

@@ -251,6 +251,30 @@ func (s *Store) DeleteSession(ctx context.Context, tokenHash []byte) error {
 	return mapErr(s.q.DeleteSession(ctx, tokenHash))
 }
 
+func (s *Store) SaveMCPToken(ctx context.Context, steamID int64, tokenHash []byte) error {
+	return mapErr(s.q.SaveMCPToken(ctx, SaveMCPTokenParams{SteamID: steamID, TokenHash: tokenHash}))
+}
+
+func (s *Store) MCPTokenCreatedAt(ctx context.Context, steamID int64) (time.Time, error) {
+	t, err := s.q.GetMCPToken(ctx, steamID)
+	if err != nil {
+		return time.Time{}, mapErr(err)
+	}
+	return parseTime(t), nil
+}
+
+func (s *Store) GetMCPTokenUser(ctx context.Context, tokenHash []byte) (store.User, error) {
+	u, err := s.q.GetMCPTokenUser(ctx, tokenHash)
+	if err != nil {
+		return store.User{}, mapErr(err)
+	}
+	return toUser(u), nil
+}
+
+func (s *Store) DeleteMCPToken(ctx context.Context, steamID int64) error {
+	return mapErr(s.q.DeleteMCPToken(ctx, steamID))
+}
+
 func (s *Store) StartSyncRun(ctx context.Context, steamID int64) (int64, error) {
 	id, err := s.q.StartSyncRun(ctx, steamID)
 	return id, mapErr(err)

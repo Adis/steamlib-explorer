@@ -29,6 +29,15 @@ type Store interface {
 	GetSessionUser(ctx context.Context, tokenHash []byte) (User, error)
 	DeleteSession(ctx context.Context, tokenHash []byte) error
 
+	// MCP server access. Each user has at most one token; only its hash is kept.
+	// SaveMCPToken replaces the user's token.
+	SaveMCPToken(ctx context.Context, steamID int64, tokenHash []byte) error
+	// MCPTokenCreatedAt returns ErrNotFound when the user has no token.
+	MCPTokenCreatedAt(ctx context.Context, steamID int64) (time.Time, error)
+	// GetMCPTokenUser returns ErrNotFound for an unknown token.
+	GetMCPTokenUser(ctx context.Context, tokenHash []byte) (User, error)
+	DeleteMCPToken(ctx context.Context, steamID int64) error
+
 	// Library sync
 	// StartSyncRun returns ErrConflict when the user already has a running Refresh.
 	StartSyncRun(ctx context.Context, steamID int64) (int64, error)
@@ -118,6 +127,10 @@ type LibraryStatsRow struct {
 	Unavailable int64
 	Failed      int64
 	WithReviews int64
+	Played      int64 // games with any playtime
+	// Total playtime across the library, all time and in the last two weeks.
+	PlaytimeMinutes       int64
+	Playtime2weeksMinutes int64
 }
 
 type EnsureAppParams struct {

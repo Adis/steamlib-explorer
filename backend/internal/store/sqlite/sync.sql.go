@@ -163,18 +163,24 @@ SELECT
     count(*) FILTER (WHERE a.details_status = 'ok')           AS with_details,
     count(*) FILTER (WHERE a.details_status = 'unavailable')  AS unavailable,
     count(*) FILTER (WHERE a.details_status = 'error')        AS failed,
-    count(*) FILTER (WHERE a.reviews_fetched_at IS NOT NULL)  AS with_reviews
+    count(*) FILTER (WHERE a.reviews_fetched_at IS NOT NULL)  AS with_reviews,
+    count(*) FILTER (WHERE o.playtime_forever > 0)            AS played,
+    CAST(coalesce(sum(o.playtime_forever), 0) AS INTEGER)     AS playtime_minutes,
+    CAST(coalesce(sum(o.playtime_2weeks), 0) AS INTEGER)      AS playtime_2weeks_minutes
 FROM owned_games o
 JOIN apps a ON a.appid = o.appid
 WHERE o.steam_id = ?
 `
 
 type LibraryStatsRow struct {
-	Games       int64
-	WithDetails int64
-	Unavailable int64
-	Failed      int64
-	WithReviews int64
+	Games                 int64
+	WithDetails           int64
+	Unavailable           int64
+	Failed                int64
+	WithReviews           int64
+	Played                int64
+	PlaytimeMinutes       int64
+	Playtime2weeksMinutes int64
 }
 
 func (q *Queries) LibraryStats(ctx context.Context, steamID int64) (LibraryStatsRow, error) {
@@ -186,6 +192,9 @@ func (q *Queries) LibraryStats(ctx context.Context, steamID int64) (LibraryStats
 		&i.Unavailable,
 		&i.Failed,
 		&i.WithReviews,
+		&i.Played,
+		&i.PlaytimeMinutes,
+		&i.Playtime2weeksMinutes,
 	)
 	return i, err
 }

@@ -88,10 +88,12 @@ func TestPostgresToSQLite(t *testing.T) {
 	fetched := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
 	must(t, pg.SaveDeveloperGames(ctx, store.DeveloperGames{Developer: "valve", Games: []byte(`[{"appid": 620}]`), FetchedAt: fetched}))
 
+	must(t, pg.SaveMCPToken(ctx, user, []byte{9, 8, 7}))
+
 	lite := openSQLite(t)
 	counts, err := PostgresToSQLite(ctx, pg.Pool(), lite.DB())
 	must(t, err)
-	want := Counts{"users": 2, "sessions": 1, "apps": 3, "owned_games": 4, "sync_runs": 1, "developer_games": 1}
+	want := Counts{"users": 2, "sessions": 1, "apps": 3, "owned_games": 4, "sync_runs": 1, "developer_games": 1, "mcp_tokens": 1}
 	if !reflect.DeepEqual(counts, want) {
 		t.Errorf("counts = %v, want %v", counts, want)
 	}
@@ -126,6 +128,15 @@ func TestPostgresToSQLite(t *testing.T) {
 			u, err := s.GetSessionUser(ctx, []byte{0, 1, 255})
 			u.CreatedAt, u.LastLoginAt = *ms(&u.CreatedAt), *ms(&u.LastLoginAt)
 			return u, err
+		},
+		"mcp token user": func(s store.Store) (any, error) {
+			u, err := s.GetMCPTokenUser(ctx, []byte{9, 8, 7})
+			u.CreatedAt, u.LastLoginAt = *ms(&u.CreatedAt), *ms(&u.LastLoginAt)
+			return u, err
+		},
+		"mcp token created": func(s store.Store) (any, error) {
+			c, err := s.MCPTokenCreatedAt(ctx, user)
+			return *ms(&c), err
 		},
 		"sync run": func(s store.Store) (any, error) {
 			r, err := s.LatestSyncRun(ctx, user)

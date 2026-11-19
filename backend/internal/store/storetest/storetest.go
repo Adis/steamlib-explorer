@@ -23,6 +23,8 @@ func Run(t *testing.T, open func(t *testing.T) store.Store) {
 	t.Run("NameSearchBeyondASCII", func(t *testing.T) { testNameSearchUnicode(t, open(t)) })
 	t.Run("ReviewSortByRatingFirst", func(t *testing.T) { testReviewSortByRating(t, open(t)) })
 	t.Run("DeveloperGames", func(t *testing.T) { testDeveloperGames(t, open(t)) })
+	t.Run("MCPTokens", func(t *testing.T) { testMCPTokens(t, open(t)) })
+	t.Run("PlaytimeStats", func(t *testing.T) { testPlaytimeStats(t, open(t)) })
 }
 
 func testNameSearchUnicode(t *testing.T, s store.Store) {
@@ -467,5 +469,65 @@ func testDeveloperGames(t *testing.T, s store.Store) {
 	}
 	if _, err := s.GetDeveloperGames(ctx, "valve"); err != nil {
 		t.Errorf("fresh list deleted: %v", err)
+	}
+}
+
+func testMCPTokens(t *testing.T, s store.Store) {
+	ctx := context.Background()
+	for _, id := range []int64{1, 2} {
+		_, err := s.UpsertUser(ctx, store.UpsertUserParams{SteamID: id, PersonaName: ptr("Player")})
+		must(t, err)
+	}
+	if _, err := s.MCPTokenCreatedAt(ctx, 1); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("no token yet: err = %v, want ErrNotFound", err)
+	}
+	must(t, s.SaveMCPToken(ctx, 1, []byte("first")))
+	must(t, s.SaveMCPToken(ctx, 2, []byte("other user")))
+	created, err := s.MCPTokenCreatedAt(ctx, 1)
+	must(t, err)
+	if time.Since(created) > time.Minute || time.Since(created) < -time.Minute {
+		t.Errorf("created at %v, want about now", created)
+	}
+	u, err := s.GetMCPTokenUser(ctx, []byte("first"))
+	must(t, err)
+	if u.SteamID != 1 || u.PersonaName == nil || *u.PersonaName != "Player" {
+		t.Errorf("token user = %+v", u)
+	}
+
+	// A new token replaces the old one.
+	must(t, s.SaveMCPToken(ctx, 1, []byte("second")))
+	if _, err := s.GetMCPTokenUser(ctx, []byte("first")); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("replaced token: err = %v, want ErrNotFound", err)
+	}
+	if u, err := s.GetMCPTokenUser(ctx, []byte("second")); err != nil || u.SteamID != 1 {
+		t.Errorf("new token user = %+v, %v", u, err)
+	}
+
+	must(t, s.DeleteMCPToken(ctx, 1))
+	if _, err := s.GetMCPTokenUser(ctx, []byte("second")); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("deleted token: err = %v, want ErrNotFound", err)
+	}
+	if u, err := s.GetMCPTokenUser(ctx, []byte("other user")); err != nil || u.SteamID != 2 {
+		t.Errorf("other user's token after delete = %+v, %v", u, err)
+	}
+}
+
+func testPlaytimeStats(t *testing.T, s store.Store) {
+	ctx := context.Background()
+	seed(t, s, []app{
+		{id: 1, name: "Played", owner: 1, minutes: 90, recent: 30},
+		{id: 2, name: "Played more", owner: 1, minutes: 600},
+		{id: 3, name: "Never played", owner: 1},
+		{id: 4, name: "Someone else's", owner: 2, minutes: 1000},
+	})
+	stats, err := s.LibraryStats(ctx, 1)
+	must(t, err)
+	if stats.Games != 3 || stats.Played != 2 || stats.PlaytimeMinutes != 690 || stats.Playtime2weeksMinutes != 30 {
+		t.Errorf("stats = %+v, want 3 games, 2 played, 690 minutes, 30 recent", stats)
+	}
+	empty, err := s.LibraryStats(ctx, 99)
+	must(t, err)
+	if empty != (store.LibraryStatsRow{}) {
+		t.Errorf("empty library stats = %+v", empty)
 	}
 }
