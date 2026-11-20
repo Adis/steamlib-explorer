@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { CheckIcon } from "./icons.tsx";
 import McpAccess from "./McpAccess.tsx";
 import { SIDEBAR_FILTERS, useSidebarFilters } from "./sidebarFilters.ts";
 import { TABLE_COLUMNS, useTableColumns } from "./tableColumns.ts";
@@ -93,7 +93,7 @@ function ThemeOptions({
             <ThemePreview colors={t.swatch} />
             <span className="mt-1.5 flex items-center justify-between gap-1 px-0.5">
               <span className={selected ? "font-medium text-fg" : "text-fg"}>{t.name}</span>
-              {selected && <Check aria-hidden className="h-3.5 w-3.5 shrink-0 text-accent" />}
+              {selected && <CheckIcon className="h-3.5 w-3.5 text-accent" />}
             </span>
           </button>
         );
@@ -210,7 +210,7 @@ function ColorVisionPicker() {
               </span>
               <span className="flex items-center justify-between gap-1">
                 <span className={selected ? "font-medium text-fg" : "text-fg"}>{c.name}</span>
-                {selected && <Check aria-hidden className="h-3.5 w-3.5 shrink-0 text-accent" />}
+                {selected && <CheckIcon className="h-3.5 w-3.5 text-accent" />}
               </span>
               <span className="text-xs text-muted">{c.detail}</span>
             </button>

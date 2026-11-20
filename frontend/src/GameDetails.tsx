@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ExternalLink, LibraryBig } from "lucide-react";
+import { BookIcon, CheckIcon, ExternalLinkIcon } from "./icons.tsx";
 import { ApiError, fetchDeveloperGames, fetchGame, type DeveloperGame, type Game, type GamesPage } from "./api.ts";
 import { formatHours, ReviewLabel, reviewDetail } from "./GamesTable.tsx";
 import { ErrorBox, formatDate, isNewRelease, NewBadge } from "./ui.tsx";
@@ -131,7 +131,7 @@ function Overview({ game }: { game: Game }) {
             title="Opens this game in the Steam app. Needs Steam installed on this computer."
             className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover"
           >
-            <LibraryBig aria-hidden className="h-4 w-4" />
+            <BookIcon className="h-6 w-6" />
             Open in library
           </a>
           <a
@@ -140,7 +140,7 @@ function Overview({ game }: { game: Game }) {
             rel="noreferrer"
             className="inline-flex items-center gap-2 rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-fg hover:bg-raised"
           >
-            <ExternalLink aria-hidden className="h-4 w-4" />
+            <ExternalLinkIcon className="h-6 w-6" />
             Open store page
             <span className="sr-only"> (opens in a new tab)</span>
           </a>
@@ -259,7 +259,7 @@ function Metacritic({ game }: { game: Game }) {
       className="inline-flex items-center gap-1 text-link underline hover:text-link-hover"
     >
       {game.metacritic_score}
-      <ExternalLink aria-hidden className="h-3.5 w-3.5" />
+      <ExternalLinkIcon className="h-3.5 w-3.5" />
       <span className="sr-only"> on Metacritic (opens in a new tab)</span>
     </a>
   );
@@ -373,7 +373,7 @@ function DeveloperGameCard({ game }: { game: DeveloperGame }) {
         )}
         {game.owned && (
           <span className="in-library-badge absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-md border border-accent bg-surface px-1.5 py-0.5 text-[0.6875rem] font-semibold text-fg shadow-sm shadow-black/30">
-            <Check aria-hidden className="h-3 w-3 text-accent" strokeWidth={3} />
+            <CheckIcon className="h-3 w-3 text-accent" />
             In library
           </span>
         )}
@@ -392,7 +392,7 @@ function DeveloperGameCard({ game }: { game: DeveloperGame }) {
         </span>
         <span className="mt-auto flex items-center justify-between gap-2 pt-1 text-xs text-faint">
           <span className="truncate">{game.released_text}</span>
-          {!game.owned && <ExternalLink aria-hidden className="h-3 w-3 shrink-0" />}
+          {!game.owned && <ExternalLinkIcon className="h-3 w-3" />}
         </span>
       </div>
     </a>

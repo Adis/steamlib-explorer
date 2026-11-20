@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy } from "lucide-react";
+import { CheckIcon, CopyIcon } from "./icons.tsx";
 import { useState } from "react";
 import { createMcpToken, deleteMcpToken, fetchMcpToken } from "./api.ts";
 import { AI_HELP_HREF } from "./Help.tsx";
@@ -131,7 +131,7 @@ function CopyField({ value, label, multiline = false }: { value: string; label: 
         aria-label={`Copy ${label}`}
         className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-line-strong px-2.5 py-1.5 text-sm text-fg hover:bg-raised"
       >
-        {copied ? <Check aria-hidden className="h-4 w-4 text-accent" /> : <Copy aria-hidden className="h-4 w-4" />}
+        {copied ? <CheckIcon className="h-4 w-4 text-accent" /> : <CopyIcon className="h-4 w-4" />}
         <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
       </button>
     </div>

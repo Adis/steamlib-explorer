@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, fetchSyncStatus, startSync, type SyncRun, type SyncStatus } from "./api.ts";
 import { libraryCountHref, openExplorerLink } from "./filters.ts";
 import { ErrorBox, formatDateTime, formatTimeAgo } from "./ui.tsx";
+import { SyncIcon } from "./icons.tsx";
 
 /** Library status, the Sync button, and progress while a sync runs. */
 export default function SyncPanel() {
@@ -54,7 +55,7 @@ export default function SyncPanel() {
           title="Fetches your owned games, then store details and reviews for new games and for games whose store data is older than 30 days, about 3 seconds per game."
           className="inline-flex items-center gap-2 rounded-md border border-control px-4 py-2 text-sm font-medium text-fg hover:border-accent hover:bg-raised disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <SyncIcon spinning={running} />
+          <SyncIcon className={`h-6 w-6 ${running ? "animate-spin" : ""}`} />
           {running ? "Syncing…" : "Sync library"}
         </button>
       </div>
@@ -225,20 +226,3 @@ function CountLink({
   );
 }
 
-function SyncIcon({ spinning }: { spinning: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      aria-hidden
-      className={`h-4 w-4 ${spinning ? "animate-spin" : ""}`}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M16.5 10a6.5 6.5 0 0 1-11.3 4.4M3.5 10a6.5 6.5 0 0 1 11.3-4.4" />
-      <path d="M15 2.5v3.2h-3.2M5 17.5v-3.2h3.2" />
-    </svg>
-  );
-}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { KeyRound } from "lucide-react";
+import { KeyIcon } from "./icons.tsx";
 import { saveApiKey } from "./api.ts";
 import { ErrorBox } from "./ui.tsx";
 
@@ -15,7 +15,7 @@ export default function Setup() {
 
   return (
     <section className="mx-auto mt-16 max-w-xl panel rounded-xl border border-line bg-surface p-10 shadow-xl shadow-black/20">
-      <KeyRound aria-hidden className="mb-5 h-10 w-10 text-accent" />
+      <KeyIcon className="mb-5 h-12 w-12 text-accent" />
       <h2 className="text-2xl font-semibold tracking-tight">One-time setup</h2>
       <p className="mt-2 text-muted">
         Steamlib Explorer reads your library through the Steam Web API, which needs a free key
