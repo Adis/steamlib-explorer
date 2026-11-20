@@ -158,9 +158,12 @@ function useGameTrail(page: string, gameId: number | null) {
   return next;
 }
 
-/** The page named in the address bar's #fragment: "help", "settings" or "" (the library). */
+/**
+ * The page named in the address bar's #fragment: "help", "settings" or ""
+ * (the library). "#help/<section>" is the Help page, opened at that section.
+ */
 function useHashPage() {
-  const read = () => window.location.hash.replace(/^#/, "");
+  const read = () => window.location.hash.replace(/^#/, "").replace(/^help\/.*/, "help");
   const [page, setPage] = useState(read);
   useEffect(() => {
     const onChange = () => setPage(read());

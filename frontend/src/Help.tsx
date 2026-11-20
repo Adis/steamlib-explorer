@@ -1,5 +1,21 @@
-/** Help page: why Steam may not share a library, and the two ways to fix it. */
+import { useEffect } from "react";
+
+/** Link to the Help page's section about AI assistants. */
+export const AI_HELP_HREF = "#help/ai-assistants";
+
+/**
+ * Help page: why Steam may not share a library and the two ways to fix it,
+ * and how to let an AI assistant read the library. "#help/<id>" opens it at
+ * the section with that id.
+ */
 export default function Help({ signedIn }: { signedIn: boolean }) {
+  useEffect(() => {
+    const id = window.location.hash.split("/")[1];
+    if (!id) return;
+    // After the app has moved focus to the top of the new page.
+    const t = setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: "start" }), 0);
+    return () => clearTimeout(t);
+  }, []);
   return (
     <article className="mx-auto max-w-3xl space-y-8 text-[0.9375rem] leading-relaxed">
       <header>
@@ -108,13 +124,88 @@ export default function Help({ signedIn }: { signedIn: boolean }) {
           again: Steam can take a while to apply a privacy change.
         </p>
       </Section>
+
+      <Section id="ai-assistants" title="Ask an AI assistant about your library">
+        <p>
+          The app can let an AI assistant such as Claude read your library, so you can ask
+          about it in plain words. It uses MCP (Model Context Protocol), a standard way for
+          assistants to use other programs. The assistant can search your games with the same
+          filters as the explorer, look up a game, see your library stats and list other
+          games by a developer. It can only read: it can't change anything, start a sync or
+          reach your Steam account.
+        </p>
+        <h4 className="font-semibold">1. Make a token</h4>
+        <ol className="list-decimal space-y-1 pl-6">
+          <li>
+            Sign in, open <a href="#settings" className="text-link hover:text-link-hover">Settings</a>{" "}
+            and find <strong>AI assistants (MCP)</strong>.
+          </li>
+          <li>
+            Press <strong>Make token</strong> and copy the token straight away. The app keeps
+            only a fingerprint of it, so it can't show it again. If you lose it, press{" "}
+            <strong>Replace token</strong> and set up the assistant again.
+          </li>
+          <li>
+            Note the <strong>Server address</strong> shown there, usually{" "}
+            <code>http://localhost:8080/mcp</code>.
+          </li>
+        </ol>
+
+        <h4 className="font-semibold">2. Connect your assistant</h4>
+        <p>
+          <strong>Claude Code</strong>: right after you make a token, Settings shows a{" "}
+          <code>claude mcp add …</code> command. Paste it into a terminal, then start{" "}
+          <code>claude</code> and ask away. <code>/mcp</code> in Claude Code shows whether
+          it's connected.
+        </p>
+        <p>
+          <strong>Claude Desktop</strong>: its Connectors reach servers on the internet, not
+          ones on your computer, so it connects through a small helper,{" "}
+          <ExtLink href="https://www.npmjs.com/package/mcp-remote">mcp-remote</ExtLink>, which
+          needs <ExtLink href="https://nodejs.org">Node.js</ExtLink>. In Claude Desktop open{" "}
+          <strong>Settings</strong>, <strong>Developer</strong>, <strong>Edit Config</strong>,
+          add this with your server address and token, and restart Claude Desktop:
+        </p>
+        <pre className="overflow-x-auto rounded-md border border-control bg-canvas px-3 py-2 font-mono text-[0.8125rem]">{`{
+  "mcpServers": {
+    "steamlib": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:8080/mcp",
+               "--header", "Authorization:\${STEAMLIB_AUTH}"],
+      "env": { "STEAMLIB_AUTH": "Bearer slx_your_token" }
+    }
+  }
+}`}</pre>
+        <p>
+          Other assistants that support MCP over HTTP work too: give them the server address
+          and the header <code>Authorization: Bearer &lt;your token&gt;</code>.
+        </p>
+
+        <h4 className="font-semibold">3. Ask</h4>
+        <ul className="list-disc space-y-1 pl-6">
+          <li>"Which Overwhelmingly Positive games have I never played?"</li>
+          <li>"Suggest a short strategy game I own for this weekend."</li>
+          <li>"What did I play most in the last two weeks?"</li>
+          <li>"What's in my library from the last six months?"</li>
+          <li>"Which games by the makers of my most played game don't I own?"</li>
+          <li>"How many hours have I spent on Steam, and on which genres?"</li>
+        </ul>
+
+        <p className="text-muted">
+          The app must be running for the assistant to reach it, and answers are as fresh as
+          your last <strong>Sync library</strong>. Anyone with your token can read your
+          library, so keep it to yourself; <strong>Revoke token</strong> in Settings cuts off
+          every assistant using it. Each person who signs in makes their own token, which reads
+          only their library.
+        </p>
+      </Section>
     </article>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3 panel rounded-xl border border-line bg-surface px-6 py-5">
+    <section id={id} className="scroll-mt-4 space-y-3 panel rounded-xl border border-line bg-surface px-6 py-5">
       <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
       {children}
     </section>
