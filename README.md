@@ -61,13 +61,15 @@ Its tools:
 
 To connect an assistant, sign in, open **Settings**, and under **AI assistants (MCP)** press **Make token**. Copy the token right away: the app keeps only a hash of it, so it can't show it again (make a new one if you lose it, which also cuts off the old one). **Revoke token** cuts off every assistant using it. Each user has their own token, which reads only their library. Settings also shows the server address, normally `http://localhost:8080/mcp` (`http://localhost:5173/mcp` with `make dev`).
 
+**Any MCP client** that speaks Streamable HTTP connects with the server address and the header `Authorization: Bearer <token>`. Clients that only run local (stdio) servers can use the `mcp-remote` config below. Two examples:
+
 **Claude Code**: Settings shows the command, ready to paste:
 
 ```sh
 claude mcp add --transport http steamlib http://localhost:8080/mcp --header "Authorization: Bearer slx_..."
 ```
 
-**Claude Desktop**: its **Connectors** settings reach servers from the internet, not ones on your computer, so connect through [mcp-remote](https://www.npmjs.com/package/mcp-remote), which needs [Node.js](https://nodejs.org). In Claude Desktop open **Settings**, **Developer**, **Edit Config**, add this to `claude_desktop_config.json` with your token, and restart Claude Desktop:
+**Claude Desktop** (and other clients that take an `mcpServers` config): its **Connectors** settings reach servers from the internet, not ones on your computer, so connect through [mcp-remote](https://www.npmjs.com/package/mcp-remote), which needs [Node.js](https://nodejs.org). In Claude Desktop open **Settings**, **Developer**, **Edit Config**, add this to `claude_desktop_config.json` with your token, and restart Claude Desktop:
 
 ```json
 {
