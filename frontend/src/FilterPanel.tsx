@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchFacets, type Facet } from "./api.ts";
 import { activeFilterCount, MIN_REVIEWS, type SetParam, type UrlParams } from "./filters.ts";
 import { useSidebarFilters } from "./sidebarFilters.ts";
-import { X } from "lucide-react";
+import { CloseIcon } from "./icons.tsx";
 
 type Props = {
   params: UrlParams;
@@ -188,7 +188,7 @@ function SyncDataFilters({ params, setParam }: { params: UrlParams; setParam: Se
               title="Remove filter"
               className="-mr-1 rounded p-0.5 text-muted hover:bg-surface hover:text-fg"
             >
-              <X aria-hidden className="h-3.5 w-3.5" />
+              <CloseIcon className="h-3.5 w-3.5" />
             </button>
           </li>
         ))}

@@ -8,7 +8,8 @@ import Settings from "./Settings.tsx";
 import Setup from "./Setup.tsx";
 import SyncPanel from "./SyncPanel.tsx";
 import { ErrorBox } from "./ui.tsx";
-import { CircleHelp, LibraryBig, LogOut, Settings as SettingsIcon, type LucideIcon } from "lucide-react";
+import { LibraryBig } from "lucide-react";
+import { HelpIcon, SettingsIcon, SignOutIcon, type Icon } from "./icons.tsx";
 
 export default function App() {
   const me = useQuery({ queryKey: ["me"], queryFn: fetchMe });
@@ -92,7 +93,7 @@ export default function App() {
           </h1>
           <div className="flex items-center gap-3">
             <nav className="flex items-center gap-1">
-              <NavLink href="#help" icon={CircleHelp} label="Help" current={page === "help"} />
+              <NavLink href="#help" icon={HelpIcon} label="Help" current={page === "help"} />
               <NavLink href="#settings" icon={SettingsIcon} label="Settings" current={page === "settings"} />
             </nav>
             {me.data && <UserBadge user={me.data} />}
@@ -196,7 +197,7 @@ function UserBadge({ user }: { user: User }) {
         disabled={signOut.isPending}
         className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm text-muted hover:bg-raised hover:text-fg disabled:opacity-50"
       >
-        <LogOut aria-hidden className="h-4 w-4" />
+        <SignOutIcon className="h-6 w-6" />
         Sign out
       </button>
     </div>
@@ -240,7 +241,7 @@ function NavLink({
   current,
 }: {
   href: string;
-  icon: LucideIcon;
+  icon: Icon;
   label: string;
   current: boolean;
 }) {
@@ -250,7 +251,7 @@ function NavLink({
       aria-current={current ? "page" : undefined}
       className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm text-muted hover:bg-raised hover:text-fg aria-[current=page]:bg-raised aria-[current=page]:text-fg"
     >
-      <Icon aria-hidden className="h-4 w-4" />
+      <Icon className="h-6 w-6" />
       {label}
     </a>
   );

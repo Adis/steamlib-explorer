@@ -5,7 +5,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { ReactNode } from "react";
-import { Minus, ThumbsDown, ThumbsUp } from "lucide-react";
+import { MixedIcon, ThumbsDownIcon, ThumbsUpIcon } from "./icons.tsx";
 import type { Game } from "./api.ts";
 import { useTableColumns } from "./tableColumns.ts";
 import { gameHref } from "./GameDetails.tsx";
@@ -257,10 +257,10 @@ export function formatHours(minutes: number) {
  * it can be read without telling the colours apart.
  */
 export function ReviewLabel({ pct, children }: { pct: number; children: ReactNode }) {
-  const Icon = pct >= 70 ? ThumbsUp : pct >= 40 ? Minus : ThumbsDown;
+  const Icon = pct >= 70 ? ThumbsUpIcon : pct >= 40 ? MixedIcon : ThumbsDownIcon;
   return (
     <span className={`inline-flex items-center gap-1 font-medium ${reviewColor(pct)}`}>
-      <Icon aria-hidden className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+      <Icon className="h-3.5 w-3.5" />
       {children}
     </span>
   );

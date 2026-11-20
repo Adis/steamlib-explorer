@@ -4,6 +4,7 @@ import { fetchGames } from "./api.ts";
 import FilterPanel from "./FilterPanel.tsx";
 import GamesGrid from "./GamesGrid.tsx";
 import GamesTable from "./GamesTable.tsx";
+import { CardsIcon, TableIcon, type Icon } from "./icons.tsx";
 import {
   activeFilterCount,
   apiParams,
@@ -173,35 +174,20 @@ function useView() {
 }
 
 function ViewSwitch({ view, onChange }: { view: View; onChange: (v: View) => void }) {
-  const options: [View, string, React.ReactNode][] = [
-    [
-      "table",
-      "Table",
-      <path key="t" d="M3 5h14M3 10h14M3 15h14" />,
-    ],
-    [
-      "cards",
-      "Cards",
-      <g key="c">
-        <rect x="3" y="3" width="6" height="6" rx="1.2" />
-        <rect x="11" y="3" width="6" height="6" rx="1.2" />
-        <rect x="3" y="11" width="6" height="6" rx="1.2" />
-        <rect x="11" y="11" width="6" height="6" rx="1.2" />
-      </g>,
-    ],
+  const options: [View, string, Icon][] = [
+    ["table", "Table", TableIcon],
+    ["cards", "Cards", CardsIcon],
   ];
   return (
     <div role="group" aria-label="View" className="flex gap-0.5 rounded-md border border-control bg-surface p-0.5">
-      {options.map(([v, label, icon]) => (
+      {options.map(([v, label, OptionIcon]) => (
         <button
           key={v}
           onClick={() => onChange(v)}
           aria-pressed={view === v}
           className={`inline-flex items-center gap-1.5 rounded px-2 py-1 transition-colors ${view === v ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}
         >
-          <svg viewBox="0 0 20 20" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-            {icon}
-          </svg>
+          <OptionIcon className="h-4 w-4" />
           {label}
         </button>
       ))}
