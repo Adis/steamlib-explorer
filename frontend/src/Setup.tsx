@@ -16,7 +16,7 @@ export default function Setup() {
   return (
     <section className="mx-auto mt-16 max-w-xl panel rounded-xl border border-line bg-surface p-10 shadow-xl shadow-black/20">
       <KeyIcon className="mb-5 h-12 w-12 text-accent" />
-      <h2 className="heading text-2xl">One-time setup</h2>
+      <h2 className="page-title text-2xl">One-time setup</h2>
       <p className="mt-2 text-muted">
         Steamlib Explorer reads your library through the Steam Web API, which needs a free key
         tied to your Steam account. It stays on this computer.

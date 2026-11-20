@@ -22,7 +22,7 @@ export default function Help({ signedIn }: { signedIn: boolean }) {
         <a href="#" className="text-sm text-link hover:text-link-hover">
           {signedIn ? "← Back to your library" : "← Back to sign in"}
         </a>
-        <h2 className="heading mt-3 text-2xl">Help</h2>
+        <h2 className="page-title mt-3 text-2xl">Help</h2>
       </header>
 
       <Section title="Why can't the app read my library?">

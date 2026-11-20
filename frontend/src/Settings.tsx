@@ -25,7 +25,7 @@ export default function Settings({ signedIn }: { signedIn: boolean }) {
         <a href="#" className="text-sm text-link hover:text-link-hover">
           {signedIn ? "← Back to your library" : "← Back to sign in"}
         </a>
-        <h2 className="heading mt-3 text-2xl">Settings</h2>
+        <h2 className="page-title mt-3 text-2xl">Settings</h2>
         <p className="mt-1 text-sm text-muted">Saved in this browser, except the AI assistant token.</p>
       </header>
 

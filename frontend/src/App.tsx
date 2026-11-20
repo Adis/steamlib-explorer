@@ -207,7 +207,7 @@ function SignIn() {
   return (
     <section className="mx-auto mt-16 max-w-xl panel rounded-xl border border-line bg-surface p-10 text-center shadow-xl shadow-black/20">
       <Logo className="mx-auto mb-5 h-12 w-12" />
-      <h2 className="heading text-2xl">Explore your Steam library</h2>
+      <h2 className="page-title text-2xl">Explore your Steam library</h2>
       <p className="mt-2 text-muted">
         Sign in with your Steam account. Steam shares your library only when your
         game details are public, or when this app runs with your own Steam API
