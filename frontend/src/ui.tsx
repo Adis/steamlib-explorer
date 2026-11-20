@@ -79,7 +79,7 @@ export function NewBadge({ game, className = "" }: { game: { release_date: strin
   return (
     <span
       title={title}
-      className={`new-badge inline-block rounded-md bg-accent px-1.5 py-0.5 text-[0.6875rem] font-semibold text-on-accent ${className}`}
+      className={`new-badge label-caps inline-block rounded-md bg-accent px-1.5 py-0.5 text-on-accent ${className}`}
     >
       New<span className="sr-only"> release{title ? `, ${title.toLowerCase()}` : ""}</span>
     </span>

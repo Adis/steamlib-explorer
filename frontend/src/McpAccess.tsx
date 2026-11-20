@@ -36,7 +36,7 @@ export default function McpAccess() {
 
   return (
     <div>
-      <h3 className="font-semibold tracking-tight">AI assistants (MCP)</h3>
+      <h3 className="heading">AI assistants (MCP)</h3>
       <p className="mt-0.5 text-sm text-muted">
         Let an AI assistant such as Claude read your library through MCP: search your games, look
         up a game, see library stats and other games by a developer. It can only read; it can't
@@ -89,7 +89,7 @@ export default function McpAccess() {
           onClick={() => create.mutate()}
           disabled={busy || status.isPending}
           title={exists ? "Assistants using the old token lose access." : undefined}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover disabled:opacity-50"
+          className="btn-action rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover disabled:opacity-50"
         >
           {create.isPending ? "Making…" : exists ? "Replace token" : "Make token"}
         </button>

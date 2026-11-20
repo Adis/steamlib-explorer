@@ -33,7 +33,7 @@ export default function SyncPanel() {
     <section className="panel rounded-xl border border-line bg-surface px-5 py-4 shadow-lg shadow-black/10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-semibold tracking-tight">Your library</h2>
+          <h2 className="heading">Your library</h2>
           <p className="mt-0.5 text-sm text-muted">
             {stats && (
               <CountLink filters={{}} title="Show all your games, including those with few reviews" className="font-medium text-fg tabular-nums">
@@ -53,7 +53,7 @@ export default function SyncPanel() {
           onClick={() => sync.mutate()}
           disabled={running}
           title="Fetches your owned games, then store details and reviews for new games and for games whose store data is older than 30 days, about 3 seconds per game."
-          className="inline-flex items-center gap-2 rounded-md border border-control px-4 py-2 text-sm font-medium text-fg hover:border-accent hover:bg-raised disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-action inline-flex items-center gap-2 rounded-md border border-control px-4 py-2 text-sm font-medium text-fg hover:border-accent hover:bg-raised disabled:cursor-not-allowed disabled:opacity-60"
         >
           <SyncIcon className={`h-6 w-6 ${running ? "animate-spin" : ""}`} />
           {running ? "Syncing…" : "Sync library"}

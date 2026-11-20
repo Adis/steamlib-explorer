@@ -1,7 +1,6 @@
 // Interface icons from the HackerNoon Pixel Icon Library (MIT,
 // https://pixeliconlibrary.com). Every icon goes through this file, so the set
-// can be swapped in one place. The app logo stays Lucide's library-big (see
-// Logo in App.tsx): it's a brand mark, and this set has no bookshelf.
+// can be swapped in one place. The book is also the app logo (Logo in App.tsx).
 //
 // The icons are pixel art on a 24px grid with 1px lines, so they are sharpest
 // at 24px (or 48px). Use those sizes where there is room: the header and the
