@@ -3,6 +3,8 @@
 @import "@fontsource-variable/pixelify-sans";
 /* Retro DOS theme only; the browser downloads it only when that theme is on. */
 @import "@fontsource/vt323/latin.css";
+/* Small capitals labels (Silkscreen has one weight, capitals only). */
+@import "@fontsource/silkscreen/latin-400.css";
 
 /*
  * Design tokens. Components use these names (bg-surface, text-muted,
@@ -13,6 +15,10 @@
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   /* App title only. */
   --font-pixel: "Pixelify Sans Variable", ui-monospace, monospace;
+  /* Page and panel titles (.heading), never game names: those are content. */
+  --font-heading: "Pixelify Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  /* Short capitals labels, table headers and badges (.label-caps). */
+  --font-label: "Silkscreen", ui-monospace, monospace;
 
   /* Surfaces, darkest to lightest. */
   --color-canvas: #0a0d14;
@@ -120,6 +126,7 @@
   --color-warn-line: #fcd34d;
   --color-warn-fg: #92400e;
   --glow: 5%;
+  --hard-shadow: #c4cad4;
 }
 
 /*
@@ -127,6 +134,16 @@
  * least 7:1 against the background (WCAG AAA), edges are solid and strong,
  * and there is no dim text. Extra rules are at the end of this file.
  */
+:root[data-theme="hc-dark"],
+:root[data-theme="hc-light"] {
+  /* Plain type and flat panels: no pixel fonts or offset shadows. */
+  --font-heading: var(--font-sans);
+  --font-label: var(--font-sans);
+  --heading-tracking: -0.025em;
+  --label-tracking: 0.05em;
+  --label-weight: 600;
+}
+
 :root[data-theme="hc-dark"] {
   --color-canvas: #000000;
   --color-surface: #000000;
@@ -248,6 +265,9 @@
 :root[data-theme="dos"] {
   --font-sans: "VT323", ui-monospace, monospace;
   --font-pixel: "VT323", ui-monospace, monospace;
+  --font-heading: "VT323", ui-monospace, monospace;
+  --font-label: "VT323", ui-monospace, monospace;
+  --label-tracking: 0.05em;
   --color-canvas: #0000aa;
   --color-surface: #0000aa;
   --color-raised: #0000d0;
@@ -279,6 +299,12 @@
     color-scheme: dark;
     /* Strength of the accent glow behind the header. */
     --glow: 14%;
+    /* Retro touches (see "Pixel type and hard shadows" below). Themes that
+       don't want them override these. */
+    --heading-tracking: 0.01em;
+    --label-tracking: 0;
+    --label-weight: 400;
+    --hard-shadow: color-mix(in oklab, var(--color-accent) 28%, var(--color-canvas));
   }
 
   html {
@@ -321,6 +347,24 @@
 }
 
 @layer components {
+  /* Page and panel titles. */
+  .heading {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: var(--heading-tracking);
+  }
+
+  /* Small capitals: filter group names, table headers, badges. Silkscreen is
+     wide, so keep these to a few words. */
+  .label-caps {
+    font-family: var(--font-label);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: var(--label-weight);
+    letter-spacing: var(--label-tracking);
+    text-transform: uppercase;
+  }
+
   /* "Skip to games": off screen until the keyboard reaches it. */
   .skip-link {
     position: fixed;
@@ -339,6 +383,51 @@
     scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: var(--color-line-strong) transparent;
+  }
+}
+
+/*
+ * Pixel type and hard shadows: panels and cards get squarer corners and a
+ * solid offset shadow in a dark shade of the accent, and the main action
+ * buttons (.btn-action) a smaller one, pressing down when clicked. Choice
+ * controls (theme tiles, switches, segmented buttons) stay flat so the
+ * chosen one still stands out by its border. Retro DOS and the high contrast
+ * themes keep their own frames.
+ */
+:root:not([data-theme="dos"], [data-theme="hc-dark"], [data-theme="hc-light"]) {
+  .panel {
+    border-radius: 4px;
+    box-shadow: 4px 4px 0 0 var(--hard-shadow);
+  }
+  /* Owned games under "More from" keep their accent frame. */
+  .panel:not(.owned-card) {
+    border-color: var(--color-line-strong);
+  }
+  /* Game cards lift towards the pointer, the shadow growing behind them. */
+  .group.panel:hover {
+    translate: -2px -2px;
+    box-shadow: 6px 6px 0 0 var(--hard-shadow);
+  }
+
+  .btn-action {
+    border-radius: 3px;
+    box-shadow: 2px 2px 0 0 var(--hard-shadow);
+  }
+  /* Filled buttons get a bevel: light top-left edge, dark bottom-right. */
+  .btn-action.bg-accent {
+    box-shadow:
+      inset -2px -2px 0 rgb(0 0 0 / 0.25),
+      inset 2px 2px 0 rgb(255 255 255 / 0.3),
+      2px 2px 0 0 var(--hard-shadow);
+  }
+  .btn-action:not(:disabled):active {
+    translate: 2px 2px;
+    box-shadow: none;
+  }
+
+  /* Badges match the squarer corners. */
+  .label-caps.rounded-md {
+    border-radius: 2px;
   }
 }
 
@@ -515,7 +604,8 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  /* No card lift or cover zoom on hover. */
+  /* No card lift, cover zoom or button press. */
+  .btn-action:active,
   .group:hover,
   .group:hover * {
     translate: none !important;

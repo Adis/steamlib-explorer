@@ -25,20 +25,20 @@ export default function Settings({ signedIn }: { signedIn: boolean }) {
         <a href="#" className="text-sm text-link hover:text-link-hover">
           {signedIn ? "← Back to your library" : "← Back to sign in"}
         </a>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight">Settings</h2>
+        <h2 className="heading mt-3 text-2xl">Settings</h2>
         <p className="mt-1 text-sm text-muted">Saved in this browser, except the AI assistant token.</p>
       </header>
 
       <section className="panel rounded-xl border border-line bg-surface p-5">
         <fieldset>
-          <legend className="font-semibold tracking-tight">Theme</legend>
+          <legend className="heading">Theme</legend>
           <p className="mt-0.5 mb-4 text-sm text-muted">Colours used across the app.</p>
           <ThemeOptions themes={THEMES.filter((t) => !isAccessible(t))} theme={theme} setTheme={setTheme} />
         </fieldset>
       </section>
 
       <section className="panel rounded-xl border border-line bg-surface p-5">
-        <h3 className="font-semibold tracking-tight">Accessibility</h3>
+        <h3 className="heading">Accessibility</h3>
         <fieldset className="mt-4">
           <legend className="text-sm font-medium">High contrast</legend>
           <p className="mt-0.5 mb-3 text-sm text-muted">
@@ -283,7 +283,7 @@ function ToggleGroup<Id extends string>({
 }) {
   return (
     <fieldset>
-      <legend className="font-semibold tracking-tight">{title}</legend>
+      <legend className="heading">{title}</legend>
       <p className="mt-0.5 mb-4 text-sm text-muted">{description}</p>
       <div className="grid gap-x-6 sm:grid-cols-2">
         {items.map((f) => (

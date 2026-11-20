@@ -20,7 +20,7 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
   return (
     <aside className="space-y-6 text-sm">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold tracking-tight">Filters</h2>
+        <h2 className="heading">Filters</h2>
         {active > 0 && (
           <button
             onClick={clearFilters}
@@ -52,7 +52,7 @@ export default function FilterPanel({ params, setParam, clearFilters }: Props) {
       )}
 
       {isShown("playtime") && (
-        <Group title="Playtime (hours)">
+        <Group title="Hours played">
           <Range
             params={params}
             setParam={setParam}
@@ -226,7 +226,7 @@ function toggle(list: string[], value: string) {
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <fieldset>
-      <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
+      <legend className="label-caps mb-2 text-muted">
         {title}
       </legend>
       {children}

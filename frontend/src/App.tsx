@@ -8,8 +8,7 @@ import Settings from "./Settings.tsx";
 import Setup from "./Setup.tsx";
 import SyncPanel from "./SyncPanel.tsx";
 import { ErrorBox } from "./ui.tsx";
-import { LibraryBig } from "lucide-react";
-import { HelpIcon, SettingsIcon, SignOutIcon, type Icon } from "./icons.tsx";
+import { BookIcon, HelpIcon, SettingsIcon, SignOutIcon, type Icon } from "./icons.tsx";
 
 export default function App() {
   const me = useQuery({ queryKey: ["me"], queryFn: fetchMe });
@@ -207,8 +206,8 @@ function UserBadge({ user }: { user: User }) {
 function SignIn() {
   return (
     <section className="mx-auto mt-16 max-w-xl panel rounded-xl border border-line bg-surface p-10 text-center shadow-xl shadow-black/20">
-      <Logo className="mx-auto mb-5 h-10 w-10" />
-      <h2 className="text-2xl font-semibold tracking-tight">Explore your Steam library</h2>
+      <Logo className="mx-auto mb-5 h-12 w-12" />
+      <h2 className="heading text-2xl">Explore your Steam library</h2>
       <p className="mt-2 text-muted">
         Sign in with your Steam account. Steam shares your library only when your
         game details are public, or when this app runs with your own Steam API
@@ -220,7 +219,7 @@ function SignIn() {
       {/* A plain link: the backend redirects to Steam and back. */}
       <a
         href="/auth/steam/login"
-        className="mt-6 inline-block rounded-md bg-accent px-5 py-2.5 font-medium text-on-accent hover:bg-accent-hover"
+        className="btn-action mt-6 inline-block rounded-md bg-accent px-5 py-2.5 font-medium text-on-accent hover:bg-accent-hover"
       >
         Sign in through Steam
       </a>
@@ -228,9 +227,10 @@ function SignIn() {
   );
 }
 
-/** App mark: Lucide's "library-big" icon (ISC licence), in the accent colour. */
+/** App mark: the pixel book icon, in the accent colour. Same drawing as the
+ *  desktop app's tray and installer icon (backend/cmd/steamlib-explorer/icon). */
 function Logo({ className = "h-6 w-6" }: { className?: string }) {
-  return <LibraryBig aria-hidden className={`text-accent ${className}`} strokeWidth={2} />;
+  return <BookIcon className={`text-accent ${className}`} />;
 }
 
 /** Header link with an icon and a label, highlighted on its own page. */

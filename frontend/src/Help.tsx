@@ -22,7 +22,7 @@ export default function Help({ signedIn }: { signedIn: boolean }) {
         <a href="#" className="text-sm text-link hover:text-link-hover">
           {signedIn ? "← Back to your library" : "← Back to sign in"}
         </a>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight">Help</h2>
+        <h2 className="heading mt-3 text-2xl">Help</h2>
       </header>
 
       <Section title="Why can't the app read my library?">
@@ -206,7 +206,7 @@ export default function Help({ signedIn }: { signedIn: boolean }) {
 function Section({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="scroll-mt-4 space-y-3 panel rounded-xl border border-line bg-surface px-6 py-5">
-      <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+      <h3 className="heading text-lg">{title}</h3>
       {children}
     </section>
   );

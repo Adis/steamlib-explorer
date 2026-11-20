@@ -33,7 +33,7 @@ function GameCard({ game }: { game: Game }) {
           />
         )}
         {game.playtime_2weeks_minutes > 0 && (
-          <span className="absolute left-2 top-2 rounded-md bg-accent px-1.5 py-0.5 text-[0.6875rem] font-semibold text-on-accent">
+          <span className="absolute left-2 top-2 label-caps rounded-md bg-accent px-1.5 py-0.5 text-on-accent">
             Recently played
           </span>
         )}

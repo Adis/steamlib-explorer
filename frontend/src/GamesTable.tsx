@@ -115,7 +115,7 @@ export default function GamesTable({ games, sort, descending, onSort }: Props) {
     <div className="overflow-x-auto panel rounded-xl border border-line bg-surface/40 shadow-lg shadow-black/10">
       <table className="w-full text-sm">
         <caption className="sr-only">Your games. Column headers with a button sort the table.</caption>
-        <thead className="border-b border-line bg-surface text-left text-[0.6875rem] uppercase tracking-wider text-faint">
+        <thead className="border-b border-line bg-surface label-caps text-left text-faint">
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
               {hg.headers.map((h) => {

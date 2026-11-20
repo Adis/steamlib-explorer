@@ -129,7 +129,7 @@ function Overview({ game }: { game: Game }) {
           <a
             href={`steam://nav/games/details/${game.appid}`}
             title="Opens this game in the Steam app. Needs Steam installed on this computer."
-            className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover"
+            className="btn-action inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover"
           >
             <BookIcon className="h-6 w-6" />
             Open in library
@@ -138,7 +138,7 @@ function Overview({ game }: { game: Game }) {
             href={game.store_url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-fg hover:bg-raised"
+            className="btn-action inline-flex items-center gap-2 rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-fg hover:bg-raised"
           >
             <ExternalLinkIcon className="h-6 w-6" />
             Open store page
@@ -215,7 +215,7 @@ function Facts({ game }: { game: Game }) {
 function FactPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="panel rounded-xl border border-line bg-surface px-5 py-4">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-faint">{title}</h3>
+      <h3 className="label-caps mb-2 text-faint">{title}</h3>
       <dl className="divide-y divide-line text-sm">{children}</dl>
     </section>
   );
@@ -325,7 +325,7 @@ function MoreFromDeveloper({ developer, appid }: { developer: string; appid: num
   return (
     <section aria-labelledby="more-heading" className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 id="more-heading" className="text-lg font-semibold tracking-tight">
+        <h3 id="more-heading" className="heading text-lg">
           More from {developer}
         </h3>
         {more.data && games.length > 0 && (
@@ -372,7 +372,7 @@ function DeveloperGameCard({ game }: { game: DeveloperGame }) {
           />
         )}
         {game.owned && (
-          <span className="in-library-badge absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-md border border-accent bg-surface px-1.5 py-0.5 text-[0.6875rem] font-semibold text-fg shadow-sm shadow-black/30">
+          <span className="in-library-badge absolute left-1.5 top-1.5 inline-flex items-center gap-1 label-caps rounded-md border border-accent bg-surface px-1.5 py-0.5 text-fg shadow-sm shadow-black/30">
             <CheckIcon className="h-3 w-3 text-accent" />
             In library
           </span>
