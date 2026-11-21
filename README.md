@@ -9,7 +9,7 @@ There are two ways to run it: [download the app](#download-the-app) from GitHub 
 
 | Cards view | Filtered: unplayed strategy games rated Very Positive or better |
 | --- | --- |
-| ![Your library as cards with header images](docs/screenshots/explorer-cards.png) | ![300 unplayed strategy games with Very Positive or better reviews](docs/screenshots/explorer-filtered.png) |
+| ![Your library as cards with header images](docs/screenshots/explorer-cards.png) | ![301 unplayed strategy games with Very Positive or better reviews](docs/screenshots/explorer-filtered.png) |
 
 <details>
 <summary>Settings: themes, high contrast and text size</summary>
