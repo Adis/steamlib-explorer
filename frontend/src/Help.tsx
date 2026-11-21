@@ -127,7 +127,7 @@ export default function Help({ signedIn }: { signedIn: boolean }) {
 
       <Section id="ai-assistants" title="Ask an AI assistant about your library">
         <p>
-          The app can let an AI assistant such as Claude read your library, so you can ask
+          The app can let an AI assistant read your library, so you can ask
           about it in plain words. It uses MCP (Model Context Protocol), a standard way for
           assistants to use other programs. The assistant can search your games with the same
           filters as the explorer, look up a game, see your library stats and list other
@@ -153,18 +153,26 @@ export default function Help({ signedIn }: { signedIn: boolean }) {
 
         <h4 className="font-semibold">2. Connect your assistant</h4>
         <p>
-          <strong>Claude Code</strong>: right after you make a token, Settings shows a{" "}
-          <code>claude mcp add …</code> command. Paste it into a terminal, then start{" "}
-          <code>claude</code> and ask away. <code>/mcp</code> in Claude Code shows whether
-          it's connected.
+          Any assistant or app that supports MCP can connect; check its documentation for where
+          MCP servers are added. It needs two things:
         </p>
+        <ul className="list-disc space-y-1 pl-6">
+          <li>
+            the <strong>Server address</strong> from Settings, as a <em>Streamable HTTP</em> (or just
+            "HTTP") server, and
+          </li>
+          <li>
+            the header <code>Authorization: Bearer &lt;your token&gt;</code>.
+          </li>
+        </ul>
         <p>
-          <strong>Claude Desktop</strong>: its Connectors reach servers on the internet, not
-          ones on your computer, so it connects through a small helper,{" "}
-          <ExtLink href="https://www.npmjs.com/package/mcp-remote">mcp-remote</ExtLink>, which
-          needs <ExtLink href="https://nodejs.org">Node.js</ExtLink>. In Claude Desktop open{" "}
-          <strong>Settings</strong>, <strong>Developer</strong>, <strong>Edit Config</strong>,
-          add this with your server address and token, and restart Claude Desktop:
+          Some apps can only start MCP servers as local programs (often called <em>stdio</em>{" "}
+          servers), or reach remote servers only through the internet, which can't see the app on
+          your computer. For those, a small helper,{" "}
+          <ExtLink href="https://www.npmjs.com/package/mcp-remote">mcp-remote</ExtLink> (needs{" "}
+          <ExtLink href="https://nodejs.org">Node.js</ExtLink>), passes the requests on. Many apps
+          take an <code>mcpServers</code> config like this one; put in your server address and
+          token:
         </p>
         <pre className="overflow-x-auto rounded-md border border-control bg-canvas px-3 py-2 font-mono text-[0.8125rem]">{`{
   "mcpServers": {
@@ -176,10 +184,17 @@ export default function Help({ signedIn }: { signedIn: boolean }) {
     }
   }
 }`}</pre>
-        <p>
-          Other assistants that support MCP over HTTP work too: give them the server address
-          and the header <code>Authorization: Bearer &lt;your token&gt;</code>.
-        </p>
+        <p>Two examples:</p>
+        <ul className="list-disc space-y-1 pl-6">
+          <li>
+            <strong>Claude Code</strong> connects over HTTP: right after you make a token, Settings
+            shows a <code>claude mcp add …</code> command to paste into a terminal.
+          </li>
+          <li>
+            <strong>Claude Desktop</strong> uses the config above: open <strong>Settings</strong>,{" "}
+            <strong>Developer</strong>, <strong>Edit Config</strong>, add it and restart the app.
+          </li>
+        </ul>
 
         <h4 className="font-semibold">3. Ask</h4>
         <ul className="list-disc space-y-1 pl-6">

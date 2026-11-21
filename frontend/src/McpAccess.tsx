@@ -6,7 +6,7 @@ import { AI_HELP_HREF } from "./Help.tsx";
 import { ErrorBox, formatDateTime } from "./ui.tsx";
 
 /**
- * Settings section for the MCP server: lets an AI assistant such as Claude
+ * Settings section for the MCP server: lets an AI assistant (any MCP client)
  * read the library with a token made here. Unlike the rest of Settings, the
  * token is kept by the app for the signed-in account.
  */
@@ -38,12 +38,12 @@ export default function McpAccess() {
     <div>
       <h3 className="heading">AI assistants (MCP)</h3>
       <p className="mt-0.5 text-sm text-muted">
-        Let an AI assistant such as Claude read your library through MCP: search your games, look
+        Let an AI assistant read your library through MCP: search your games, look
         up a game, see library stats and other games by a developer. It can only read; it can't
         change anything or start a sync. The token is kept by the app for your account, not in
         this browser.{" "}
         <a href={AI_HELP_HREF} className="text-link hover:text-link-hover">
-          How to connect Claude
+          How to connect an assistant
         </a>
       </p>
 
@@ -70,7 +70,9 @@ export default function McpAccess() {
         <div className="mt-4 space-y-3 rounded-lg border border-accent p-4 text-sm">
           <p className="font-medium">Copy your token now: it won't be shown again.</p>
           <CopyField value={token} label="token" />
-          <p className="text-muted">For Claude Code, run this in a terminal:</p>
+          <p className="text-muted">Give your assistant the server address above and this header:</p>
+          <CopyField value={`Authorization: Bearer ${token}`} label="header" />
+          <p className="text-muted">For example, for Claude Code, run this in a terminal:</p>
           <CopyField
             value={`claude mcp add --transport http steamlib ${url} --header "Authorization: Bearer ${token}"`}
             label="Claude Code command"
